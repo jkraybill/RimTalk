@@ -77,6 +77,23 @@ public static class Describer
         return "Completely cowed, unlikely to resist";
     }
     
+    /// <summary>
+    /// How big is what is happening, in words. rim-universe #35.
+    ///
+    /// Deliberately takes plain numbers rather than a Map: this file is source-linked
+    /// into the test project precisely because it has no RimWorld dependency, and the
+    /// band boundaries are exactly the kind of thing that wants tests. Game-state
+    /// extraction lives in ScaleDescriber.
+    /// </summary>
+    /// <param name="dangerLevel">0 none, 1 low, 2 high</param>
+    public static string Situation(int dangerLevel, int downed, int dead, float wealth, bool isPlayerHome)
+    {
+        if (dangerLevel >= 2 || dead > 0) return "as bad as it has been";
+        if (dangerLevel >= 1 || downed > 0) return "dangerous";
+        if (isPlayerHome && wealth < 20_000f) return "precarious";
+        return "quiet";
+    }
+
     public static string GetLabelShort(this Gender gender)
     {
         return gender switch

@@ -163,7 +163,15 @@ public static class ContextBuilder
         if (traits.Any())
         {
             var separator = infoLevel == PromptService.InfoLevel.Full ? "\n" : ",";
-            return $"Traits: {string.Join(separator, traits)}";
+            var line = $"Traits: {string.Join(separator, traits)}";
+
+            // One trait wins today. Without this the model averages the list into a
+            // composite nobody, and averages it the same way tomorrow. #35.
+            var dominant = GetDominantTrait(pawn);
+            if (dominant != null)
+                line += $"\nRight now: {dominant} is winning.";
+
+            return line;
         }
 
         return null;
@@ -310,6 +318,10 @@ public static class ContextBuilder
         var intentSb = new StringBuilder();
         var topicSb = new StringBuilder();
 
+        // What this pawn was talking about before the situation escalated. Carried
+        // through rather than deleted; see the combat branch below.
+        string preoccupation = null;
+
         if (talkRequest.TalkType.IsFromUser())
         {
             topicSb.Append($"{pawns[1].LabelShort}({pawns[1].GetRole()}) said to {shortName}: '{talkRequest.Prompt}'. ");
@@ -331,8 +343,17 @@ public static class ContextBuilder
             }
             else if (mainPawn.IsInCombat() || mainPawn.GetMapRole() == MapRole.Invading)
             {
+                // The topic used to be destroyed here (talkRequest.Prompt = null), which
+                // deleted whatever the conversation was about the instant anything
+                // dramatic started -- precisely when a small preoccupation colliding with
+                // a large situation becomes worth having. Sam thinking about potatoes at
+                // the gates of Mordor is the effect; nulling the potatoes forbids it.
+                //
+                // Demoted, not discarded. See rim-universe #34.
                 if (talkRequest.TalkType != TalkType.Urgent && !mainPawn.InMentalState)
-                    talkRequest.Prompt = null;
+                    preoccupation = Rand.Value < Settings.Get().Context.PreoccupationChance
+                        ? talkRequest.Prompt
+                        : null;
 
                 talkRequest.TalkType = TalkType.Urgent;
                 intentSb.Append(mainPawn.IsSlave || mainPawn.IsPrisoner
@@ -351,6 +372,14 @@ public static class ContextBuilder
             else if (talkRequest.Prompt != null)
                 topicSb.Append(talkRequest.Prompt);
 
+            // Stated as a secondary concern so the model keeps the urgency AND the
+            // triviality, instead of averaging them into one flat register.
+            if (preoccupation != null)
+                topicSb.Append(topicSb.Length > 0 ? "\n" : "")
+                       .Append($"{shortName} is still preoccupied with: {preoccupation}");
+
+            AppendScaleGap(topicSb, mainPawn, preoccupation);
+
             sb.Append(intentSb);
             if (topicSb.Length > 0)
                 sb.Append("\n").Append(topicSb);
@@ -358,6 +387,52 @@ public static class ContextBuilder
 
         intent = intentSb.ToString();
         topic = topicSb.ToString();
+    }
+
+    /// <summary>
+    /// States the mismatch between how big the situation is and how big this pawn's
+    /// concerns are. rim-universe #35.
+    ///
+    /// Humour and tragedy are the same mechanism running in opposite directions: a
+    /// character whose concerns are the wrong SIZE for their situation. A model is
+    /// very good at inhabiting a mismatch someone else has named and very bad at
+    /// inventing one, so the game computes it and the prompt states it as fact.
+    /// </summary>
+    public static void AppendScaleGap(StringBuilder sb, Pawn mainPawn, string preoccupation)
+    {
+        if (!Settings.Get().Context.IncludeScaleGap) return;
+        if (mainPawn?.Map == null) return;
+
+        var situation = ScaleDescriber.Situation(mainPawn.Map);
+        if (situation == null) return;
+
+        var concern = preoccupation != null
+            ? "something small and unfinished"
+            : ScaleDescriber.ConcernFor(mainPawn);
+
+        sb.Append(sb.Length > 0 ? "\n" : "")
+          .Append($"Scale: the situation is {situation}. {mainPawn.LabelShort} is thinking about {concern}. Let that mismatch show.");
+    }
+
+    /// <summary>
+    /// Picks ONE trait and declares it dominant for this exchange. rim-universe #35.
+    ///
+    /// A comma list of three traits makes the model average them into a composite
+    /// nobody. GURPS solves this with self-control numbers: the trait is a contest
+    /// the character can lose, and losing is the interesting outcome.
+    /// </summary>
+    public static string GetDominantTrait(Pawn pawn)
+    {
+        if (!Settings.Get().Context.IncludeDominantTrait) return null;
+
+        var traits = pawn?.story?.traits?.TraitsSorted?.ToList();
+        if (traits == null || traits.Count == 0) return null;
+
+        // Rand, not UnityEngine.Random: RimWorld seeds Rand so a reloaded save
+        // reproduces the same rolls.
+        var winner = traits[Rand.Range(0, traits.Count)];
+        var degree = GenCollection.FirstOrDefault(winner.def.degreeDatas, d => d.degree == winner.Degree);
+        return degree?.label;
     }
 
     public static void BuildLocationContext(StringBuilder sb, ContextSettings contextSettings, Pawn mainPawn)

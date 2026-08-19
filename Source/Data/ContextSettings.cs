@@ -22,6 +22,15 @@ namespace RimTalk.Data
         public bool IncludeEquipment = true;
         public bool IncludePrisonerSlaveStatus = false;
 
+        // Storytelling (rim-universe #34, #35)
+        //
+        // A colony that always talks proportionately about its situation is accurate
+        // and completely forgettable. These three exist to keep the register mismatched
+        // on purpose.
+        public bool IncludeScaleGap = true;
+        public bool IncludeDominantTrait = true;
+        public float PreoccupationChance = 0.5f;
+
         // Environment
         public bool IncludeTime = true;
         public bool IncludeDate = false;
@@ -51,6 +60,10 @@ namespace RimTalk.Data
             Scribe_Values.Look(ref IncludeRelations, "IncludeRelations", true);
             Scribe_Values.Look(ref IncludeEquipment, "IncludeEquipment", true);
             Scribe_Values.Look(ref IncludePrisonerSlaveStatus, "IncludePrisonerSlaveStatus", false);
+
+            Scribe_Values.Look(ref IncludeScaleGap, "IncludeScaleGap", true);
+            Scribe_Values.Look(ref IncludeDominantTrait, "IncludeDominantTrait", true);
+            Scribe_Values.Look(ref PreoccupationChance, "PreoccupationChance", 0.5f);
 
             Scribe_Values.Look(ref IncludeTime, "IncludeTime", true);
             Scribe_Values.Look(ref IncludeDate, "IncludeDate", false);
