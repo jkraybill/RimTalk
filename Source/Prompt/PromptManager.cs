@@ -417,6 +417,21 @@ public class PromptManager : IExposable
 
         talkRequest.PromptMessageSegments = segments.Count > 0 ? segments : null;
 
+        // Dump the assembled prompt to the game log, gated on RimWorld's own
+        // "Verbose logging" dev option. The debug window is the only other place to
+        // read this and it lives behind a MainButtonDef that is unfindable in a
+        // 130-mod button bar. A log line needs no UI and can be read straight off
+        // disk, which also means Gordo can inspect it without JK relaying anything.
+        if (Prefs.LogVerbose)
+        {
+            var dump = new System.Text.StringBuilder();
+            dump.AppendLine("===== RIMTALK ASSEMBLED PROMPT =====");
+            foreach (var (role, content) in messages)
+                dump.AppendLine($"---- {role} ----\n{content}");
+            dump.Append("===== END PROMPT =====");
+            Util.Logger.Message(dump.ToString());
+        }
+
         return messages.Select(m => ((Role)m.role, m.content)).ToList();
     }
 
