@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using RimTalk.API;
@@ -106,6 +107,13 @@ public static class PromptService
                 sb.AppendLine($"Activity: {cleanName}");
             }
         }
+
+        // What this pawn actually carries from the colony's history. Harvested from
+        // game state, persisted across saves, and ranked so witnessed events beat
+        // hearsay. rim-universe #21 / roundtable S166.
+        var remembered = Narrative.NarrativeStore.For(pawn).ToList();
+        if (remembered.Count > 0)
+            sb.AppendLine("Remembers: " + string.Join("; ", remembered.Select(e => e.AsRemembered(pawn))));
 
         AppendWithHook(sb, pawn, ContextCategories.Pawn.Social, ContextBuilder.GetRelationsContext(pawn, infoLevel));
         

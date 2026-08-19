@@ -31,6 +31,11 @@ namespace RimTalk.Data
         public bool IncludeDominantTrait = true;
         public float PreoccupationChance = 0.5f;
 
+        // Narrative letters. Off would make the whole design invisible again, so it
+        // ships on -- but it is a toggle because letter spam is the fastest route to
+        // uninstall and this is the first of several senders.
+        public bool NarrativeLetters = true;
+
         // Environment
         public bool IncludeTime = true;
         public bool IncludeDate = false;
@@ -64,6 +69,7 @@ namespace RimTalk.Data
             Scribe_Values.Look(ref IncludeScaleGap, "IncludeScaleGap", true);
             Scribe_Values.Look(ref IncludeDominantTrait, "IncludeDominantTrait", true);
             Scribe_Values.Look(ref PreoccupationChance, "PreoccupationChance", 0.5f);
+            Scribe_Values.Look(ref NarrativeLetters, "NarrativeLetters", true);
 
             Scribe_Values.Look(ref IncludeTime, "IncludeTime", true);
             Scribe_Values.Look(ref IncludeDate, "IncludeDate", false);

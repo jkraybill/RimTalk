@@ -14,6 +14,14 @@ public class RimTalkWorldComponent(World world) : WorldComponent(world)
     public Dictionary<string, string> RimTalkInteractionTexts = new();
     private Queue<string> _keyInsertionOrder = new();
 
+    /// <summary>
+    /// Harvested colony history. rim-universe #21 / roundtable S166.
+    /// Bounded by NarrativeStore.MaxEvents; a decades-long save must not grow
+    /// without limit. Lives here because this component is already scribed and
+    /// already save-tested.
+    /// </summary>
+    public List<Narrative.NarrativeEvent> NarrativeEvents = new();
+
     public override void ExposeData()
     {
         base.ExposeData();
@@ -37,8 +45,21 @@ public class RimTalkWorldComponent(World world) : WorldComponent(world)
 
         Scribe_Collections.Look(ref keyOrderList, "rimtalkKeyOrder");
 
+        // Deep, not Reference: these deliberately outlive the pawns they describe.
+        try
+        {
+            Scribe_Collections.Look(ref NarrativeEvents, "rimtalkNarrativeEvents", LookMode.Deep);
+        }
+        catch (System.Exception ex)
+        {
+            Logger.Error($"Failed to save/load narrative events. Resetting to prevent save corruption. Error: {ex.Message}");
+            NarrativeEvents = new List<Narrative.NarrativeEvent>();
+        }
+        NarrativeEvents ??= new List<Narrative.NarrativeEvent>();
+
         if (Scribe.mode != LoadSaveMode.PostLoadInit) return;
         RimTalkInteractionTexts ??= new Dictionary<string, string>();
+        NarrativeEvents ??= new List<Narrative.NarrativeEvent>();
             
         _keyInsertionOrder = keyOrderList != null ? new Queue<string>(keyOrderList) : new Queue<string>();
     }
