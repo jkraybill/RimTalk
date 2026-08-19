@@ -260,17 +260,19 @@ public class PromptManager : IExposable
                 },
                 new()
                 {
-                    Name = "JSON Format",
-                    Role = PromptRole.System,
-                    Position = PromptPosition.Relative,
-                    Content = Constant.JsonInstruction + "\n{{ if settings.ApplyMoodAndSocialEffects }}\n" + Constant.SocialInstruction + "\n{{ end }}"
-                },
-                new()
-                {
                     Name = "Pawn Profiles",
                     Role = PromptRole.System,
                     Position = PromptPosition.Relative,
                     Content = "{{context}}"
+                },
+                // Format LAST, closest to generation. A conversational system prompt
+                // loosens formatting, and RimTalk drops any line it cannot parse.
+                new()
+                {
+                    Name = "JSON Format",
+                    Role = PromptRole.System,
+                    Position = PromptPosition.Relative,
+                    Content = Constant.JsonInstruction + "\n{{ if settings.ApplyMoodAndSocialEffects }}\n" + Constant.SocialInstruction + "\n{{ end }}"
                 },
                 // 2. History Section
                 new()

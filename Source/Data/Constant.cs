@@ -13,30 +13,67 @@ public static class Constant
     public static string Lang => LanguageDatabase.activeLanguage?.info?.friendlyNameNative ?? "English";
     public static HediffDef VocalLinkDef => DefDatabase<HediffDef>.GetNamedSilentFail("VocalLinkImplant");
 
+    /// <summary>
+    /// Rewritten S166 after measuring the old one in the prompt lab.
+    ///
+    /// The previous instruction was ~90 words of role sketches and a JSONL contract.
+    /// It said "Conversation = 4-8 short turns" and produced ONE turn in 3 of 4 raid
+    /// samples and 4 of 4 quiet-morning samples -- it did not obey its own rule. It
+    /// also gave voices to Prisoner, Slave, Visitor and Enemy and none to Colonist,
+    /// the commonest speaker by an enormous margin.
+    ///
+    /// This one says what the job is, what the world is, how people sound, what they
+    /// may never do, and shows two examples. Examples teach register; adjectives do
+    /// not.
+    /// </summary>
     public static string DefaultInstruction =>
         $"""
-         Role-play RimWorld character per profile
+         You write dialogue for colonists in RimWorld, a survival sim on a hostile
+         frontier planet. Each line appears as a speech bubble above someone's head
+         while the player watches their colony.
 
-         Rules:
-         Preserve original names (no translation)
-         Keep dialogue short ({Lang} only, 1-2 sentences)
+         These are ordinary people in a place that is trying to kill them. They are
+         not heroes and they do not know they are in a story.
 
-         Roles:
-         Colonist: plain and grounded; talk about what is in front of you; understate
-         Prisoner: wary, hesitant; mention confinement; plead or bargain
-         Slave: fearful, obedient; reference forced labor and exhaustion; call colonists "master"
-         Visitor: polite, curious, deferential; treat other visitors in the same group as companions
-         Enemy: hostile, aggressive; terse commands/threats
+         How they speak:
+         Plainly, in {Lang}, about what is actually in front of them. Short. They
+         understate. They swear when they mean it. Nobody narrates their own feelings
+         and nobody reaches for a metaphor they would not use out loud.
 
-         Monologue = 1 turn. Conversation = 4-8 short turns
+         What they never do:
+         Explain how they came to be on this planet. None of them knows, and none of
+         them ever will. They may guess from their own past. They may never state it
+         as fact.
 
-         Speak literally about what is happening and what you are doing.
-         No abstract metaphor. No self-narration.
+         Two examples of the register:
+
+           Rice again. Always rice.
+           I'd kill something just to taste it.
+
+           They're coming up the east side, and I'm still not done with you about
+           the rice.
+
+         Write only what is said. No stage directions, no asterisks, no narration.
          """;
 
+    /// <summary>
+    /// Moved LAST in the preset, closest to generation, and hardened.
+    ///
+    /// The prose instruction above is conversational, and a conversational system
+    /// prompt loosens formatting generally: one lab run parsed 89% of its JSONL
+    /// against 100% for the terse original. RimTalk silently DROPS a line it cannot
+    /// parse, so a formatting slip is a lost turn nobody sees.
+    /// </summary>
     public const string JsonInstruction = """
-                                           Output JSONL.
-                                           Required keys: "name", "text".
+                                           FORMAT — this overrides everything above.
+
+                                           Reply with JSON Lines and nothing else. One complete JSON object per line:
+
+                                           {"name": "Someone", "text": "What they said."}
+
+                                           Every line opens with { and closes with }. No trailing commas, no
+                                           parentheses, no markdown fences, no commentary before or after.
+                                           One speaker per line.
                                            """;
     
     public const string SocialInstruction = """

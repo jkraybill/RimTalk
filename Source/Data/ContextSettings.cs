@@ -40,6 +40,11 @@ namespace RimTalk.Data
         // uninstall and this is the first of several senders.
         public bool NarrativeLetters = true;
 
+        // The whole prompt shape. On = prose profile and prose scene; off = the
+        // original labelled field dump. Kept switchable because it is a large change
+        // and the old path still has to be A/B-able against it.
+        public bool ProsePrompt = true;
+
         // Environment
         public bool IncludeTime = true;
         public bool IncludeDate = false;
@@ -74,6 +79,7 @@ namespace RimTalk.Data
             Scribe_Values.Look(ref IncludeDominantTrait, "IncludeDominantTrait", true);
             Scribe_Values.Look(ref PreoccupationChance, "PreoccupationChance", 0.5f);
             Scribe_Values.Look(ref NarrativeLetters, "NarrativeLetters", true);
+            Scribe_Values.Look(ref ProsePrompt, "ProsePrompt", true);
 
             Scribe_Values.Look(ref IncludeTime, "IncludeTime", true);
             Scribe_Values.Look(ref IncludeDate, "IncludeDate", false);

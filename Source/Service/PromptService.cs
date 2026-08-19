@@ -79,6 +79,13 @@ public static class PromptService
     /// <summary>Creates the full pawn context.</summary>
     public static string CreatePawnContext(Pawn pawn, InfoLevel infoLevel = InfoLevel.Normal)
     {
+        // Prose, not a form. Measured in the prompt lab: the same data written as
+        // sentences produced 6-7 conversational turns where the field dump produced
+        // one, and turned a weather report into "Potatoes should hold."
+        // rim-universe, S166.
+        if (Settings.Get().Context.ProsePrompt)
+            return Prose.ProseProfile.Build(pawn, infoLevel);
+
         var sb = new StringBuilder();
         sb.Append(CreatePawnBackstory(pawn, infoLevel));
 
@@ -131,9 +138,20 @@ public static class PromptService
         var gameData = CommonUtil.GetInGameData();
         var mainPawn = pawns[0];
         var shortName = $"{mainPawn.LabelShort}";
+        if (mainPawn == null) return;
 
         // Dialogue type
-        ContextBuilder.BuildDialogueType(sb, talkRequest, pawns, shortName, mainPawn);
+        ContextBuilder.BuildDialogueType(sb, talkRequest, pawns, shortName, mainPawn,
+                                         out var intent, out var topic);
+
+        if (contextSettings.ProsePrompt)
+        {
+            // The scene as a scene. Nine labelled rows read as a status page and get
+            // answered with a weather report.
+            talkRequest.Prompt = Prose.ProseScene.Build(talkRequest, pawns, intent, topic);
+            return;
+        }
+
         sb.Append($"\n{status}");
 
         // Time and weather (apply environment hooks with injections)
