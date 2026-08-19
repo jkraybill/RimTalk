@@ -149,7 +149,12 @@ internal static class TickManagerPatch
     private static string FallbackTopic(Pawn pawn)
     {
         var activity = pawn?.GetActivity();
-        return string.IsNullOrWhiteSpace(activity) ? null : $"while {activity.StripTags().ToLower()}";
+        // A whole clause, not a fragment. The first version emitted "while hauling
+        // steel" as a standalone topic line -- a dangling subordinate clause with
+        // nothing to attach to, which the model then invented a referent for.
+        return string.IsNullOrWhiteSpace(activity)
+            ? null
+            : $"{pawn.LabelShort} is {activity.StripTags().ToLower()}";
     }
 
     private static bool TryGenerateTalkFromPool(Pawn pawn)

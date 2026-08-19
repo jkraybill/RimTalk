@@ -397,6 +397,17 @@ public static class ContextBuilder
     /// character whose concerns are the wrong SIZE for their situation. A model is
     /// very good at inhabiting a mismatch someone else has named and very bad at
     /// inventing one, so the game computes it and the prompt states it as fact.
+    ///
+    /// STATE it, do not INSTRUCT it. The first version ended "Let that mismatch
+    /// show", which is a dial the model can see and will therefore play to --
+    /// producing strained metaphor rather than a character who happens to be
+    /// thinking about the wrong thing. Four roundtable reviewers predicted exactly
+    /// this ("performed incongruity is quippy"), and JK hit it in game within the
+    /// hour: "If I let go of this code, I'm not sure the colony's head won't crack."
+    ///
+    /// The roundtable's better formulation, adopted: hold both scales without
+    /// collapsing either. "Both are true at once" says that without asking for a
+    /// performance.
     /// </summary>
     public static void AppendScaleGap(StringBuilder sb, Pawn mainPawn, string preoccupation)
     {
@@ -411,7 +422,7 @@ public static class ContextBuilder
             : ScaleDescriber.ConcernFor(mainPawn);
 
         sb.Append(sb.Length > 0 ? "\n" : "")
-          .Append($"Scale: the situation is {situation}. {mainPawn.LabelShort} is thinking about {concern}. Let that mismatch show.");
+          .Append($"Situation: {situation}. On {mainPawn.LabelShort}'s mind: {concern}. Both are true at once.");
     }
 
     /// <summary>
