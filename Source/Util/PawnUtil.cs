@@ -231,10 +231,18 @@ public static class PawnUtil
             {
                 string activity = GetPawnActivity(p, relevantPawns, useOptimization);
                 string talkRequestStr = "";
+
+                // PEEK, do not consume. This used to call MarkRequestSpoken, which
+                // removes the request from the queue -- so a nearby pawn's pending
+                // topic was spent decorating SOMEBODY ELSE'S status line and then
+                // deleted. Gilliam chats about hickory trees, Crosby generates first,
+                // and the hickory trees are silently destroyed while Crosby talks
+                // about the weather. rim-universe #38.
+                //
+                // Requests expire on their own via IsExpired(), so nothing leaks.
                 var talkRequest = pawnState.GetNextTalkRequest();
                 if (talkRequest != null)
                 {
-                    pawnState.MarkRequestSpoken(talkRequest);
                     talkRequestStr = $" - {talkRequest.Prompt}";
                 }
                 entry = $"{label} {activity.StripTags()}{extraStatus}{talkRequestStr}";

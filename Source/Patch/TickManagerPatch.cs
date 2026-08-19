@@ -120,16 +120,36 @@ internal static class TickManagerPatch
                         talkGenerated = TalkService.GenerateTalk(pawnState.GetNextTalkRequest());
                 }
 
-                // 3. Fallback: generate based on current context if nothing else worked
+                // 3. Fallback: generate based on current context if nothing else worked.
+                //
+                // This used to pass a null prompt, so the model had nothing but the
+                // profile and the environment envelope -- which is why untopiced
+                // dialogue is all weather, meals and bedrolls. A conversation with no
+                // topic cannot have a SMALL topic, so there is nothing for the
+                // situation to collide with either (#34, #35). rim-universe #38.
+                //
+                // Seeded from what the pawn is actually doing. Thin, but real, and it
+                // is replaced by a Need (#30) once those exist.
                 if (!talkGenerated)
                 {
-                    TalkRequest talkRequest = new TalkRequest(null, selectedPawn);
+                    TalkRequest talkRequest = new TalkRequest(FallbackTopic(selectedPawn), selectedPawn);
                     TalkService.GenerateTalk(talkRequest);
                 }
             }
             
             _lastTalkEndTick = GenTicks.TicksGame;
         }
+    }
+
+    /// <summary>
+    /// Something for an otherwise topicless conversation to be about. rim-universe #38.
+    /// Deliberately modest: the pawn's current activity is concrete, already computed,
+    /// and is not already in the profile block the way mood and thoughts are.
+    /// </summary>
+    private static string FallbackTopic(Pawn pawn)
+    {
+        var activity = pawn?.GetActivity();
+        return string.IsNullOrWhiteSpace(activity) ? null : $"while {activity.StripTags().ToLower()}";
     }
 
     private static bool TryGenerateTalkFromPool(Pawn pawn)
