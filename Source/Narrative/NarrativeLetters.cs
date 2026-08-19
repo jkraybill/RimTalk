@@ -19,8 +19,20 @@ namespace RimTalk.Narrative;
 /// </summary>
 public static class NarrativeLetters
 {
-    /// <summary>Opinion at or above this counts as "mattered".</summary>
+    /// <summary>Opinion at or above this counts as "mattered", in a colony big enough
+    /// for the distinction to be meaningful.</summary>
     const float BondThreshold = 40f;
+
+    /// <summary>
+    /// At or below this many colonists, ANY witnessed death is a narrative beat and
+    /// the relation gate is dropped.
+    ///
+    /// The first version required a relation or opinion >= 40, which would have
+    /// suppressed the letter for exactly the case JK plays: a naked landing where
+    /// three strangers arrive with no relations and near-zero opinion, and one of
+    /// them dying is the most significant thing that has ever happened. R1.
+    /// </summary>
+    const int SmallColony = 5;
 
     public static void AnnounceDeath(Pawn dead, NarrativeEvent e)
     {
@@ -35,7 +47,7 @@ public static class NarrativeLetters
             var relation = mourner.GetMostImportantRelation(dead);
             var bond = relation != null
                 ? relation.GetGenderSpecificLabelCap(dead).ToString().ToLower()
-                : "someone they were close to";
+                : "one of the few people here";
 
             var label = $"{mourner.LabelShort} saw {dead.LabelShort} die";
             var text = $"{mourner.LabelShort} was there when {dead.LabelShort} died"
@@ -56,10 +68,13 @@ public static class NarrativeLetters
     {
         if (dead?.Map?.mapPawns == null || dead.relations == null) return null;
 
-        return dead.Map.mapPawns.FreeColonistsSpawned
+        var colonists = dead.Map.mapPawns.FreeColonistsSpawned;
+        bool small = colonists.Count <= SmallColony;
+
+        return colonists
             .Where(p => p != null && !p.Dead && e.WasWitnessedBy(p))
             .Select(p => (pawn: p, score: SafeOpinion(p, dead), rel: p.GetMostImportantRelation(dead)))
-            .Where(x => x.rel != null || x.score >= BondThreshold)
+            .Where(x => small || x.rel != null || x.score >= BondThreshold)
             .OrderByDescending(x => x.rel != null ? 1 : 0)
             .ThenByDescending(x => x.score)
             .Select(x => x.pawn)
