@@ -22,12 +22,16 @@ public static class Constant
          Keep dialogue short ({Lang} only, 1-2 sentences)
 
          Roles:
+         Colonist: plain and grounded; talk about what is in front of you; understate
          Prisoner: wary, hesitant; mention confinement; plead or bargain
          Slave: fearful, obedient; reference forced labor and exhaustion; call colonists "master"
          Visitor: polite, curious, deferential; treat other visitors in the same group as companions
          Enemy: hostile, aggressive; terse commands/threats
 
          Monologue = 1 turn. Conversation = 4-8 short turns
+
+         Speak literally about what is happening and what you are doing.
+         No abstract metaphor. No self-narration.
          """;
 
     public const string JsonInstruction = """

@@ -165,11 +165,18 @@ public static class ContextBuilder
             var separator = infoLevel == PromptService.InfoLevel.Full ? "\n" : ",";
             var line = $"Traits: {string.Join(separator, traits)}";
 
-            // One trait wins today. Without this the model averages the list into a
-            // composite nobody, and averages it the same way tomorrow. #35.
+            // One trait wins today -- but it must RESOLVE the affect stack, not add a
+            // fourth voice to it.
+            //
+            // The first version appended "Right now: Nervous is winning" alongside
+            // "Mood: Content (71%)", "Personality: Cheerful Helper - always trying to
+            // lift spirits" and the trait list. Two of three roundtable reviewers
+            // named that as the top systematic degrader: four emotional scripts, two
+            // sentences, and the model resolves the contradiction by sounding like
+            // nobody. "Let the model play one note, not a chord."
             var dominant = GetDominantTrait(pawn);
             if (dominant != null)
-                line += $"\nRight now: {dominant} is winning.";
+                line += $"\nRight now {pawn.LabelShort} is showing the {dominant} side more than the rest — let that one lead.";
 
             return line;
         }
@@ -183,7 +190,16 @@ public static class ContextBuilder
         if (!contextSettings.IncludeSkills)
             return null;
 
-        var skills = pawn.skills?.skills?.Select(s => $"{s.def.label}: {s.Level}");
+        // Only what could plausibly shape a sentence. The full twelve-item list is
+        // noise in a 1-2 sentence dialogue system, and three roundtable reviewers
+        // independently flagged it as "hallucination bait" -- the model grabs the
+        // highest numbers and forces them into irrelevant dialogue.
+        var skills = pawn.skills?.skills?
+            .Where(s => s.Level >= 8 || s.def == SkillDefOf.Social)
+            .OrderByDescending(s => s.Level)
+            .Take(4)
+            .Select(s => $"{s.def.label}: {s.Level}");
+
         if (skills?.Any() == true)
             return $"Skills: {string.Join(", ", skills)}";
         return null;

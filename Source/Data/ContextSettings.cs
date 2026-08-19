@@ -27,7 +27,11 @@ namespace RimTalk.Data
         // A colony that always talks proportionately about its situation is accurate
         // and completely forgettable. These three exist to keep the register mismatched
         // on purpose.
-        public bool IncludeScaleGap = true;
+        // CUT by unanimous roundtable verdict, S166. Three reviewers independently
+        // said a prompt line is the wrong instrument for a tonal goal: "a dial the
+        // model can see is a dial the model will play to". The code stays so the
+        // decision is reversible and A/B-able; it does not ship on.
+        public bool IncludeScaleGap = false;
         public bool IncludeDominantTrait = true;
         public float PreoccupationChance = 0.5f;
 
@@ -66,7 +70,7 @@ namespace RimTalk.Data
             Scribe_Values.Look(ref IncludeEquipment, "IncludeEquipment", true);
             Scribe_Values.Look(ref IncludePrisonerSlaveStatus, "IncludePrisonerSlaveStatus", false);
 
-            Scribe_Values.Look(ref IncludeScaleGap, "IncludeScaleGap", true);
+            Scribe_Values.Look(ref IncludeScaleGap, "IncludeScaleGap", false);
             Scribe_Values.Look(ref IncludeDominantTrait, "IncludeDominantTrait", true);
             Scribe_Values.Look(ref PreoccupationChance, "PreoccupationChance", 0.5f);
             Scribe_Values.Look(ref NarrativeLetters, "NarrativeLetters", true);
