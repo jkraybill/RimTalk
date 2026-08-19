@@ -3,8 +3,12 @@
     <MainButtonDef>
         <defName>RimTalkDebug</defName>
         <tabWindowClass>RimTalk.UI.OverlayTabLauncher</tabWindowClass>
+        <!-- Was minimized:True, which renders an unlabelled icon square. With 130
+             mods loaded JK could not find it at all. A labelled tab costs one slot
+             in the bar and is findable. -->
+        <label>RimTalk</label>
         <order>79</order>
-        <minimized>True</minimized>
+        <minimized>False</minimized>
         <iconPath>UI/RimTalkIcon</iconPath>
     </MainButtonDef>
 </Defs>
