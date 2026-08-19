@@ -46,7 +46,14 @@ public static class PawnUtil
         if (pawn == null || pawn.IsPlayer()) return false;
         if (pawn.Dead) return true;
         if (pawn.Downed) return true;
-        if (!pawn.health.capacities.CapableOf(PawnCapacityDefOf.Moving)) return true;
+        // Being unable to walk is a CONDITION, not a danger. This line made every
+        // immobile pawn permanently "in danger", and DisplayTalk discards every
+        // non-urgent response from a pawn in danger -- so a colonist who lost their
+        // legs could never hold a normal conversation again, silently, forever.
+        // Reported upstream as jlibrary/RimTalk#78 and reproduced here.
+        //
+        // Genuine danger to an immobile pawn is already covered by the hostile,
+        // bleeding, pain, burning and lethal-hediff checks around this one.
         if (pawn.InMentalState && includeMentalState) return true;
         if (pawn.IsBurning()) return true;
         if (pawn.health.hediffSet.PainTotal >= pawn.GetStatValue(StatDefOf.PainShockThreshold)) return true;
@@ -69,13 +76,32 @@ public static class PawnUtil
     {
         if (pawn == null) return false;
 
-        if (pawn.mindState.enemyTarget != null) return true;
+        // enemyTarget is STICKY. RimWorld does not reliably clear it when a fight
+        // ends, and it survives save/reload, so `enemyTarget != null` alone marks
+        // any pawn who has ever fought as permanently in combat -- permanently
+        // [IN DANGER], permanently urgent tone. Reported upstream as jlibrary/
+        // RimTalk#65 and reproduced here.
+        //
+        // It also silently defeats the preoccupation carry-through (#34): the
+        // effect fires when combat STARTS, and a pawn who is never out of combat
+        // never starts.
+        var target = pawn.mindState?.enemyTarget;
+        if (IsLiveThreat(pawn, target)) return true;
 
         if (pawn.stances?.curStance is Stance_Busy busy && busy.verb != null)
             return true;
 
         Pawn hostilePawn = pawn.GetHostilePawnNearBy();
         return hostilePawn != null && pawn.Position.DistanceTo(hostilePawn.Position) <= 20f;
+    }
+
+    /// <summary>A remembered target only counts while it is still there and still a threat.</summary>
+    private static bool IsLiveThreat(Pawn pawn, Thing target)
+    {
+        if (target == null || target.Destroyed || !target.Spawned) return false;
+        if (target.Map != pawn.Map) return false;
+        if (target is Pawn tp && (tp.Dead || tp.Downed)) return false;
+        return pawn.Position.DistanceTo(target.Position) <= 30f;
     }
 
     public static string GetRole(this Pawn pawn, bool includeFaction = false)
