@@ -85,7 +85,9 @@ public static class AIErrorHandler
         if (!_quotaWarningShown)
         {
             _quotaWarningShown = true;
-            string message = "RimTalk.TalkService.QuotaExceeded".Translate();
+            // Same key as HandleFinalFailure's other branch below. QuotaExceeded was
+            // never defined in any language file, so this printed the raw key.
+            string message = "RimTalk.TalkService.QuotaReached".Translate();
             Messages.Message(message, MessageTypeDefOf.NeutralEvent, false);
             Logger.Warning(ex.Message);
         }
