@@ -1,6 +1,7 @@
 using RimTalk.Data;
 using RimWorld;
 using UnityEngine;
+using System.Threading.Tasks;
 using Verse;
 
 namespace RimTalk.UI;
@@ -149,11 +150,21 @@ public class PersonaEditorWindow : Window
                 Data.PersonaService.GeneratePersona(_pawn).ContinueWith(task =>
                 {
                     _isGenerating = false;
-                    if (task.IsCompleted)
+
+                    // IsCompleted is true for Faulted and Canceled too, and
+                    // GeneratePersona returns null on any failure -- an empty
+                    // response, an error payload, or a deserialization failure are
+                    // all ordinary outcomes for an LLM call. task.Result.Persona
+                    // then NREs.
+                    var result = task.Status == TaskStatus.RanToCompletion ? task.Result : null;
+                    if (result == null)
                     {
-                        _editingPersonality = task.Result.Persona ?? "";
-                        _talkInitiationWeight = task.Result.Chattiness;
+                        Util.Logger.Warning("Persona generation failed - see the API log.");
+                        return;
                     }
+
+                    _editingPersonality = result.Persona ?? "";
+                    _talkInitiationWeight = result.Chattiness;
                 });
             }
         }

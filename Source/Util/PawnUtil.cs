@@ -14,6 +14,10 @@ public static class PawnUtil
 {
     public static bool IsTalkEligible(this Pawn pawn)
     {
+        // Guard explicitly. This used to fall out of IsPlayer() returning true for
+        // null when no player pawn existed, which answered "yes, eligible" for a
+        // null pawn -- accidentally safe, and wrong.
+        if (pawn == null) return false;
         if (pawn.IsPlayer()) return true;
         if (pawn.HasVocalLink()) return true;
         if (pawn.DestroyedOrNull() || !pawn.Spawned || pawn.Dead) return false;
@@ -587,12 +591,16 @@ public static class PawnUtil
 
     public static bool IsPlayer(this Pawn pawn)
     {
-        return pawn == Cache.GetPlayer();
+        // Guard the null case explicitly: Cache.GetPlayer() is null until the
+        // invisible player pawn is created, and null == null would otherwise make
+        // every null pawn "the player".
+        return pawn != null && pawn == Cache.GetPlayer();
     }
 
     public static bool HasVocalLink(this Pawn pawn)
     {
         return Settings.Get().AllowNonHumanToTalk &&
+               pawn?.health?.hediffSet != null &&
                pawn.health.hediffSet.HasHediff(Constant.VocalLinkDef);
     }
 }

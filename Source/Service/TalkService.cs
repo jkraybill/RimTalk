@@ -44,7 +44,11 @@ public static class TalkService
         }
 
         List<Pawn> nearbyPawns = PawnSelector.GetAllNearByPawns(talkRequest.Initiator);
-        if (talkRequest.Recipient.IsPlayer()) nearbyPawns.Insert(0, talkRequest.Recipient);
+        // Recipient may have just been nulled above. IsPlayer() is an extension, so it
+        // does not throw on null -- and when no player pawn exists it returns true for
+        // null, inserting a null that NREs downstream in GetPawnStatusFull.
+        if (talkRequest.Recipient != null && talkRequest.Recipient.IsPlayer())
+            nearbyPawns.Insert(0, talkRequest.Recipient);
         var (status, isInDanger) = talkRequest.Initiator.GetPawnStatusFull(nearbyPawns);
         
         // Avoid spamming generations if the pawn's status hasn't changed recently.
