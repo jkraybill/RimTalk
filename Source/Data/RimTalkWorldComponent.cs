@@ -30,6 +30,14 @@ public class RimTalkWorldComponent(World world) : WorldComponent(world)
     /// </summary>
     public Dictionary<int, string> RecentSpokenLines = new();
 
+    /// <summary>
+    /// Conversation history, flattened. rim-universe #9. The live store stays a
+    /// ConcurrentDictionary in TalkHistory because it is written from the thread that
+    /// finishes a streaming call; this is only the persistence medium, filled on save
+    /// and drained on load.
+    /// </summary>
+    public List<ChatTurn> ChatTurns = new();
+
     public override void ExposeData()
     {
         base.ExposeData();
@@ -65,6 +73,22 @@ public class RimTalkWorldComponent(World world) : WorldComponent(world)
         }
         NarrativeEvents ??= new List<Narrative.NarrativeEvent>();
 
+        // Filled from the live store on the way out. Doing it here rather than keeping
+        // the component as the working structure keeps Scribe off the hot path, which
+        // is written from a background thread.
+        if (Scribe.mode == LoadSaveMode.Saving) ChatTurns = TalkHistory.Snapshot();
+
+        try
+        {
+            Scribe_Collections.Look(ref ChatTurns, "rimtalkChatTurns", LookMode.Deep);
+        }
+        catch (System.Exception ex)
+        {
+            Logger.Error($"Failed to save/load chat history. Resetting to prevent save corruption. Error: {ex.Message}");
+            ChatTurns = new List<ChatTurn>();
+        }
+        ChatTurns ??= new List<ChatTurn>();
+
         try
         {
             Scribe_Collections.Look(ref RecentSpokenLines, "rimtalkRecentSpokenLines",
@@ -81,6 +105,11 @@ public class RimTalkWorldComponent(World world) : WorldComponent(world)
         RimTalkInteractionTexts ??= new Dictionary<string, string>();
         NarrativeEvents ??= new List<Narrative.NarrativeEvent>();
         RecentSpokenLines ??= new Dictionary<int, string>();
+        ChatTurns ??= new List<ChatTurn>();
+
+        // After RimTalk.cs's TalkHistory.Clear(), which runs on every load. #9: that
+        // call is why no colony ever remembered a conversation across a save.
+        TalkHistory.Restore(ChatTurns);
             
         _keyInsertionOrder = keyOrderList != null ? new Queue<string>(keyOrderList) : new Queue<string>();
     }
