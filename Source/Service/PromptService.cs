@@ -35,7 +35,12 @@ public static class PromptService
             pawnContext = CommonUtil.StripFormattingTags(pawnContext);
 
             Cache.Get(pawn).Context = pawnContext;
-            context.AppendLine($"[P{i + 1}]").AppendLine(pawnContext);
+
+            // [P1] [P2] [P3] is a field-dump index, and in prose mode it was three
+            // labelled rows sitting on top of three paragraphs of prose. The profiles
+            // open with the pawn's own name, so nothing needs disambiguating.
+            if (!Settings.Get().Context.ProsePrompt) context.AppendLine($"[P{i + 1}]");
+            context.AppendLine(pawnContext).AppendLine();
         }
 
         return context.ToString().TrimEnd();

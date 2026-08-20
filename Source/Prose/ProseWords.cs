@@ -99,6 +99,21 @@ public static class ProseWords
     public static string Mid(string label)
     {
         if (string.IsNullOrWhiteSpace(label)) return "";
+
+        // A label that already ends in a full stop cannot go in the middle of a
+        // sentence. RimWorld's job reports all do — GetReport() returns "Repairing
+        // steel wall (53%)." — which shipped as "Keattch is repairing steel wall
+        // (53%). on open ground." and "Scott is wandering..". Found by reading the
+        // assembled prompt out of Player.log; every scene sentence in the game was
+        // broken this way and no fixture caught it, because the fixtures were written
+        // with tidy activity strings.
+        label = label.TrimEnd();
+        while (label.Length > 0 && (label[label.Length - 1] == '.' ||
+                                    label[label.Length - 1] == '!' ||
+                                    label[label.Length - 1] == '?'))
+            label = label.Substring(0, label.Length - 1).TrimEnd();
+
+        if (label.Length == 0) return "";
         if (!char.IsUpper(label[0])) return label;
 
         var firstWord = label.Split(' ')[0];
