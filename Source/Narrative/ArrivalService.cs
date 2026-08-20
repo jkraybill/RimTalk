@@ -39,10 +39,15 @@ public static class ArrivalService
     /// One candidate, or null. Called from the cache refresh, which already runs on the
     /// main thread every few seconds and already walks every eligible pawn.
     /// </summary>
+    /// <summary>
+    /// A pawn who needs either generation. rim-universe #44 rides along here on
+    /// purpose: the arrival log already fires once when a pawn enters the colony's
+    /// orbit, so back-pocket topics cost no new trigger and no new schedule.
+    /// </summary>
     public static Pawn NextNeeding() =>
         _generating || AIService.IsBusy() || Find.World == null
             ? null
-            : Cache.Keys.FirstOrDefault(p => InOrbit(p) && !ArrivalLog.Has(p));
+            : Cache.Keys.FirstOrDefault(p => InOrbit(p) && (!ArrivalLog.Has(p) || !TopicStore.Fresh(p)));
 
     public static void TryGenerate()
     {
@@ -58,6 +63,10 @@ public static class ArrivalService
         try
         {
             var profile = PromptService.CreatePawnContext(pawn);
+
+            if (!TopicStore.Fresh(pawn)) await GenerateTopics(pawn, profile);
+            if (ArrivalLog.Has(pawn)) return;
+
             var place = Place(pawn);
 
             var request = new TalkRequest(ArrivalText.Prompt(profile, place), pawn);
@@ -80,6 +89,30 @@ public static class ArrivalService
         {
             Logger.Error($"Arrival log generation failed: {e.Message}");
         }
+    }
+
+    /// <summary>
+    /// The things this pawn brings up when nothing much is happening. rim-universe
+    /// #44: without these, the subject of every unprompted conversation in the game
+    /// came from RimWorld's random noun list.
+    ///
+    /// A failure here is not an error — the caller falls back to the vanilla string,
+    /// which is exactly what shipped before — so it is logged once and left.
+    /// </summary>
+    static async Task GenerateTopics(Pawn pawn, string profile)
+    {
+        var request = new TalkRequest(TopicText.Prompt(profile), pawn);
+        var data = await AIService.Query<TopicData>(request);
+
+        var accepted = TopicText.Accept(data?.Topics);
+        if (accepted.Count == 0)
+        {
+            Logger.Message($"No usable back-pocket topics for {pawn.LabelShort}; " +
+                           "ordinary conversation falls back to the vanilla topic. Will retry.");
+            return;
+        }
+
+        TopicStore.Record(pawn, accepted);
     }
 
     /// <summary>Where they woke up, in the words the scene prose would use.</summary>

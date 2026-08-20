@@ -68,6 +68,30 @@ public static class Bubbler_Add
         if (pawnState == null || (isChitchat && pawnState.TalkRequests.Count > 0))
             return false;
 
+        // rim-universe #44. `prompt` at this point is RimWorld's own sentence, and for
+        // chitchat that means its RANDOM NOUN generator: "said something about crags",
+        // "about horseshoes", "about vomiting". That string is the ONLY subject
+        // unprompted dialogue has — everything else in the prompt is context — so
+        // every colonist conversation in the game was about a dictionary word with no
+        // connection to the pawn, the other pawn, or anything that had happened.
+        //
+        // Draw one of this pawn's own topics instead. Falls back to the vanilla string
+        // when they have none, which is exactly what shipped before.
+        if (isChitchat)
+        {
+            var topic = Narrative.TopicStore.Draw(initiator);
+            var line = Prose.TopicText.LogLine(initiator.LabelShort, recipient?.LabelShort, topic);
+            if (line != null)
+            {
+                prompt = line;
+
+                // Rewrite the social-log row too. The machinery already exists and is
+                // already scribed, so the log reads as a real exchange rather than a
+                // dictionary word — for free, on the same substitution.
+                Find.World?.GetComponent<RimTalkWorldComponent>()?.SetTextFor(entry, line);
+            }
+        }
+
         // Otherwise, block normal bubble and generate talk
         prompt = $"{prompt} ({interactionDef.label})";
         pawnState.AddTalkRequest(prompt, recipient, TalkType.Chitchat);

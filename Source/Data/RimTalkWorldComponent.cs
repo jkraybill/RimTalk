@@ -44,6 +44,9 @@ public class RimTalkWorldComponent(World world) : WorldComponent(world)
     /// </summary>
     public List<Narrative.ArrivalEntry> ArrivalEntries = new();
 
+    /// <summary>Back-pocket conversation topics, one set per pawn. rim-universe #44.</summary>
+    public List<Narrative.TopicEntry> TopicEntries = new();
+
     public override void ExposeData()
     {
         base.ExposeData();
@@ -86,6 +89,17 @@ public class RimTalkWorldComponent(World world) : WorldComponent(world)
 
         try
         {
+            Scribe_Collections.Look(ref TopicEntries, "rimtalkTopicEntries", LookMode.Deep);
+        }
+        catch (System.Exception ex)
+        {
+            Logger.Error($"Failed to save/load conversation topics. Resetting to prevent save corruption. Error: {ex.Message}");
+            TopicEntries = new List<Narrative.TopicEntry>();
+        }
+        TopicEntries ??= new List<Narrative.TopicEntry>();
+
+        try
+        {
             Scribe_Collections.Look(ref ArrivalEntries, "rimtalkArrivalEntries", LookMode.Deep);
         }
         catch (System.Exception ex)
@@ -124,6 +138,7 @@ public class RimTalkWorldComponent(World world) : WorldComponent(world)
         RecentSpokenLines ??= new Dictionary<int, string>();
         ChatTurns ??= new List<ChatTurn>();
         ArrivalEntries ??= new List<Narrative.ArrivalEntry>();
+        TopicEntries ??= new List<Narrative.TopicEntry>();
 
         // After RimTalk.cs's TalkHistory.Clear(), which runs on every load. #9: that
         // call is why no colony ever remembered a conversation across a save.

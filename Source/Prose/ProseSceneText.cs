@@ -59,6 +59,15 @@ public class SceneFacts
     /// line did exactly that and produced "A moment ago Bren was on about bren chatted
     /// about the rice with Kess, and is not finished with it."
     /// </summary>
+    /// <summary>
+    /// What this conversation is about, when something set it. rim-universe #44 and a
+    /// regression from #34's refactor: BuildDialogueType has always produced a topic
+    /// for ordinary conversation, and when the frame replaced two pre-formatted
+    /// strings with fields, prose mode was wired to Preoccupation — which is only ever
+    /// set in combat — and the everyday topic stopped reaching the model entirely.
+    /// </summary>
+    public string Topic;
+
     public string Preoccupation;
 
     /// <summary>#35's scale gap, in pieces rather than pre-formatted.</summary>
@@ -105,8 +114,11 @@ public static class ProseSceneText
         if (others != null) lines.Add(others);
         else if (f.OtherColonistsOnMap == 0) lines.Add("There is nobody to hear it.");
 
-        var preoccupied = Preoccupied(f);
-        if (preoccupied != null) lines.Add(preoccupied);
+        // The preoccupation wins when both are set: that only happens in combat, where
+        // the older topic is the one being carried through and the point is the gap
+        // between it and the situation.
+        var about = Preoccupied(f) ?? About(f);
+        if (about != null) lines.Add(about);
 
         var gap = ScaleGap(f);
         if (gap != null) lines.Add(gap);
@@ -161,6 +173,21 @@ public static class ProseSceneText
     {
         if (string.IsNullOrWhiteSpace(f.Preoccupation)) return null;
         return $"A moment ago: {ProseWords.Paragraph(f.Preoccupation.Trim())}";
+    }
+
+    /// <summary>
+    /// What they are talking about. Present tense, because unlike the preoccupation
+    /// this has not been interrupted by anything.
+    /// </summary>
+    static string About(SceneFacts f)
+    {
+        if (string.IsNullOrWhiteSpace(f.Topic)) return null;
+
+        // Reported, not slotted. The topic is a whole sentence that opens with a name
+        // — "Jesse said something about the debt his sister never repaid to Charon" —
+        // so "talking about {Mid(topic)}" lowercases the name and buries the verb.
+        // Exactly the bug the preoccupation had, which is why it reads the same way.
+        return $"Just now: {ProseWords.Paragraph(f.Topic.Trim())}";
     }
 
     /// <summary>

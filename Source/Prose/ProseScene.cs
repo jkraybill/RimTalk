@@ -52,6 +52,7 @@ public static class ProseScene
             OtherColonistsOnMap = map.mapPawns?.FreeColonistsSpawned?.Count(c => c != pawn && !c.Dead) ?? 0,
             Colony = GatherColony(map),
             Shape = frame?.Shape ?? SceneShape.Conversation,
+            Topic = frame?.Topic,
             Preoccupation = frame?.Preoccupation,
             Situation = frame?.Situation,
             Concern = frame?.Concern,
