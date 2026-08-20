@@ -1,3 +1,4 @@
+using RimTalk.Prose;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -324,13 +325,33 @@ public static class ContextBuilder
         return null;
     }
 
-    public static void BuildDialogueType(StringBuilder sb, TalkRequest talkRequest, List<Pawn> pawns, string shortName, Pawn mainPawn)
+    /// <summary>
+    /// What kind of exchange this is, and what it is about — as facts, so each
+    /// renderer can say them its own way.
+    ///
+    /// rim-universe #34. This used to hand back two pre-formatted strings, and prose
+    /// mode then treated the whole topic block as a raw fact and wrapped it in a
+    /// sentence of its own. The result, live: "A moment ago Bren was on about bren
+    /// chatted about the rice with Kess, and is not finished with it" — a multi-line
+    /// field dump slotted into a noun position. The instruction half of the prompt was
+    /// never converted to prose at all; it was still "Bren dialogue short, urgent tone
+    /// (colonist/command)".
+    /// </summary>
+    public class DialogueFrame
     {
-        BuildDialogueType(sb, talkRequest, pawns, shortName, mainPawn, out _, out _);
+        public SceneShape Shape = SceneShape.Conversation;
+        public string Intent = "";        // the old telegraphic instruction, for non-prose mode
+        public string Topic = "";         // ditto: the whole assembled topic block
+        public string Preoccupation;      // what it was about before combat started
+        public string Situation;          // #35, in pieces
+        public string Concern;
+        public string OtherName;          // reply shapes
+        public string PlayerLine;
     }
 
-    public static void BuildDialogueType(StringBuilder sb, TalkRequest talkRequest, List<Pawn> pawns, string shortName, Pawn mainPawn, out string intent, out string topic)
+    public static DialogueFrame BuildDialogueType(StringBuilder sb, TalkRequest talkRequest, List<Pawn> pawns, string shortName, Pawn mainPawn)
     {
+        var frame = new DialogueFrame();
         var intentSb = new StringBuilder();
         var topicSb = new StringBuilder();
 
@@ -345,6 +366,10 @@ public static class ContextBuilder
             var mode = Settings.Get().PlayerDialogueMode;
             bool multiTurn = mode == Settings.PlayerDialogueMode.AIDriven || (!pawns[1].IsPlayer() && mode != Settings.PlayerDialogueMode.Manual);
 
+            frame.Shape = multiTurn ? SceneShape.ReplyToPlayerMulti : SceneShape.ReplyToPlayer;
+            frame.OtherName = pawns[1].LabelShort;
+            frame.PlayerLine = talkRequest.Prompt;
+
             intentSb.Append(multiTurn
                 ? $"Generate multi turn dialogues starting after this (do not repeat initial dialogue), beginning with {shortName}"
                 : $"Generate dialogue starting after this. Do not generate any further lines for {pawns[1].LabelShort}");
@@ -355,6 +380,7 @@ public static class ContextBuilder
         {
             if (pawns.Count == 1)
             {
+                frame.Shape = SceneShape.Monologue;
                 intentSb.Append($"{shortName} short monologue");
             }
             else if (mainPawn.IsInCombat() || mainPawn.GetMapRole() == MapRole.Invading)
@@ -372,7 +398,9 @@ public static class ContextBuilder
                         : null;
 
                 talkRequest.TalkType = TalkType.Urgent;
-                intentSb.Append(mainPawn.IsSlave || mainPawn.IsPrisoner
+                var afraid = mainPawn.IsSlave || mainPawn.IsPrisoner;
+                frame.Shape = afraid ? SceneShape.UrgentAfraid : SceneShape.Urgent;
+                intentSb.Append(afraid
                     ? $"{shortName} dialogue short (worry)"
                     : $"{shortName} dialogue short, urgent tone ({mainPawn.GetMapRole().ToString().ToLower()}/command)");
             }
@@ -394,15 +422,17 @@ public static class ContextBuilder
                 topicSb.Append(topicSb.Length > 0 ? "\n" : "")
                        .Append($"{shortName} is still preoccupied with: {preoccupation}");
 
-            AppendScaleGap(topicSb, mainPawn, preoccupation);
+            frame.Preoccupation = preoccupation;
+            AppendScaleGap(topicSb, mainPawn, preoccupation, frame);
 
             sb.Append(intentSb);
             if (topicSb.Length > 0)
                 sb.Append("\n").Append(topicSb);
         }
 
-        intent = intentSb.ToString();
-        topic = topicSb.ToString();
+        frame.Intent = intentSb.ToString();
+        frame.Topic = topicSb.ToString();
+        return frame;
     }
 
     /// <summary>
@@ -425,7 +455,8 @@ public static class ContextBuilder
     /// collapsing either. "Both are true at once" says that without asking for a
     /// performance.
     /// </summary>
-    public static void AppendScaleGap(StringBuilder sb, Pawn mainPawn, string preoccupation)
+    public static void AppendScaleGap(StringBuilder sb, Pawn mainPawn, string preoccupation,
+                                      DialogueFrame frame = null)
     {
         if (!Settings.Get().Context.IncludeScaleGap) return;
         if (mainPawn?.Map == null) return;
@@ -436,6 +467,12 @@ public static class ContextBuilder
         var concern = preoccupation != null
             ? "something small and unfinished"
             : ScaleDescriber.ConcernFor(mainPawn);
+
+        if (frame != null)
+        {
+            frame.Situation = situation;
+            frame.Concern = concern;
+        }
 
         sb.Append(sb.Length > 0 ? "\n" : "")
           .Append($"Situation: {situation}. On {mainPawn.LabelShort}'s mind: {concern}. Both are true at once.");

@@ -22,6 +22,14 @@ public class RimTalkWorldComponent(World world) : WorldComponent(world)
     /// </summary>
     public List<Narrative.NarrativeEvent> NarrativeEvents = new();
 
+    /// <summary>
+    /// The last few lines each pawn said, keyed by thingIDNumber, newline-joined.
+    /// rim-universe #41. Newline-joined rather than a nested list because Scribe has
+    /// no LookMode for Dictionary&lt;int, List&lt;string&gt;&gt; and a value type here
+    /// costs nothing; RecentLines strips newlines on the way in.
+    /// </summary>
+    public Dictionary<int, string> RecentSpokenLines = new();
+
     public override void ExposeData()
     {
         base.ExposeData();
@@ -57,9 +65,22 @@ public class RimTalkWorldComponent(World world) : WorldComponent(world)
         }
         NarrativeEvents ??= new List<Narrative.NarrativeEvent>();
 
+        try
+        {
+            Scribe_Collections.Look(ref RecentSpokenLines, "rimtalkRecentSpokenLines",
+                                    LookMode.Value, LookMode.Value);
+        }
+        catch (System.Exception ex)
+        {
+            Logger.Error($"Failed to save/load recent spoken lines. Resetting to prevent save corruption. Error: {ex.Message}");
+            RecentSpokenLines = new Dictionary<int, string>();
+        }
+        RecentSpokenLines ??= new Dictionary<int, string>();
+
         if (Scribe.mode != LoadSaveMode.PostLoadInit) return;
         RimTalkInteractionTexts ??= new Dictionary<string, string>();
         NarrativeEvents ??= new List<Narrative.NarrativeEvent>();
+        RecentSpokenLines ??= new Dictionary<int, string>();
             
         _keyInsertionOrder = keyOrderList != null ? new Queue<string>(keyOrderList) : new Queue<string>();
     }

@@ -55,7 +55,15 @@ public static class ScaleDescriber
 
         var top = pawn.skills?.skills?.OrderByDescending(sk => sk.Level).FirstOrDefault();
         if (top != null && top.Level >= 10)
-            return $"whether the {top.def.label} work will hold";
+        {
+            // skillLabel, not label. Vanilla SkillDefs carry <skillLabel> and no
+            // <label>, so SkillDef.label is null for all twelve and this shipped
+            // "whether the  work will hold" with a hole in it. Same bug as the profile
+            // want line, second code path — found by grepping for the other one.
+            var label = top.def.skillLabel ?? top.def.label ?? top.def.defName?.ToLower();
+            if (!string.IsNullOrWhiteSpace(label))
+                return $"whether the {label} work will hold";
+        }
 
         return "the meal, the bed, and the weather";
     }

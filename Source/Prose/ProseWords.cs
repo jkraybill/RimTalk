@@ -48,6 +48,12 @@ public static class ProseWords
         "Female" => "her", "Male" => "his", _ => "their"
     };
 
+    /// <summary>her / him / them — the object form.</summary>
+    public static string Object(string gender) => gender switch
+    {
+        "Female" => "her", "Male" => "him", _ => "them"
+    };
+
     /// <summary>"has" vs "have" — they/them takes the plural verb.</summary>
     public static string Has(string gender) => gender == "Female" || gender == "Male" ? "has" : "have";
 
@@ -99,5 +105,47 @@ public static class ProseWords
         if (firstWord.Skip(1).Any(char.IsUpper)) return label;   // RimWorld, McKinley, UN
 
         return char.ToLowerInvariant(label[0]) + label[1..];
+    }
+
+    /// <summary>
+    /// "a" or "an", by sound rather than by spelling.
+    ///
+    /// Spelling alone gets "an heir" and "a university" both wrong. Checked against
+    /// the game's own 1110 backstory titles: every u-initial one ("urchin",
+    /// "urbworld drone", "undertaker") does take "an", and "heir" is the single
+    /// silent-h case in vanilla — so the exception lists below exist mostly for
+    /// modded content, which is exactly where an unchecked rule would break.
+    /// </summary>
+    public static string Article(string word)
+    {
+        if (string.IsNullOrWhiteSpace(word)) return "a";
+        var w = word.TrimStart().ToLowerInvariant();
+
+        // Silent h: the vowel sound wins.
+        if (SilentH.Any(w.StartsWith)) return "an";
+
+        // Written vowel, spoken consonant: "a university", "a one-eyed drifter".
+        if (SoundsLikeConsonant.Any(w.StartsWith)) return "a";
+
+        return "aeiou".IndexOf(w[0]) >= 0 ? "an" : "a";
+    }
+
+    static readonly string[] SilentH = { "hour", "honest", "honor", "honour", "heir" };
+
+    static readonly string[] SoundsLikeConsonant =
+    {
+        "uni", "use", "usu", "util", "euro", "euph", "eul", "ewe", "one", "once", "ubiq", "ufo",
+    };
+
+    /// <summary>
+    /// Uppercase the first character. Verse.GenText.CapitalizeFirst does this, but
+    /// this file must stay free of RimWorld types so it can be source-linked into
+    /// the test project, and so can the composers that call it.
+    /// </summary>
+    public static string Cap(string s)
+    {
+        if (string.IsNullOrEmpty(s)) return s;
+        if (char.IsUpper(s[0])) return s;
+        return char.ToUpperInvariant(s[0]) + s[1..];
     }
 }

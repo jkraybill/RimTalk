@@ -109,16 +109,18 @@ internal static class TickManagerPatch
 
             if (selectedPawn != null)
             {
-                // 1. ALWAYS try to get from the general pool first.
-                var talkGenerated = TryGenerateTalkFromPool(selectedPawn);
+                // Own queue before the pool. rim-universe #40: the pool holds map-wide
+                // events whose Initiator is overwritten with whoever was selected, so a
+                // pool line is something this pawn merely witnessed. Answering a
+                // witnessed event before the remark you just made yourself is what put
+                // the courtship in the log after the line about the sick knot.
+                var pawnState = Cache.Get(selectedPawn);
+                var ownRequest = pawnState?.GetNextTalkRequest();
 
-                // 2. If the pawn has a specific talk request, try generating it
+                var talkGenerated = ownRequest != null && TalkService.GenerateTalk(ownRequest);
+
                 if (!talkGenerated)
-                {
-                    var pawnState = Cache.Get(selectedPawn);
-                    if (pawnState.GetNextTalkRequest() != null)
-                        talkGenerated = TalkService.GenerateTalk(pawnState.GetNextTalkRequest());
-                }
+                    talkGenerated = TryGenerateTalkFromPool(selectedPawn);
 
                 // 3. Fallback: generate based on current context if nothing else worked.
                 //

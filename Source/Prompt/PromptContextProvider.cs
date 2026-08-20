@@ -30,9 +30,9 @@ public static class PromptContextProvider
         var sb = new StringBuilder();
         
         // Delegate to ContextBuilder to avoid duplicating dialogue type logic
-        ContextBuilder.BuildDialogueType(sb, talkRequest, pawns, shortName, mainPawn, out string intent, out string topic);
-        
-        return (sb.ToString(), intent, topic);
+        var frame = ContextBuilder.BuildDialogueType(sb, talkRequest, pawns, shortName, mainPawn);
+
+        return (sb.ToString(), frame.Intent, frame.Topic);
     }
 
     /// <summary>

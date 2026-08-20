@@ -66,39 +66,80 @@ public class PawnSelector
         return GetNearbyPawnsInternal(pawn1, pawn2, DetectionType.Hearing, onlyTalkable: false);
     }
 
+    /// <summary>
+    /// Who speaks next.
+    ///
+    /// rim-universe #40. This used to rank user requests and nothing else, so a pawn
+    /// who had just made a remark to somebody had exactly the same claim on the next
+    /// generation as one asleep across the map — a weighted coin flip. Chitchat
+    /// requests expire in 20 seconds, so most of them died unserved and the line that
+    /// did appear was a pool event narrated by whoever the flip picked. That is why
+    /// the generated line arrived before the interaction that caused it and was about
+    /// neither.
+    ///
+    /// The ranking itself lives in <see cref="TalkPriority"/>, which is pure and
+    /// tested; this reads the game and hands it the facts.
+    /// </summary>
     public static Pawn SelectNextAvailablePawn()
     {
-        Pawn pawnWithOldestUserRequest = null;
-        int oldestTick = int.MaxValue;
+        var byId = new Dictionary<int, Pawn>();
+        var candidates = new List<TalkCandidate>();
         var talkReadyPawns = new List<Pawn>();
 
-        // Find the pawn with the highest priority task:
-        // 1. The oldest user-initiated talk request (absolute priority).
-        // 2. Pawns that can talk normally (for fallback).
         foreach (var pawn in Cache.Keys)
         {
             var pawnState = Cache.Get(pawn);
+            if (pawnState == null) continue;
 
-            var minTick = pawnState.TalkRequests
-                .Where(req => req.TalkType == TalkType.User)
-                .Select(req => req.CreatedTick)
-                .DefaultIfEmpty(int.MaxValue)
-                .Min();
+            var canTalk = pawnState.CanGenerateTalk();
+            if (canTalk) talkReadyPawns.Add(pawn);
 
-            if (minTick < oldestTick)
-            {
-                oldestTick = minTick;
-                pawnWithOldestUserRequest = pawn;
-            }
-
-            if (pawnState.CanGenerateTalk())
-            {
-                talkReadyPawns.Add(pawn);
-            }
+            byId[pawn.thingIDNumber] = pawn;
+            candidates.Add(Describe(pawn, pawnState, canTalk));
         }
 
-        // Return the highest priority pawn found, or null if none are available.
-        return pawnWithOldestUserRequest ?? 
-               (talkReadyPawns.Any() ? Cache.GetRandomWeightedPawn(talkReadyPawns) : null);
+        var preferred = TalkPriority.Preferred(candidates);
+        if (preferred != null && byId.TryGetValue(preferred.PawnId, out var chosen))
+            return chosen;
+
+        // Nobody has anything to answer. An ordinary, unprompted moment.
+        return talkReadyPawns.Any() ? Cache.GetRandomWeightedPawn(talkReadyPawns) : null;
+    }
+
+    static TalkCandidate Describe(Pawn pawn, PawnState state, bool canTalk)
+    {
+        var c = new TalkCandidate
+        {
+            PawnId = pawn.thingIDNumber,
+            CanTalk = canTalk,
+            OldestUserTick = int.MaxValue,
+            OldestUrgentTick = int.MaxValue,
+            OldestPendingTick = int.MaxValue,
+        };
+
+        foreach (var req in state.TalkRequests)
+        {
+            // A request that has already lapsed is not something to answer; leaving it
+            // in the ranking would pin the selector to a pawn whose reason to speak is
+            // gone. GetNextTalkRequest sweeps them on read.
+            if (req == null || req.IsExpired()) continue;
+
+            if (req.TalkType.IsFromUser())
+            {
+                c.HasUserRequest = true;
+                c.OldestUserTick = Math.Min(c.OldestUserTick, req.CreatedTick);
+            }
+            else if (req.TalkType == TalkType.Urgent)
+            {
+                c.HasUrgentRequest = true;
+                c.OldestUrgentTick = Math.Min(c.OldestUrgentTick, req.CreatedTick);
+            }
+            else
+            {
+                c.HasPendingRequest = true;
+                c.OldestPendingTick = Math.Min(c.OldestPendingTick, req.CreatedTick);
+            }
+        }
+        return c;
     }
 }

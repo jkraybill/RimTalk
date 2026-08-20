@@ -141,14 +141,13 @@ public static class PromptService
         if (mainPawn == null) return;
 
         // Dialogue type
-        ContextBuilder.BuildDialogueType(sb, talkRequest, pawns, shortName, mainPawn,
-                                         out var intent, out var topic);
+        var frame = ContextBuilder.BuildDialogueType(sb, talkRequest, pawns, shortName, mainPawn);
 
         if (contextSettings.ProsePrompt)
         {
             // The scene as a scene. Nine labelled rows read as a status page and get
             // answered with a weather report.
-            talkRequest.Prompt = Prose.ProseScene.Build(talkRequest, pawns, intent, topic);
+            talkRequest.Prompt = Prose.ProseScene.Build(talkRequest, pawns, frame);
             return;
         }
 
