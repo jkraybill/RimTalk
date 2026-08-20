@@ -1,3 +1,4 @@
+using RimTalk.Util;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -97,9 +98,13 @@ public static class PatchMemoryThoughtHandlerTryGainMemory
         {
             moodImpact = newThought.MoodOffset();
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            return; // Skip this thought if another mod has issues
+            // Skipped, not silent. A thought that never reaches the prompt is a mood
+            // the pawn never mentions, and nothing connects the two. rim-universe #2.
+            Logger.WarningOnce($"mood:{newThought?.def?.defName}",
+                $"MoodOffset failed for {newThought?.def?.defName}: {ex.Message}");
+            return;
         }
 
         if (Math.Abs(moodImpact) < 3f)

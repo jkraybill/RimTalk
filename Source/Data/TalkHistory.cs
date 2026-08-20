@@ -11,27 +11,71 @@ public static class TalkHistory
 {
     private static readonly ConcurrentDictionary<int, List<(Role role, string message)>> MessageHistory = new();
     private static readonly ConcurrentDictionary<Guid, int> SpokenTickCache = new() { [Guid.Empty] = 0 };
-    private static readonly ConcurrentBag<Guid> IgnoredCache = [];
-    
+
+    /// <summary>
+    /// rim-universe #3. This was a ConcurrentBag, which is not a set: it has no hash
+    /// index, so Contains walks the whole thing. IsTalkIgnored is called on the
+    /// DISPLAY path for every generated talk, and the bag grows by one Guid every
+    /// time a user request pre-empts a queue — which is every player-initiated
+    /// conversation. A long session turns the interaction the player uses most into a
+    /// linear scan over thousands of entries.
+    ///
+    /// A dictionary makes it O(1). <see cref="Prune"/> makes it bounded, which the
+    /// bag never was: TalkHistory.Clear() only ever cleared MessageHistory.
+    /// </summary>
+    private static readonly ConcurrentDictionary<Guid, int> IgnoredTickCache = new();
+
+    /// <summary>
+    /// Two in-game days. A talk that could have been displayed two days ago cannot be
+    /// displayed now — the response objects it refers to are long gone — so anything
+    /// older is dead weight in both caches.
+    /// </summary>
+    public const int RememberTicks = 120000;   // GenDate.TicksPerDay * 2
+
+    /// <summary>Only walk the caches when one of them has grown enough to be worth it.</summary>
+    public const int PruneAbove = 512;
+
     // Add a new talk with the current game tick
     public static void AddSpoken(Guid id)
     {
         SpokenTickCache.TryAdd(id, GenTicks.TicksGame);
+        Prune();
     }
-    
+
     public static void AddIgnored(Guid id)
     {
-        IgnoredCache.Add(id);
+        IgnoredTickCache.TryAdd(id, GenTicks.TicksGame);
+        Prune();
     }
 
     public static int GetSpokenTick(Guid id)
     {
         return SpokenTickCache.TryGetValue(id, out var tick) ? tick : -1;
     }
-    
+
     public static bool IsTalkIgnored(Guid id)
     {
-        return IgnoredCache.Contains(id);
+        return IgnoredTickCache.ContainsKey(id);
+    }
+
+    /// <summary>
+    /// Drop entries older than <see cref="RememberTicks"/>. rim-universe #3: both
+    /// caches held one entry per talk for the entire session and neither was ever
+    /// trimmed. Guid.Empty is seeded at tick 0 and must survive — it is the sentinel
+    /// for "no parent talk", and pruning it makes every root talk look unspoken.
+    /// </summary>
+    static void Prune()
+    {
+        var now = GenTicks.TicksGame;
+        if (SpokenTickCache.Count <= PruneAbove && IgnoredTickCache.Count <= PruneAbove) return;
+
+        foreach (var pair in SpokenTickCache)
+            if (pair.Key != Guid.Empty && TalkCacheMath.Expired(pair.Value, now, RememberTicks))
+                SpokenTickCache.TryRemove(pair.Key, out _);
+
+        foreach (var pair in IgnoredTickCache)
+            if (TalkCacheMath.Expired(pair.Value, now, RememberTicks))
+                IgnoredTickCache.TryRemove(pair.Key, out _);
     }
 
     public static void AddMessageHistory(Pawn pawn, string request, string response)

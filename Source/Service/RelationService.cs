@@ -69,9 +69,15 @@ public static class RelationsService
                     relationsSb.Append($"{pawnName}({label}) {opinion}, ");
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Skip this pawn if opinion calculation fails due to mod conflicts
+                // Still skipped — a mod conflict must not break the prompt — but no
+                // longer silent. This pawn vanishes from the Relations: line of every
+                // prompt for the rest of the session, and what the player sees is not
+                // an error: it is colonists who have stopped acknowledging that they
+                // are married. rim-universe #2.
+                Logger.WarningOnce($"rel:{pawn?.ThingID}:{otherPawn?.ThingID}",
+                    $"Relation skipped: {pawn?.LabelShort} -> {otherPawn?.LabelShort}: {ex.Message}");
             }
         }
 
@@ -197,9 +203,12 @@ public static class RelationsService
                 sb.Append("- ");
                 sb.AppendLine(text);
             }
-            catch (Exception)
-            {   
-                // Skip if something's wrong with the entry (e.g., modded entry)
+            catch (Exception ex)
+            {
+                // Same shape, same issue. A modded log entry that never renders is a
+                // hole in the social context nobody can see. rim-universe #2.
+                Logger.WarningOnce($"interaction:{ex.GetType().Name}",
+                    $"Social log entry skipped: {ex.Message}");
             }
         }
 
@@ -242,8 +251,10 @@ public static class RelationsService
         {
             opinionValue = pawn.relations.OpinionOf(otherPawn);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Logger.WarningOnce($"opinion:{pawn?.ThingID}:{otherPawn?.ThingID}",
+                $"OpinionOf failed: {pawn?.LabelShort} -> {otherPawn?.LabelShort}: {ex.Message}");
             return false;
         }
 

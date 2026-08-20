@@ -60,9 +60,13 @@ public static class CommonUtil
 
             return mapData;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // Return default data in case of an exception
+            // "N/A" for the time, the date, the season AND the weather is not a
+            // degraded prompt, it is a prompt with no world in it. Worth one line.
+            // rim-universe #2.
+            Logger.WarningOnce($"ingamedata:{ex.GetType().Name}",
+                $"In-game data unavailable, prompt will read N/A: {ex.Message}");
             return new InGameData
                 { Hour12HString = "N/A", DateString = "N/A", SeasonString = "N/A", WeatherString = "N/A" };
         }

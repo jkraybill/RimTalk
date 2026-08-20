@@ -12,6 +12,18 @@ namespace RimTalk.Data
         // estimate rather than by count, so a long reply no longer costs the same as a
         // short one.
         public int ConversationHistoryCount = 4;
+
+        /// <summary>
+        /// How many participants get a full profile. rim-universe #7: this used to be
+        /// hardcoded to one — index 0 — so in a two-hander one speaker had no skills,
+        /// no equipment and three traits, decided by list position and re-decided
+        /// every time the pair spoke.
+        ///
+        /// Two, so both sides of an ordinary conversation are rounded. Bystanders
+        /// stay Short. The cost is bounded and predictable: one extra Normal block is
+        /// roughly a skills line, an equipment line and a few more traits.
+        /// </summary>
+        public int FullProfileParticipants = 2;
         
         // Pawn Info
         public bool IncludeRace = true;
@@ -67,6 +79,7 @@ namespace RimTalk.Data
             Scribe_Values.Look(ref EnableContextOptimization, "EnableContextOptimization", false);
             Scribe_Values.Look(ref MaxPawnContextCount, "MaxPawnContextCount", 3);
             Scribe_Values.Look(ref ConversationHistoryCount, "ConversationHistoryCount", 4);
+            Scribe_Values.Look(ref FullProfileParticipants, "FullProfileParticipants", 2);
             Scribe_Values.Look(ref IncludeRace, "IncludeRace", true);
             Scribe_Values.Look(ref IncludeNotableGenes, "IncludeNotableGenes", true);
             Scribe_Values.Look(ref IncludeIdeology, "IncludeIdeology", true);

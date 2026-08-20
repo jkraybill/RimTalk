@@ -25,12 +25,23 @@ public static class PromptService
     {
         var context = new StringBuilder();
     
+        // rim-universe #7. Depth used to be decided by POSITION IN A LIST: index 0 got
+        // Normal and everyone else got Short, which omits skills and equipment
+        // entirely and cuts traits to three. In a two-hander that hands the model a
+        // rounded character and a sketch and asks for a conversation between them —
+        // and the assignment flips next time the same pair speaks, so a colonist is
+        // deep on Tuesday and thin on Wednesday. That undermines the one thing the
+        // mod exists for.
+        //
+        // Budget by conversation instead: the speakers who carry it get Normal, the
+        // bystanders get Short.
+        var full = Settings.Get().Context.FullProfileParticipants;
         for (int i = 0; i < pawns.Count; i++)
         {
             var pawn = pawns[i];
             if (pawn.IsPlayer()) continue;
-            InfoLevel infoLevel = Settings.Get().Context.EnableContextOptimization 
-                                  || i != 0 ? InfoLevel.Short : InfoLevel.Normal;
+            InfoLevel infoLevel = Settings.Get().Context.EnableContextOptimization
+                                  || i >= full ? InfoLevel.Short : InfoLevel.Normal;
             var pawnContext = CreatePawnContext(pawn, infoLevel);
             pawnContext = CommonUtil.StripFormattingTags(pawnContext);
 
