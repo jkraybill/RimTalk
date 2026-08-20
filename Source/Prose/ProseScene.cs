@@ -50,6 +50,7 @@ public static class ProseScene
             PawnName = pawn.LabelShort,
             PawnActivity = string.IsNullOrWhiteSpace(doing) ? null : doing.StripTags(),
             OtherColonistsOnMap = map.mapPawns?.FreeColonistsSpawned?.Count(c => c != pawn && !c.Dead) ?? 0,
+            Colony = GatherColony(map),
             Shape = frame?.Shape ?? SceneShape.Conversation,
             Preoccupation = frame?.Preoccupation,
             Situation = frame?.Situation,
@@ -73,5 +74,64 @@ public static class ProseScene
                 })
                 .ToList(),
         };
+    }
+
+    /// <summary>
+    /// The colony as facts. rim-universe #23.
+    ///
+    /// Every read here is defensive: a map mid-generation, a scenario with no resource
+    /// counter, a modded biome with no label. A null field renders as no sentence,
+    /// which is the right failure — a missing clause beats an invented one.
+    /// </summary>
+    static ColonyFacts GatherColony(Map map)
+    {
+        if (map == null) return null;
+
+        var colonists = map.mapPawns?.FreeColonistsSpawned?.Count(c => !c.Dead) ?? 0;
+
+        return new ColonyFacts
+        {
+            SettlementName = map.Parent?.LabelCap,
+            BiomeLabel = map.Biome?.label,
+            DaysOld = GenDate.DaysPassed,
+            FoodDays = FoodDays(map, colonists),
+            MedicineCount = MedicineCount(map),
+            HasPower = HasPower(map),
+        };
+    }
+
+    /// <summary>
+    /// Days of food at the current population. A colonist eats about 1.6 nutrition a
+    /// day, which is the figure RimWorld's own food-supply readout uses.
+    /// </summary>
+    static float FoodDays(Map map, int colonists)
+    {
+        var nutrition = map.resourceCounter?.TotalHumanEdibleNutrition ?? -1f;
+        if (nutrition < 0f) return -1f;
+        if (colonists <= 0) return -1f;      // nobody to feed; the number means nothing
+        return nutrition / (colonists * 1.6f);
+    }
+
+    static int MedicineCount(Map map)
+    {
+        var counter = map.resourceCounter;
+        if (counter == null) return -1;
+
+        var total = 0;
+        foreach (var def in new[] { ThingDefOf.MedicineHerbal, ThingDefOf.MedicineIndustrial,
+                                    ThingDefOf.MedicineUltratech })
+            if (def != null) total += counter.GetCount(def);
+        return total;
+    }
+
+    /// <summary>
+    /// Null rather than false when the map has no power net at all, so a scenario that
+    /// never had electricity is not told it has none.
+    /// </summary>
+    static bool? HasPower(Map map)
+    {
+        var nets = map.powerNetManager?.AllNetsListForReading;
+        if (nets == null || nets.Count == 0) return null;
+        return nets.Any(n => n.CurrentEnergyGainRate() > 0f || n.CurrentStoredEnergy() > 0f);
     }
 }

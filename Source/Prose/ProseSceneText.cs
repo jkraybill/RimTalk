@@ -65,6 +65,9 @@ public class SceneFacts
     public string Situation;
     public string Concern;
 
+    /// <summary>Where this is and how it is doing. rim-universe #23. Null when unknown.</summary>
+    public ColonyFacts Colony;
+
     public SceneShape Shape = SceneShape.Conversation;
 
     /// <summary>Who the player is speaking as, and what they said. Reply shapes only.</summary>
@@ -91,6 +94,12 @@ public static class ProseSceneText
     {
         if (f == null) return "";
         var lines = new List<string> { Setting(f) };
+
+        // Second, because a person knows where they are before they notice who is in
+        // the room with them, and because it is the only place the biome and the
+        // colony's name ever appear. rim-universe #23.
+        var colony = ProseColonyText.Compose(f.Colony);
+        if (colony != null) lines.Add(colony);
 
         var others = Others(f);
         if (others != null) lines.Add(others);
@@ -192,6 +201,19 @@ public static class ProseSceneText
         // openings went from 47% to 62% — so it stays here and only here.
         if (!alone && !string.IsNullOrWhiteSpace(f.Preoccupation))
             ask += " What they were talking about a moment ago comes into it.";
+
+        // #23, and the same lesson: the colony's state stated in the scene gets
+        // mentioned 0-18% of the time and pointed at from here 33-72%. Gated on the
+        // state actually being pressing, because a clause that fires every time makes
+        // every conversation about the food stores.
+        //
+        // Never on a monologue. One line from someone who is sowing is about the soil,
+        // and four different phrasings all failed to move that — including "Three days
+        // in, with nothing to eat", which got 0% and cost a third of the variety. The
+        // solo case needs something other than a harder instruction; see #23.
+        if (shape != SceneShape.Monologue && ProseColonyText.IsPressing(f.Colony))
+            ask += " How this place is doing comes into it.";
+
         return ask;
     }
 
