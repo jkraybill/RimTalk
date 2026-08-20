@@ -38,6 +38,12 @@ public class RimTalkWorldComponent(World world) : WorldComponent(world)
     /// </summary>
     public List<ChatTurn> ChatTurns = new();
 
+    /// <summary>
+    /// What each person wrote the day they came to here. rim-universe #37. Deep, not
+    /// Reference: these are meant to outlive the people in them.
+    /// </summary>
+    public List<Narrative.ArrivalEntry> ArrivalEntries = new();
+
     public override void ExposeData()
     {
         base.ExposeData();
@@ -80,6 +86,17 @@ public class RimTalkWorldComponent(World world) : WorldComponent(world)
 
         try
         {
+            Scribe_Collections.Look(ref ArrivalEntries, "rimtalkArrivalEntries", LookMode.Deep);
+        }
+        catch (System.Exception ex)
+        {
+            Logger.Error($"Failed to save/load arrival log. Resetting to prevent save corruption. Error: {ex.Message}");
+            ArrivalEntries = new List<Narrative.ArrivalEntry>();
+        }
+        ArrivalEntries ??= new List<Narrative.ArrivalEntry>();
+
+        try
+        {
             Scribe_Collections.Look(ref ChatTurns, "rimtalkChatTurns", LookMode.Deep);
         }
         catch (System.Exception ex)
@@ -106,6 +123,7 @@ public class RimTalkWorldComponent(World world) : WorldComponent(world)
         NarrativeEvents ??= new List<Narrative.NarrativeEvent>();
         RecentSpokenLines ??= new Dictionary<int, string>();
         ChatTurns ??= new List<ChatTurn>();
+        ArrivalEntries ??= new List<Narrative.ArrivalEntry>();
 
         // After RimTalk.cs's TalkHistory.Clear(), which runs on every load. #9: that
         // call is why no colony ever remembered a conversation across a save.

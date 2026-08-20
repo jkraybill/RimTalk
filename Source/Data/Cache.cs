@@ -71,6 +71,11 @@ public static class Cache
         // Ensure player state/name is valid.
         InitializePlayerPawn();
 
+        // rim-universe #37. Here rather than in a spawn patch: this already runs on the
+        // main thread every few seconds and already walks every eligible pawn, and one
+        // candidate per refresh is a hard ceiling on the cost.
+        Narrative.ArrivalService.TryGenerate();
+
         // Remove "Ghost Keys" (old names).
         foreach (var entry in NameCache.ToArray())
         {

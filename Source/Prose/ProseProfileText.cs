@@ -40,6 +40,12 @@ public class PawnFacts
     public string TopSkillDefName;      // SkillDef.defName — the key the want table uses
     public string TopSkillLabel;        // SkillDef.label, which is null for every vanilla skill
     public int TopSkillLevel;
+
+    /// <summary>
+    /// What this pawn wrote the day they came to here, if they have one. #37.
+    /// Their own canonical account, in their own voice, checked once against R8.
+    /// </summary>
+    public string ArrivalLog;
 }
 
 /// <summary>
@@ -67,8 +73,12 @@ public static class ProseProfileText
             Possesses(f, g),
             Body(f, g)));
 
-        // 2. The standing rule, stated once, in their own frame. R8.
-        paras.Add($"{g.Subj} woke here with no memory of arriving, and never will.");
+        // 2. R8, stated once. Their own account when they have written one — it says
+        //    the same thing better, in their voice, and having it here is what stops
+        //    the model re-inventing an arrival every time it is asked. #37.
+        paras.Add(string.IsNullOrWhiteSpace(f.ArrivalLog)
+            ? $"{g.Subj} woke here with no memory of arriving, and never will."
+            : $"What {f.Name} wrote the day {g.subj} woke here: {f.ArrivalLog.Trim()}");
 
         // 3. Where they stand today.
         paras.Add(ProseWords.Paragraph(

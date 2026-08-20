@@ -71,6 +71,8 @@ public static class ProseProfile
             .Where(t => !string.IsNullOrWhiteSpace(t))
             .ToList();
 
+        f.ArrivalLog = Narrative.ArrivalLog.For(pawn)?.Text;
+
         var top = pawn.skills?.skills?.OrderByDescending(s => s.Level).FirstOrDefault();
         if (top != null)
         {
