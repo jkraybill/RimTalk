@@ -265,6 +265,21 @@ public class PromptManager : IExposable
                     Position = PromptPosition.Relative,
                     Content = "{{context}}"
                 },
+                // rim-universe #12. This variable was written, wired into the catalogue
+                // and the settings autocomplete, and shipped — and never ran, because
+                // no default preset referenced it and no toggle emitted it. It is the
+                // closest thing RimTalk has to episodic memory, it is grounded in
+                // events the GAME recorded rather than anything the model invented, and
+                // it explicitly excludes RimTalk's own log entries so it cannot echo
+                // the chat history back. A pawn insulted ten minutes ago currently has
+                // no idea unless the resulting thought survived the top-3 Memory cut.
+                new()
+                {
+                    Name = "Recent Events",
+                    Role = PromptRole.System,
+                    Position = PromptPosition.Relative,
+                    Content = "{{pawn.fullinteraction}}"
+                },
                 // Format LAST, closest to generation. A conversational system prompt
                 // loosens formatting, and RimTalk drops any line it cannot parse.
                 new()

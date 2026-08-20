@@ -46,6 +46,15 @@ public class PawnFacts
     /// Their own canonical account, in their own voice, checked once against R8.
     /// </summary>
     public string ArrivalLog;
+
+    /// <summary>
+    /// RimWorld's own hand-written prose for one of this pawn's traits, already
+    /// name-substituted. rim-universe #8: the game ships a paragraph for every trait
+    /// degree and every backstory — the richest character material it has — and none
+    /// of it has ever reached the model, which has been inferring "Bloodlust" from
+    /// the word.
+    /// </summary>
+    public string DominantTraitDescription;
 }
 
 /// <summary>
@@ -71,7 +80,8 @@ public static class ProseProfileText
             WhoTheyAre(f, g),
             Describes(f, g),
             Possesses(f, g),
-            Body(f, g)));
+            Body(f, g),
+            Dominant(f)));
 
         // 2. R8, stated once. Their own account when they have written one — it says
         //    the same thing better, in their voice, and having it here is what stops
@@ -148,6 +158,25 @@ public static class ProseProfileText
         var sep = adjectives.Count > 1 ? ", and " : " and ";
         return $"{g.Subj} {g.Is} {ProseWords.Join(adjectives)}{sep}{ProseWords.Join(nouns)}";
     }
+
+    /// <summary>
+    /// One trait, in the game's own words. #8, and #35's lesson about why it is ONE:
+    /// a comma list of three traits gets averaged into a composite nobody, so the
+    /// description is spent on the trait that is leading today rather than spread.
+    ///
+    /// Capped, because these are written for a tooltip with a whole panel to fill and
+    /// this one has to sit inside a profile that competes for the same context as the
+    /// scene, the history and the ban list. A description over the cap is dropped
+    /// rather than truncated: half a sentence about a character is worse than none.
+    /// </summary>
+    static string Dominant(PawnFacts f)
+    {
+        var d = f.DominantTraitDescription?.Trim();
+        if (string.IsNullOrWhiteSpace(d)) return null;
+        return d.Length > MaxTraitDescription ? null : d;
+    }
+
+    public const int MaxTraitDescription = 320;
 
     /// <summary>Traits that are had rather than been: "He has a great memory."</summary>
     static string Possesses(PawnFacts f, Gram g)

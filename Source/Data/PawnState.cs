@@ -32,7 +32,11 @@ public class PawnState(Pawn pawn)
     public HashSet<Hediff> Hediffs { get; set; } = pawn.GetHediffs();
 
     public string Personality => PersonaService.GetPersonality(Pawn);
-    public double TalkInitiationWeight => PersonaService.GetTalkInitiationWeight(Pawn);
+    /// <summary>
+    /// The effective weight, not the stored baseline. Everything that selects a pawn
+    /// to speak reads this. rim-universe #16.
+    /// </summary>
+    public double TalkInitiationWeight => PersonaService.GetEffectiveTalkWeight(Pawn);
 
     public void AddTalkRequest(string prompt, Pawn recipient = null, TalkType talkType = TalkType.Other)
     {

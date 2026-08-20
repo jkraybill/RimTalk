@@ -72,6 +72,7 @@ public static class ProseProfile
             .ToList();
 
         f.ArrivalLog = Narrative.ArrivalLog.For(pawn)?.Text;
+        f.DominantTraitDescription = Service.ContextBuilder.GetDominantTraitDescription(pawn);
 
         var top = pawn.skills?.skills?.OrderByDescending(s => s.Level).FirstOrDefault();
         if (top != null)

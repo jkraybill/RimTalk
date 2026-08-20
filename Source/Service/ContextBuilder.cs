@@ -494,9 +494,35 @@ public static class ContextBuilder
 
         // Rand, not UnityEngine.Random: RimWorld seeds Rand so a reloaded save
         // reproduces the same rolls.
+        return DominantDegree(pawn)?.label;
+    }
+
+    /// <summary>
+    /// The game's own paragraph for the trait that is leading today. rim-universe #8.
+    ///
+    /// Sanitize resolves RimWorld's name placeholders, so what comes back is already
+    /// prose about this pawn rather than a template. One trait, not all of them: #35
+    /// found that a list gets averaged into a composite nobody, and a description is
+    /// only worth its tokens if it is about somebody in particular.
+    /// </summary>
+    public static string GetDominantTraitDescription(Pawn pawn)
+    {
+        var degree = DominantDegree(pawn);
+        if (string.IsNullOrWhiteSpace(degree?.description)) return null;
+        return CommonUtil.Sanitize(degree.description, pawn)?.Replace("\n", " ").Trim();
+    }
+
+    static TraitDegreeData DominantDegree(Pawn pawn)
+    {
+        if (!Settings.Get().Context.IncludeDominantTrait) return null;
+
+        var traits = pawn?.story?.traits?.TraitsSorted?.ToList();
+        if (traits == null || traits.Count == 0) return null;
+
+        // Rand, not UnityEngine.Random: RimWorld seeds Rand so a reloaded save
+        // reproduces the same rolls.
         var winner = traits[Rand.Range(0, traits.Count)];
-        var degree = GenCollection.FirstOrDefault(winner.def.degreeDatas, d => d.degree == winner.Degree);
-        return degree?.label;
+        return GenCollection.FirstOrDefault(winner.def.degreeDatas, d => d.degree == winner.Degree);
     }
 
     public static void BuildLocationContext(StringBuilder sb, ContextSettings contextSettings, Pawn mainPawn)

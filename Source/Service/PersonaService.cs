@@ -18,9 +18,24 @@ public static class PersonaService
         Hediff_Persona.GetOrAddNew(pawn).Personality = personality;
     }
 
+    /// <summary>
+    /// The baseline the player set. Editors read and write this — showing them the
+    /// effective value in a field they can edit would make the slider drift every
+    /// time the pawn got tired.
+    /// </summary>
     public static float GetTalkInitiationWeight(Pawn pawn)
     {
         return Hediff_Persona.GetOrAddNew(pawn).TalkInitiationWeight;
+    }
+
+    /// <summary>
+    /// What selection should actually use: the baseline moved by mood, rest, health
+    /// and standing. rim-universe #16 — the stored value was written once at spawn and
+    /// never again, so a recruited prisoner stayed near-mute for life.
+    /// </summary>
+    public static float GetEffectiveTalkWeight(Pawn pawn)
+    {
+        return Hediff_Persona.GetOrAddNew(pawn)?.EffectiveTalkWeight ?? 0f;
     }
 
     public static void SetTalkInitiationWeight(Pawn pawn, float frequency)
