@@ -105,12 +105,11 @@ public static class Constant
                     ?? preset.Entries.FirstOrDefault(e =>
                         e.Role == PromptRole.System && e.Position == PromptPosition.Relative);
 
-        if (string.IsNullOrWhiteSpace(entry?.Content)) return DefaultInstruction;
-
-        // A preset carries whatever the default was on the day it was created. Once
-        // the default changes, that copy is not a customisation — it is a fossil, and
+        // A preset carries whatever the default was on the day it was created. Once the
+        // default changes, that copy is not a customisation — it is a fossil, and
         // preferring it means the rewrite never reaches anyone who played before it.
-        return InstructionHeritage.IsSuperseded(entry.Content) ? DefaultInstruction : entry.Content;
+        // The decision lives in InstructionHeritage so it can be executed in the tests.
+        return InstructionHeritage.Resolve(entry?.Content, DefaultInstruction);
     }
     
     // JSON instruction for use by PromptManager

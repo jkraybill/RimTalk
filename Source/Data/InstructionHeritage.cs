@@ -58,6 +58,21 @@ public static class InstructionHeritage
         IsSuperseded(instruction) || Same(instruction, currentDefault);
 
     /// <summary>
+    /// Which base instruction to actually send, given what a preset has saved and what
+    /// the mod currently ships.
+    ///
+    /// This is the whole decision, extracted from Constant.GetBaseInstruction so it can
+    /// be run without a game. The bug it exists to stop was not in detecting a fossil —
+    /// it was in what the assembly path did with one, and nothing could execute that
+    /// path outside RimWorld.
+    /// </summary>
+    public static string Resolve(string savedEntry, string currentDefault)
+    {
+        if (string.IsNullOrWhiteSpace(savedEntry)) return currentDefault;
+        return IsSuperseded(savedEntry) ? currentDefault : savedEntry;
+    }
+
+    /// <summary>
     /// Line endings and trailing whitespace differ between what the compiler produces
     /// and what comes back out of a base64 round trip through Scribe.
     /// </summary>
