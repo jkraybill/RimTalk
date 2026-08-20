@@ -282,14 +282,39 @@ public class RimTalkSettings : ModSettings
         {
             // 1. Recover from Preset (Reverse Migration)
             // If SimpleModeInstruction is default, but we have a custom instruction in the preset, pull it back.
-            if (string.IsNullOrWhiteSpace(SimpleModeInstruction) || SimpleModeInstruction == Constant.DefaultInstruction)
+            if (string.IsNullOrWhiteSpace(SimpleModeInstruction)
+                || InstructionHeritage.IsShipped(SimpleModeInstruction, Constant.DefaultInstruction))
             {
                 var preset = PromptSystem.GetActivePreset();
                 var entry = GetOrCreateBaseInstructionEntry(preset);
-                if (entry != null && !string.IsNullOrWhiteSpace(entry.Content) && entry.Content != Constant.DefaultInstruction)
+
+                // Only a real customisation is worth recovering. The old test was
+                // "different from the current default", which every previous default
+                // satisfies — so a shipped instruction from an earlier version was
+                // promoted to the user's own and then preferred over the new one,
+                // permanently and silently.
+                if (entry != null && !string.IsNullOrWhiteSpace(entry.Content)
+                    && !InstructionHeritage.IsShipped(entry.Content, Constant.DefaultInstruction))
                 {
                     SimpleModeInstruction = entry.Content;
                 }
+                else
+                {
+                    SimpleModeInstruction = Constant.DefaultInstruction;
+                }
+            }
+
+            // Upgrade the fossil in place, loudly. Leaving it would mean re-deciding
+            // this on every load, and the log line is how anyone ever finds out that
+            // their saved instruction was a copy of an old shipped one.
+            var active = PromptSystem.GetActivePreset();
+            var baseEntry = GetOrCreateBaseInstructionEntry(active);
+            if (baseEntry != null && InstructionHeritage.IsSuperseded(baseEntry.Content))
+            {
+                Util.Logger.Warning("Base Instruction was a copy of a superseded RimTalk default " +
+                               "and has been replaced with the current one. If you had edited it, " +
+                               "the previous text is in your config backup.");
+                baseEntry.Content = Constant.DefaultInstruction;
             }
             
             // 2. Migrate from Legacy CustomInstruction
