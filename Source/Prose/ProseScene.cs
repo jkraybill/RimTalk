@@ -65,6 +65,10 @@ public static class ProseScene
             // the third person was not there for, and the model has no way to know
             // that from a block that only names two of the three.
             Pair = PairFor(pawns),
+            // The harvest is otherwise invisible to a solo colony and to two people
+            // meeting for the first time — which is most scenes, early. ProseSceneText
+            // drops this when the pair block is present.
+            Lately = Narrative.Chronicle.Lately(GenTicks.TicksGame, ProseSceneText.MaxLatelyItems),
             Others = (pawns ?? new List<Pawn>())
                 .Where(p => p != null && p != pawn && !p.Dead && !p.IsPlayer())
                 .Select(p =>

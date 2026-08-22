@@ -80,4 +80,12 @@ public static class Chronicle
         deaths.AddRange(clauses);
         return deaths.Take(max).ToList();
     }
+
+    /// <summary>
+    /// Two days. What a colonist would still bring up unprompted — long enough that a
+    /// quiet colony has something, short enough that "lately" is not a lie.
+    /// </summary>
+    public const int LatelyTicks = 120000;
+
+    public static List<string> Lately(int now, int max) => Since(now - LatelyTicks, max);
 }

@@ -98,6 +98,17 @@ public class SceneFacts
     /// callback in a three-hander is a callback the third person was not part of.
     /// </summary>
     public PairFacts Pair;
+
+    /// <summary>
+    /// What the colony has been up to, for the scenes that have no pair memory to
+    /// draw on — a monologue, or two people meeting for the first time.
+    ///
+    /// The tale harvest feeds #30's delta, and #30 only fires for two people who have
+    /// spoken before. Without this the whole harvest is invisible to a solo colony,
+    /// which is the playstyle #27 says matters most, and invisible-but-shipped is the
+    /// failure mode that hid the prose rewrite for weeks.
+    /// </summary>
+    public List<string> Lately = new();
 }
 
 /// <summary>
@@ -134,6 +145,12 @@ public static class ProseSceneText
         // happened to these two, and the instruction that points at it comes next.
         var pair = PairText.Compose(f.Pair);
         if (pair != null) lines.Add(pair);
+
+        // The shape the instruction will use, decided once — Conversation collapses
+        // to Monologue when nobody else is present, and the block has to agree with
+        // the sentence that follows it about which scene this is.
+        var lately = Lately(f, Shape(f));
+        if (lately != null) lines.Add(lately);
 
         lines.Add(Instruction(f));
 
@@ -222,8 +239,7 @@ public static class ProseSceneText
     /// </summary>
     static string Instruction(SceneFacts f)
     {
-        var alone = (f.Others ?? new List<PersonNote>()).Count == 0;
-        var shape = f.Shape == SceneShape.Conversation && alone ? SceneShape.Monologue : f.Shape;
+        var shape = Shape(f);
         var ask = Ask(f, shape);
 
         // #34 lives or dies here rather than in the scene paragraph. Measured, raid
@@ -238,6 +254,11 @@ public static class ProseSceneText
         // is obeying; a fact stated earlier in the scene reads as furniture. Adding the
         // unfinishedness to BOTH places also reached 90% and cost variety — repeated
         // openings went from 47% to 62% — so it stays here and only here.
+        // `alone`, not `shape != Monologue`: an Urgent scene with nobody else in it
+        // keeps its own shape, so the two conditions differ there and swapping them
+        // would quietly start telling a lone pawn mid-fight to carry on a conversation
+        // with nobody.
+        var alone = (f.Others ?? new List<PersonNote>()).Count == 0;
         if (!alone && !string.IsNullOrWhiteSpace(f.Preoccupation))
             ask += " What they were talking about a moment ago comes into it.";
 
@@ -267,8 +288,25 @@ public static class ProseSceneText
             if (pair != null) ask += " " + pair;
         }
 
+        // There is deliberately NO clause for the chronicle block. It was written,
+        // measured, and cut — see Lately() for the three-arm table. It bought no
+        // uptake the block did not already have and took distinct trigrams from .95
+        // to .63. Every clause on this instruction has to earn its place against that
+        // number, and the next one to be proposed should be measured the same way.
         return ask;
     }
+
+    /// <summary>
+    /// A conversation with nobody in it is a monologue. Decided in one place because
+    /// the instruction and the chronicle block both need the same answer.
+    /// </summary>
+    static SceneShape Shape(SceneFacts f) =>
+        f.Shape == SceneShape.Conversation && (f.Others ?? new List<PersonNote>()).Count == 0
+            ? SceneShape.Monologue
+            : f.Shape;
+
+    static bool Urgent(SceneShape shape) =>
+        shape is SceneShape.Urgent or SceneShape.UrgentAfraid;
 
     static string Ask(SceneFacts f, SceneShape shape)
     {
@@ -331,6 +369,60 @@ public static class ProseSceneText
     /// that the ban list cannot become the bulk of the prompt. ~30 tokens.
     /// </summary>
     public const int MaxRecentLines = 5;
+
+    /// <summary>
+    /// Two. Fewer than the pair block's three: that one has an established "then" to
+    /// hang a list off, and this one does not — a bare list of four colony events
+    /// with no anchor gets summarised rather than picked from.
+    /// </summary>
+    public const int MaxLatelyItems = 2;
+
+    /// <summary>
+    /// What the colony has been doing, for scenes with no pair history.
+    ///
+    /// **No instruction clause, and that is a measured decision.** Three arms, 10
+    /// chained samples each, deepseek-v4-flash, quiet-morning and lone-settler:
+    ///
+    ///   arm                 uptake    open%   dup%   trigram   lift%
+    ///   no block              0%     10/ 0   5/ 0   .95/.96      0%
+    ///   block + clause      100%     40/20  40/20   .63/.63     20%
+    ///   block alone       100/50%     0/ 0   0/ 0   .89/.96    6/0%
+    ///
+    /// The clause bought nothing on the case that matters and collapsed the output:
+    /// distinct trigrams .95 -> .63, duplicate lines 5% -> 40%. Told to talk about
+    /// the deer, every sample talks about the deer in nearly the same words.
+    ///
+    /// This CONTRADICTS #23 and #34, which both concluded a fact stated in the scene
+    /// reads as furniture at 0-18% and needs the instruction to point at it. The
+    /// difference is what kind of fact: those were statuses — "nothing much to eat" —
+    /// and this is a concrete event with a noun in it. S167 found the same thing from
+    /// the other end, that one paragraph of specific material beat every rewording
+    /// measured. A pawn cannot say a status; they can say "that deer".
+    ///
+    /// Suppressed when the pair block is present: that one already carries the delta,
+    /// under a heading that says what it is a delta FROM, and stating the same events
+    /// twice under two headings teaches the model that repetition is the house style.
+    ///
+    /// Suppressed mid-fight, where #34's carry-through is the point and this competes
+    /// with it. That one is a judgement rather than a number: the raid fixture took it
+    /// up 100% of the time with no clause at all, and the lines it produced were
+    /// "You built the smithy, so build some nerve" and "You tamed that boomalope, it's
+    /// going to eat us out" — a subject wedged into a firefight because the prompt
+    /// offered one. Samples are in the capture if JK wants the other call.
+    /// </summary>
+    static string Lately(SceneFacts f, SceneShape shape)
+    {
+        if (f.Pair != null || Urgent(shape)) return null;
+
+        var items = (f.Lately ?? new List<string>())
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .Select(s => s.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(MaxLatelyItems)
+            .ToList();
+
+        return items.Count == 0 ? null : $"Lately: {ProseWords.Join(items)}.";
+    }
 
     static string Others(SceneFacts f)
     {
