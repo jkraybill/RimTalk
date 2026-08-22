@@ -57,6 +57,18 @@ namespace RimTalk.Data
         // uninstall and this is the first of several senders.
         public bool NarrativeLetters = true;
 
+        /// <summary>
+        /// Colonist goals. rim-universe #28. OFF by default, and unlike everything
+        /// else here that is not caution about the prompt — it is the only feature in
+        /// this mod that writes MOOD. A player's colony balance is theirs, and a mood
+        /// mechanic that arrives switched on with a mod update is the kind of thing
+        /// that gets a mod uninstalled rather than configured.
+        ///
+        /// The gate covers generation AND the prompt block, so with it off the mod
+        /// sends exactly the prompt it sent before goals existed.
+        /// </summary>
+        public bool Goals = false;
+
         // The whole prompt shape. On = prose profile and prose scene; off = the
         // original labelled field dump. Kept switchable because it is a large change
         // and the old path still has to be A/B-able against it.
@@ -97,6 +109,7 @@ namespace RimTalk.Data
             Scribe_Values.Look(ref IncludeDominantTrait, "IncludeDominantTrait", true);
             Scribe_Values.Look(ref PreoccupationChance, "PreoccupationChance", 0.5f);
             Scribe_Values.Look(ref NarrativeLetters, "NarrativeLetters", true);
+            Scribe_Values.Look(ref Goals, "Goals", false);
             Scribe_Values.Look(ref ProsePrompt, "ProsePrompt", true);
 
             Scribe_Values.Look(ref IncludeTime, "IncludeTime", true);

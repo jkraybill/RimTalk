@@ -61,6 +61,13 @@ public class RimTalkWorldComponent(World world) : WorldComponent(world)
     /// </summary>
     public List<Narrative.PairRecord> PairRecords = new();
 
+    /// <summary>
+    /// What each colonist wants to see happen here next, and what they have already
+    /// got. rim-universe #28. Resolved entries stay: they are what the cooldown reads
+    /// and the only record that anything was ever achieved.
+    /// </summary>
+    public List<Goals.GoalEntry> GoalEntries = new();
+
     public override void ExposeData()
     {
         base.ExposeData();
@@ -126,6 +133,17 @@ public class RimTalkWorldComponent(World world) : WorldComponent(world)
 
         try
         {
+            Scribe_Collections.Look(ref GoalEntries, "rimtalkGoalEntries", LookMode.Deep);
+        }
+        catch (System.Exception ex)
+        {
+            Logger.Error($"Failed to save/load goals. Resetting to prevent save corruption. Error: {ex.Message}");
+            GoalEntries = new List<Goals.GoalEntry>();
+        }
+        GoalEntries ??= new List<Goals.GoalEntry>();
+
+        try
+        {
             Scribe_Collections.Look(ref TopicEntries, "rimtalkTopicEntries", LookMode.Deep);
         }
         catch (System.Exception ex)
@@ -178,6 +196,7 @@ public class RimTalkWorldComponent(World world) : WorldComponent(world)
         TopicEntries ??= new List<Narrative.TopicEntry>();
         ChronicleEntries ??= new List<Narrative.ChronicleEntry>();
         PairRecords ??= new List<Narrative.PairRecord>();
+        GoalEntries ??= new List<Goals.GoalEntry>();
 
         // After RimTalk.cs's TalkHistory.Clear(), which runs on every load. #9: that
         // call is why no colony ever remembered a conversation across a save.

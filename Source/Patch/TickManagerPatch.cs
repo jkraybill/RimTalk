@@ -50,6 +50,10 @@ internal static class TickManagerPatch
             if (currentHour == 0 && !_chatHistoryCleared)
             {
                 TalkHistory.CollapseAll();
+                // #28. Free, and the reason goals are not a nag: a goal that is never
+                // evaluated is a pawn repeating the same sentence for a hundred days.
+                // Rides the nightly pass rather than getting its own schedule.
+                Goals.GoalService.EvaluateAll();
                 _chatHistoryCleared = true;
             }
             else if (currentHour != 0)

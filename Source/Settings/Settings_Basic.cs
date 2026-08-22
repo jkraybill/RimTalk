@@ -102,6 +102,16 @@ public partial class Settings
         leftListing.CheckboxLabeled("RimTalk.Settings.ApplyMoodAndSocialEffects".Translate().ToString(),
             ref settings.ApplyMoodAndSocialEffects,
             "RimTalk.Settings.ApplyMoodAndSocialEffectsTooltip".Translate().ToString());
+
+        // rim-universe #28. Not translated: every other label here has a key because it
+        // shipped upstream, and adding a key for one string in one language is a worse
+        // lie than an English literal.
+        leftListing.CheckboxLabeled("Colonist goals (writes mood)",
+            ref Settings.Get().Context.Goals,
+            "Colonists set themselves a short-term goal drawn from what this colony is " +
+            "actually short of, say it out loud, and get a small mood effect when it is " +
+            "met or missed. Off by default because it is the only part of RimTalk that " +
+            "changes your colony rather than describing it.");
         leftListing.Gap(6f);
         
         // AllowCustomConversation

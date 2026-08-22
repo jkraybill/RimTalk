@@ -109,6 +109,16 @@ public class SceneFacts
     /// failure mode that hid the prose rewrite for weeks.
     /// </summary>
     public List<string> Lately = new();
+
+    /// <summary>
+    /// What the people in this scene are trying to see happen here. rim-universe #28,
+    /// already rendered as "Name wants: ...".
+    ///
+    /// The emergent property #28 names is that the colony starts telling the player
+    /// what it needs, which is a better interface than a needs bar — and that only
+    /// works if a goal is spoken rather than only stored.
+    /// </summary>
+    public List<string> Wants = new();
 }
 
 /// <summary>
@@ -151,6 +161,11 @@ public static class ProseSceneText
         // the sentence that follows it about which scene this is.
         var lately = Lately(f, Shape(f));
         if (lately != null) lines.Add(lately);
+
+        // #28. After the chronicle — what has happened, then what somebody wants to
+        // happen next — and before the instruction, like every other scene fact.
+        var wants = Wants(f);
+        if (wants != null) lines.Add(wants);
 
         lines.Add(Instruction(f));
 
@@ -304,6 +319,36 @@ public static class ProseSceneText
         f.Shape == SceneShape.Conversation && (f.Others ?? new List<PersonNote>()).Count == 0
             ? SceneShape.Monologue
             : f.Shape;
+
+    /// <summary>
+    /// Two. One each in a two-hander; past that the scene is a list of ambitions and
+    /// nobody is standing in a room any more.
+    /// </summary>
+    public const int MaxWants = 2;
+
+    /// <summary>
+    /// What these people want. rim-universe #28, and NO instruction clause — the same
+    /// decision the colony chronicle was measured into, on the same reasoning. A goal
+    /// is an intention with an object in it, which is the category that reached 100%
+    /// uptake stated in the scene alone; pointing at it from the instruction bought
+    /// nothing there and cost a third of the variety.
+    ///
+    /// Present mid-fight, unlike the chronicle. What somebody is trying to build is
+    /// exactly the kind of small unfinished thing #34 carries THROUGH a firefight
+    /// rather than around it, and the raid samples that made the chronicle look wedged
+    /// were about events the pawn had no stake in.
+    /// </summary>
+    static string Wants(SceneFacts f)
+    {
+        var items = (f.Wants ?? new List<string>())
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .Select(s => s.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(MaxWants)
+            .ToList();
+
+        return items.Count == 0 ? null : string.Join("\n", items);
+    }
 
     static bool Urgent(SceneShape shape) =>
         shape is SceneShape.Urgent or SceneShape.UrgentAfraid;

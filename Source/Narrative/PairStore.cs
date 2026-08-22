@@ -125,6 +125,28 @@ public static class PairStore
             Pairs.TryRemove(key, out _);
     }
 
+    /// <summary>
+    /// Shift every pair's last-met back, so the one-hour recall gate is already
+    /// passed. Dev-mode only: the honest test for pair memory is "wait an in-game
+    /// hour and arrange for the same two people to meet again", which is a
+    /// twenty-minute round trip for a yes/no question.
+    ///
+    /// Collapses a WAIT rather than faking an outcome — the exchange it recalls is
+    /// still a real one the pawns really had. Returns how many were moved.
+    /// </summary>
+    public static int Backdate(int ticks)
+    {
+        var n = 0;
+        foreach (var rec in Pairs.Values)
+            lock (rec)
+            {
+                if (rec.LastMetTick <= 0) continue;
+                rec.LastMetTick -= ticks;
+                n++;
+            }
+        return n;
+    }
+
     public static void Clear() => Pairs.Clear();
 
     public static List<PairRecord> Snapshot() => Pairs.Values.ToList();

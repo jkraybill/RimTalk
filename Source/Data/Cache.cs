@@ -76,6 +76,12 @@ public static class Cache
         // candidate per refresh is a hard ceiling on the cost.
         Narrative.ArrivalService.TryGenerate();
 
+        // #28, after it. Both are gated on the same single in-flight request, so the
+        // order here IS the priority: a pawn with no voice yet outranks a pawn with no
+        // goal yet, and a goal set before the arrival log exists would be written by a
+        // profile that has not been seeded.
+        Goals.GoalService.TryGenerate();
+
         // Remove "Ghost Keys" (old names).
         foreach (var entry in NameCache.ToArray())
         {

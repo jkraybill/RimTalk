@@ -69,6 +69,9 @@ public static class ProseScene
             // meeting for the first time — which is most scenes, early. ProseSceneText
             // drops this when the pair block is present.
             Lately = Narrative.Chronicle.Lately(GenTicks.TicksGame, ProseSceneText.MaxLatelyItems),
+            // #28. The speaking pawn first, so a two-hander shows theirs even when the
+            // other person is the one with the louder ambition.
+            Wants = Wants(pawns),
             Others = (pawns ?? new List<Pawn>())
                 .Where(p => p != null && p != pawn && !p.Dead && !p.IsPlayer())
                 .Select(p =>
@@ -103,13 +106,30 @@ public static class ProseScene
     }
 
     /// <summary>
+    /// What the people here are trying to see happen. rim-universe #28.
+    ///
+    /// Ordered by the scene's own order, not by anything about the goals: the speaking
+    /// pawn is pawns[0] and their goal is the one the instruction is about to ask them
+    /// to talk from.
+    /// </summary>
+    static List<string> Wants(List<Pawn> pawns) =>
+        !Settings.Get().Context.Goals
+        ? new List<string>()
+        : (pawns ?? new List<Pawn>())
+            .Where(p => p != null && !p.Dead && !p.IsPlayer())
+            .Select(p => Goals.GoalText.Block(p.LabelShort, Goals.GoalStore.Active(p)?.Statement))
+            .Where(s => s != null)
+            .Take(ProseSceneText.MaxWants)
+            .ToList();
+
+    /// <summary>
     /// The colony as facts. rim-universe #23.
     ///
     /// Every read here is defensive: a map mid-generation, a scenario with no resource
     /// counter, a modded biome with no label. A null field renders as no sentence,
     /// which is the right failure — a missing clause beats an invented one.
     /// </summary>
-    static ColonyFacts GatherColony(Map map)
+    public static ColonyFacts GatherColony(Map map)
     {
         if (map == null) return null;
 
@@ -123,6 +143,12 @@ public static class ProseScene
             FoodDays = FoodDays(map, colonists),
             MedicineCount = MedicineCount(map),
             HasPower = HasPower(map),
+            // #28's predicates. Same gatherer as everything else on this object —
+            // a second reader of the same map is the second code path that gets one
+            // entry point maintained and the other one forgotten.
+            Colonists = colonists,
+            ColonistsWithoutBed = WithoutBed(map),
+            Turrets = Turrets(map),
         };
     }
 
@@ -136,6 +162,31 @@ public static class ProseScene
         if (nutrition < 0f) return -1f;
         if (colonists <= 0) return -1f;      // nobody to feed; the number means nothing
         return nutrition / (colonists * 1.6f);
+    }
+
+    /// <summary>
+    /// Colonists with no bed they own. #28's Shelter predicate, and the one JK would
+    /// notice first — a pawn sleeping on the floor is visible in a way a food number
+    /// is not.
+    /// </summary>
+    static int WithoutBed(Map map)
+    {
+        var people = map.mapPawns?.FreeColonistsSpawned;
+        if (people == null) return 0;
+        return people.Count(p => !p.Dead && p.ownership?.OwnedBed == null);
+    }
+
+    /// <summary>
+    /// Turrets and traps. Counted rather than valued: #28's BaseDefence is "this place
+    /// could not hold off much", which is about there being emplacements at all.
+    /// -1 when the map cannot be read, which reads as no goal rather than as none.
+    /// </summary>
+    static int Turrets(Map map)
+    {
+        var things = map.listerThings;
+        if (things == null) return -1;
+        return things.ThingsInGroup(ThingRequestGroup.BuildingArtificial)
+                     .Count(t => t is Building_Turret || (t?.def?.building?.isTrap ?? false));
     }
 
     static int MedicineCount(Map map)

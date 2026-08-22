@@ -64,4 +64,37 @@
             </li>
         </stages>
     </ThoughtDef>
+
+    <!-- rim-universe #28. The first thing RimTalk has ever done that the GAME can
+         see, which is #29's exit criterion for the whole tracker.
+
+         Tiny and asymmetric on purpose. #28 names two hazards: taxing the player for
+         playing their own way, and a permanent mood floor nobody asked for. A short
+         memory with stackLimit 1 answers both, and a goal met is a bigger event than
+         a goal missed because a miss is mostly just disappointing. -->
+    <ThoughtDef>
+        <defName>RimTalk_GoalMet</defName>
+        <durationDays>5</durationDays>
+        <stackLimit>1</stackLimit>
+        <stages>
+            <li>
+                <label>got what I wanted</label>
+                <description>I set out to see something happen here, and it happened. (RimTalk)</description>
+                <baseMoodEffect>4</baseMoodEffect>
+            </li>
+        </stages>
+    </ThoughtDef>
+
+    <ThoughtDef>
+        <defName>RimTalk_GoalMissed</defName>
+        <durationDays>3</durationDays>
+        <stackLimit>1</stackLimit>
+        <stages>
+            <li>
+                <label>never got round to it</label>
+                <description>I wanted something to happen here and it never did. (RimTalk)</description>
+                <baseMoodEffect>-2</baseMoodEffect>
+            </li>
+        </stages>
+    </ThoughtDef>
 </Defs>

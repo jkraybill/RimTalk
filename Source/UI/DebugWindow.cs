@@ -21,7 +21,9 @@ public class DebugWindow : Window
     {
         MainTable,
         GroupedByPawn,
-        ActiveRequests
+        ActiveRequests,
+        /// <summary>What the narrative stores hold. rim-universe S168.</summary>
+        Narrative
     }
 
     // Layout Constants
@@ -58,6 +60,7 @@ public class DebugWindow : Window
 
     // State Variables
     private Vector2 _tableScrollPosition;
+    private Vector2 _narrativeScrollPosition;
     private Vector2 _activeRequestsScrollPosition;
     private Vector2 _detailsScrollPosition;
     private bool _stickToBottom = true;
@@ -284,6 +287,9 @@ public class DebugWindow : Window
             case DebugViewMode.ActiveRequests:
                 DrawActiveRequestsTable(tableRect);
                 break;
+            case DebugViewMode.Narrative:
+                NarrativeDebugView.Draw(tableRect, ref _narrativeScrollPosition);
+                break;
             case DebugViewMode.GroupedByPawn:
                 DrawGroupedPawnTable(tableRect);
                 break;
@@ -318,6 +324,7 @@ public class DebugWindow : Window
             DebugViewMode.MainTable => "RimTalk.DebugWindow.ViewByTime".Translate(),
             DebugViewMode.GroupedByPawn => "RimTalk.DebugWindow.ViewByPawn".Translate(),
             DebugViewMode.ActiveRequests => "RimTalk.DebugWindow.ViewTalkRequests".Translate(),
+            DebugViewMode.Narrative => "Narrative",
             _ => _viewMode.ToString()
         };
 
@@ -327,7 +334,11 @@ public class DebugWindow : Window
             {
                 new("RimTalk.DebugWindow.ViewByTime".Translate(), () => _viewMode = DebugViewMode.MainTable),
                 new("RimTalk.DebugWindow.ViewByPawn".Translate(), () => _viewMode = DebugViewMode.GroupedByPawn),
-                new("RimTalk.DebugWindow.ViewTalkRequests".Translate(), () => _viewMode = DebugViewMode.ActiveRequests)
+                new("RimTalk.DebugWindow.ViewTalkRequests".Translate(), () => _viewMode = DebugViewMode.ActiveRequests),
+                // Not translated: every other label here has a key because it shipped
+                // upstream. This one is ours and adding a key for one string in one
+                // language is a worse lie than an English literal.
+                new("Narrative", () => _viewMode = DebugViewMode.Narrative)
             };
             Find.WindowStack.Add(new FloatMenu(options));
         }
