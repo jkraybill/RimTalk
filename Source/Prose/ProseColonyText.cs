@@ -30,6 +30,16 @@ public class ColonyFacts
     public float FoodDays = -1f;
     public int MedicineCount = -1;
     public bool? HasPower;           // null when unknown
+
+    // #28's predicates. Added here rather than in a parallel ColonyState: one
+    // gatherer, one shape. A second reader of the same map is the "second code path"
+    // that got the stale config fixed in one entry point and not the other.
+    /// <summary>Free colonists on the map. 0 when unknown, which reads as no goal.</summary>
+    public int Colonists;
+    /// <summary>How many of them have no bed assigned. -1 would be indistinguishable from none.</summary>
+    public int ColonistsWithoutBed;
+    /// <summary>Turrets and traps. -1 when unknown.</summary>
+    public int Turrets = -1;
 }
 
 public static class ProseColonyText
