@@ -55,6 +55,36 @@ public static class NarrativeMath
         return true;
     }
 
+    /// <summary>Ticks in an in-game hour. 60000 / 24.</summary>
+    public const int TicksPerHour = 2500;
+
+    /// <summary>
+    /// <see cref="Elapsed"/> with hours under a day. rim-universe #30.
+    ///
+    /// Elapsed was written for deaths, where day granularity is exactly right — a
+    /// death today is a death today. A pair callback is the opposite: the gate that
+    /// lets one fire at all is ONE HOUR, so the overwhelmingly common case is a gap
+    /// Elapsed renders as "today", and "Bren and Kess last spoke today" tells the
+    /// model nothing it can use. Found by writing the playtest script and having to
+    /// state what the block would actually say.
+    ///
+    /// Deliberately a second function rather than a change to Elapsed: the death
+    /// recall reads better in days and is already shipped in that shape.
+    /// </summary>
+    public static string ElapsedFine(long elapsedTicks)
+    {
+        if (elapsedTicks < 0) elapsedTicks = 0;
+        if (elapsedTicks >= TicksPerDay) return Elapsed(elapsedTicks);
+
+        var hours = (int)System.Math.Round(elapsedTicks / (double)TicksPerHour);
+        return hours switch
+        {
+            <= 0 => "a few minutes ago",
+            1 => "an hour ago",
+            _ => $"{hours} hours ago",
+        };
+    }
+
     /// <summary>
     /// What happened in a window, newest first. rim-universe #30's delta: the events
     /// between the last time two people spoke and now.

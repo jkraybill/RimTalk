@@ -108,7 +108,7 @@ public static class PairStore
             AName = a.LabelShort,
             BName = b.LabelShort,
             TimesMet = timesMet,
-            LastSpokeAgo = NarrativeMath.Elapsed(now - lastMet),
+            LastSpokeAgo = NarrativeMath.ElapsedFine(now - lastMet),
             LastExchange = exchange,
             Since = Chronicle.Since(lastMet, PairText.MaxSinceItems),
         };
