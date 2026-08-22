@@ -39,6 +39,10 @@ public class RimTalk : GameComponent
         AIClientFactory.Clear();
         AIService.Clear();
         TalkHistory.Clear();
+        // Same contract as TalkHistory: cleared here, refilled by the world component
+        // in PostLoadInit. A pair store carried across a load would attribute one
+        // colony's conversations to another's colonists, since ids are per-save.
+        Narrative.PairStore.Clear();
         PatchThoughtHandlerGetDistinctMoodThoughtGroups.Clear();
         Cache.GetAll().ToList().ForEach(pawnState => pawnState.IgnoreAllTalkResponses());
         Cache.InitializePlayerPawn();

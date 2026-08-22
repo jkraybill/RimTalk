@@ -55,6 +55,22 @@ public static class NarrativeMath
         return true;
     }
 
+    /// <summary>
+    /// What happened in a window, newest first. rim-universe #30's delta: the events
+    /// between the last time two people spoke and now.
+    ///
+    /// STRICTLY after <paramref name="afterTick"/>. The meeting itself is the anchor,
+    /// not part of what has happened since it — an inclusive bound puts whatever was
+    /// recorded on that same tick into "since then", which reads as the pair being
+    /// told about something they were standing in front of.
+    /// </summary>
+    public static IEnumerable<T> Since<T>(IEnumerable<T> events, int afterTick,
+                                          System.Func<T, int> tick, int max)
+    {
+        if (events == null || max <= 0) return Enumerable.Empty<T>();
+        return events.Where(e => tick(e) > afterTick).OrderByDescending(tick).Take(max);
+    }
+
     /// <summary>Drop oldest-first until the list fits. A decades-long save must be bounded.</summary>
     public static void Trim<T>(List<T> list, int max)
     {

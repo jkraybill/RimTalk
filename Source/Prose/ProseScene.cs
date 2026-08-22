@@ -61,6 +61,10 @@ public static class ProseScene
             // #41. Everyone in the scene, so a two-hander cannot have one speaker
             // repeat themselves just because the other one was noisier.
             RecentLines = RecentLines.ForAll(pawns),
+            // #30. Two people only. A pair callback in a three-hander is a callback
+            // the third person was not there for, and the model has no way to know
+            // that from a block that only names two of the three.
+            Pair = PairFor(pawns),
             Others = (pawns ?? new List<Pawn>())
                 .Where(p => p != null && p != pawn && !p.Dead && !p.IsPlayer())
                 .Select(p =>
@@ -75,6 +79,23 @@ public static class ProseScene
                 })
                 .ToList(),
         };
+    }
+
+    /// <summary>
+    /// The pair memory for a two-person scene. rim-universe #30.
+    ///
+    /// The player counts as nobody: a pawn answering the player is not having a
+    /// conversation with a colonist, and PairStore only ever holds colonist pairs.
+    /// </summary>
+    static PairFacts PairFor(List<Pawn> pawns)
+    {
+        var people = (pawns ?? new List<Pawn>())
+            .Where(p => p != null && !p.Dead && !p.IsPlayer())
+            .Distinct()
+            .ToList();
+        return people.Count == 2
+            ? Narrative.PairStore.Facts(people[0], people[1], GenTicks.TicksGame)
+            : null;
     }
 
     /// <summary>

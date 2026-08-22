@@ -91,6 +91,13 @@ public class SceneFacts
     /// a whole quadrum.
     /// </summary>
     public List<string> RecentLines = new();
+
+    /// <summary>
+    /// What these two have between them, when the scene is exactly two people who
+    /// have spoken before. rim-universe #30. Null in every other case — a pair
+    /// callback in a three-hander is a callback the third person was not part of.
+    /// </summary>
+    public PairFacts Pair;
 }
 
 /// <summary>
@@ -122,6 +129,11 @@ public static class ProseSceneText
 
         var gap = ScaleGap(f);
         if (gap != null) lines.Add(gap);
+
+        // #30. After the scene and before the instruction: it is the last thing that
+        // happened to these two, and the instruction that points at it comes next.
+        var pair = PairText.Compose(f.Pair);
+        if (pair != null) lines.Add(pair);
 
         lines.Add(Instruction(f));
 
@@ -240,6 +252,20 @@ public static class ProseSceneText
         // solo case needs something other than a harder instruction; see #23.
         if (shape != SceneShape.Monologue && ProseColonyText.IsPressing(f.Colony))
             ask += " How this place is doing comes into it.";
+
+        // #30, and the third time this same lesson is being applied: the pair block
+        // above is a scene fact, and #23 and #34 both measured what those achieve on
+        // their own — 0-18%. The sentence the model obeys is this one.
+        //
+        // Never on a monologue: PairFacts is only ever built for a two-hander, but
+        // the shape can still fall back to Monologue when the others list is empty,
+        // and an instruction to pick up a conversation with nobody present is the
+        // exact shape of prompt that makes a pawn hallucinate a companion.
+        if (shape != SceneShape.Monologue)
+        {
+            var pair = PairText.Clause(f.Pair);
+            if (pair != null) ask += " " + pair;
+        }
 
         return ask;
     }

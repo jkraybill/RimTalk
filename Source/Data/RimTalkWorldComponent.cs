@@ -47,6 +47,20 @@ public class RimTalkWorldComponent(World world) : WorldComponent(world)
     /// <summary>Back-pocket conversation topics, one set per pawn. rim-universe #44.</summary>
     public List<Narrative.TopicEntry> TopicEntries = new();
 
+    /// <summary>
+    /// What the colony has been doing, already worded. rim-universe #30's delta, and
+    /// the generalised harvest #21 and #22 both need. Bounded by Chronicle.MaxEntries.
+    /// Separate from NarrativeEvents so a good hunting week cannot evict a death.
+    /// </summary>
+    public List<Narrative.ChronicleEntry> ChronicleEntries = new();
+
+    /// <summary>
+    /// Conversation history keyed by pair. rim-universe #30. Same split as ChatTurns:
+    /// the live store is a ConcurrentDictionary in PairStore because it is written
+    /// from the thread that finishes a streaming call, and this is only the medium.
+    /// </summary>
+    public List<Narrative.PairRecord> PairRecords = new();
+
     public override void ExposeData()
     {
         base.ExposeData();
@@ -86,6 +100,29 @@ public class RimTalkWorldComponent(World world) : WorldComponent(world)
         // the component as the working structure keeps Scribe off the hot path, which
         // is written from a background thread.
         if (Scribe.mode == LoadSaveMode.Saving) ChatTurns = TalkHistory.Snapshot();
+        if (Scribe.mode == LoadSaveMode.Saving) PairRecords = Narrative.PairStore.Snapshot();
+
+        try
+        {
+            Scribe_Collections.Look(ref ChronicleEntries, "rimtalkChronicleEntries", LookMode.Deep);
+        }
+        catch (System.Exception ex)
+        {
+            Logger.Error($"Failed to save/load the colony chronicle. Resetting to prevent save corruption. Error: {ex.Message}");
+            ChronicleEntries = new List<Narrative.ChronicleEntry>();
+        }
+        ChronicleEntries ??= new List<Narrative.ChronicleEntry>();
+
+        try
+        {
+            Scribe_Collections.Look(ref PairRecords, "rimtalkPairRecords", LookMode.Deep);
+        }
+        catch (System.Exception ex)
+        {
+            Logger.Error($"Failed to save/load pair memory. Resetting to prevent save corruption. Error: {ex.Message}");
+            PairRecords = new List<Narrative.PairRecord>();
+        }
+        PairRecords ??= new List<Narrative.PairRecord>();
 
         try
         {
@@ -139,10 +176,13 @@ public class RimTalkWorldComponent(World world) : WorldComponent(world)
         ChatTurns ??= new List<ChatTurn>();
         ArrivalEntries ??= new List<Narrative.ArrivalEntry>();
         TopicEntries ??= new List<Narrative.TopicEntry>();
+        ChronicleEntries ??= new List<Narrative.ChronicleEntry>();
+        PairRecords ??= new List<Narrative.PairRecord>();
 
         // After RimTalk.cs's TalkHistory.Clear(), which runs on every load. #9: that
         // call is why no colony ever remembered a conversation across a save.
         TalkHistory.Restore(ChatTurns);
+        Narrative.PairStore.Restore(PairRecords);
             
         _keyInsertionOrder = keyOrderList != null ? new Queue<string>(keyOrderList) : new Queue<string>();
     }
