@@ -71,4 +71,47 @@ public static class Speech
     /// <summary>Rec. 709 relative luminance, for the contrast check in the tests.</summary>
     public static float Luminance((float R, float G, float B) c) =>
         (0.2126f * c.R) + (0.7152f * c.G) + (0.0722f * c.B);
+
+    /// <summary>
+    /// The word that turns a bare interaction label into a directional one:
+    /// "chitchat" becomes "outbound chitchat". Null where there is no direction
+    /// worth claiming.
+    ///
+    /// A word rather than a whole sentence because it has to sit in front of a label
+    /// that is localised, may be several words, and is not ours — "deep talk",
+    /// "insult", whatever a mod adds next.
+    /// </summary>
+    public static string Adjective(SpeechDirection direction) => direction switch
+    {
+        SpeechDirection.Outward => "outbound",
+        SpeechDirection.Inward => "inbound",
+        _ => null,   // a monologue is neither, and an overheard row is not about you
+    };
+
+    /// <summary>
+    /// Put the adjective in front of the first line of a tooltip and leave the rest
+    /// alone.
+    ///
+    /// First line only, because the vanilla tip is the label followed by the line
+    /// itself and a timestamp — prefixing the whole string would put "outbound" in
+    /// front of a paragraph. Lower-cases the character it displaces so "Chitchat"
+    /// reads as "Outbound chitchat" and not "Outbound Chitchat".
+    /// </summary>
+    public static string Prefix(string tip, SpeechDirection direction)
+    {
+        var word = Adjective(direction);
+        if (word == null || string.IsNullOrWhiteSpace(tip)) return tip;
+
+        var breakAt = tip.IndexOf('\n');
+        var first = breakAt < 0 ? tip : tip.Substring(0, breakAt);
+        var rest = breakAt < 0 ? "" : tip.Substring(breakAt);
+
+        if (first.Length == 0) return tip;
+
+        // Already done. GetTipString can be called more than once for one row.
+        if (first.StartsWith(word, System.StringComparison.OrdinalIgnoreCase)) return tip;
+
+        var head = char.ToUpperInvariant(word[0]) + word.Substring(1);
+        return head + " " + char.ToLowerInvariant(first[0]) + first.Substring(1) + rest;
+    }
 }

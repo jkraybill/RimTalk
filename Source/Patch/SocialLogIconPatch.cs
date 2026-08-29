@@ -102,4 +102,30 @@ public static class SocialLogIconPatch
         var tint = Speech.Tint(direction.Value);
         if (tint != null) __result = new Color(tint.Value.R, tint.Value.G, tint.Value.B);
     }
+
+    /// <summary>
+    /// "Chitchat" becomes "Outbound chitchat" on mouseover. JK's request, S169.
+    ///
+    /// GetTipString takes no point of view — it is one string for a row, not a string
+    /// per reader — so the pawn has to come from the selection, which is the pawn
+    /// whose tab is open in every case that matters. Anything else (multi-select,
+    /// nothing selected) leaves the vanilla tip alone rather than guessing.
+    ///
+    /// Gated exactly like the icon, through the same Direction() call, because a row
+    /// showing an outbound bubble whose tooltip declines to say "outbound" is worse
+    /// than either on its own. One gate, not two agreeing ones — JK caught the first
+    /// version stating it twice, which is the shape that quietly loses a copy.
+    /// </summary>
+    [HarmonyPatch(typeof(PlayLogEntry_Interaction), nameof(PlayLogEntry_Interaction.GetTipString))]
+    [HarmonyPostfix]
+    public static void GetTipString_Postfix(LogEntry __instance, ref string __result)
+    {
+        var viewer = Find.Selector?.SingleSelectedObject as Pawn;
+        if (viewer == null) return;
+
+        var direction = Direction(__instance, viewer);
+        if (direction == null) return;
+
+        __result = Speech.Prefix(__result, direction.Value);
+    }
 }
