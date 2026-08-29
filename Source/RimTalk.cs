@@ -43,6 +43,9 @@ public class RimTalk : GameComponent
         // in PostLoadInit. A pair store carried across a load would attribute one
         // colony's conversations to another's colonists, since ids are per-save.
         Narrative.PairStore.Clear();
+        // Same contract again: the arrival/topic attempt budgets are keyed on
+        // thingIDNumber, which is per-save, and a reload is meant to be the retry.
+        Narrative.ArrivalService.Clear();
         PatchThoughtHandlerGetDistinctMoodThoughtGroups.Clear();
         Cache.GetAll().ToList().ForEach(pawnState => pawnState.IgnoreAllTalkResponses());
         Cache.InitializePlayerPawn();

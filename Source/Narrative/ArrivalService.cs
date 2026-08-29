@@ -22,6 +22,26 @@ public static class ArrivalService
     static bool _generating;
 
     /// <summary>
+    /// Neither generation has a natural end: both retry by staying on the NextNeeding
+    /// list. See AttemptBudget for what that cost in S169.
+    /// </summary>
+    static readonly AttemptBudget ArrivalBudget = new();
+    static readonly AttemptBudget TopicBudget = new();
+
+    /// <summary>Cleared on load and on new game, from RimTalk.Reset.</summary>
+    public static void Clear()
+    {
+        ArrivalBudget.Clear();
+        TopicBudget.Clear();
+    }
+
+    static bool NeedsArrival(Pawn pawn) =>
+        pawn != null && !ArrivalLog.Has(pawn) && !ArrivalBudget.Exhausted(pawn.thingIDNumber);
+
+    static bool NeedsTopics(Pawn pawn) =>
+        pawn != null && !TopicStore.Fresh(pawn) && !TopicBudget.Exhausted(pawn.thingIDNumber);
+
+    /// <summary>
     /// Whether this pawn is close enough to the colony to be worth a generation.
     /// Colonists, prisoners and slaves; not raiders, visitors or traders, whose voice
     /// is generated lazily on first speech instead.
@@ -47,7 +67,7 @@ public static class ArrivalService
     public static Pawn NextNeeding() =>
         _generating || AIService.IsBusy() || Find.World == null
             ? null
-            : Cache.Keys.FirstOrDefault(p => InOrbit(p) && (!ArrivalLog.Has(p) || !TopicStore.Fresh(p)));
+            : Cache.Keys.FirstOrDefault(p => InOrbit(p) && (NeedsArrival(p) || NeedsTopics(p)));
 
     public static void TryGenerate()
     {
@@ -64,8 +84,8 @@ public static class ArrivalService
         {
             var profile = PromptService.CreatePawnContext(pawn);
 
-            if (!TopicStore.Fresh(pawn)) await GenerateTopics(pawn, profile);
-            if (ArrivalLog.Has(pawn)) return;
+            if (NeedsTopics(pawn)) await GenerateTopics(pawn, profile);
+            if (!NeedsArrival(pawn)) return;
 
             var place = Place(pawn);
 
@@ -77,12 +97,14 @@ public static class ArrivalService
             {
                 // Refused, not repaired. A colony gets one arrival entry per person and
                 // everything downstream treats it as canon, so a false one is worse than
-                // none. The pawn stays on the list and the next refresh tries again.
+                // none. The pawn stays on the list until the attempt budget runs out.
                 Logger.Message($"Arrival log for {pawn.LabelShort} was refused (empty, over-long, " +
-                               "or it decided how they got here). Will retry.");
+                               "or it decided how they got here). " +
+                               AttemptBudget.Verdict(ArrivalBudget.Failed(pawn.thingIDNumber)));
                 return;
             }
 
+            ArrivalBudget.Succeeded(pawn.thingIDNumber);
             ArrivalLog.Record(pawn, accepted);
         }
         catch (Exception e)
@@ -108,10 +130,12 @@ public static class ArrivalService
         if (accepted.Count == 0)
         {
             Logger.Message($"No usable back-pocket topics for {pawn.LabelShort}; " +
-                           "ordinary conversation falls back to the vanilla topic. Will retry.");
+                           "ordinary conversation falls back to the vanilla topic. " +
+                           AttemptBudget.Verdict(TopicBudget.Failed(pawn.thingIDNumber)));
             return;
         }
 
+        TopicBudget.Succeeded(pawn.thingIDNumber);
         TopicStore.Record(pawn, accepted);
     }
 
