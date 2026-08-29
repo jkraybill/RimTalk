@@ -37,4 +37,38 @@ public static class Speech
         if (povId == recipientId) return SpeechDirection.Inward;
         return SpeechDirection.Overheard;
     }
+
+    /// <summary>
+    /// The glyph for a direction, as a RimWorld content path. Pure so the three stay
+    /// provably distinct: two directions sharing a texture is the whole feature
+    /// failing, silently, and it looks identical to it working.
+    /// </summary>
+    public static string IconPath(SpeechDirection direction) => direction switch
+    {
+        SpeechDirection.Outward => "UI/Speech/Out",
+        SpeechDirection.Inward => "UI/Speech/In",
+        SpeechDirection.Alone => "UI/Speech/Alone",
+        _ => null,   // overheard keeps the vanilla glyph
+    };
+
+    /// <summary>
+    /// The tint for a direction, as r/g/b in 0..1. Held here without UnityEngine so
+    /// it can be tested: warm and forward for speaking, cool for being spoken to, dim
+    /// for talking to yourself.
+    ///
+    /// The three differ in BRIGHTNESS as well as hue, which is the part a colour-blind
+    /// player depends on — and with #43 tier two they also differ in shape, so colour
+    /// is never the only cue.
+    /// </summary>
+    public static (float R, float G, float B)? Tint(SpeechDirection direction) => direction switch
+    {
+        SpeechDirection.Outward => (1.00f, 0.85f, 0.45f),
+        SpeechDirection.Inward => (0.55f, 0.80f, 1.00f),
+        SpeechDirection.Alone => (0.62f, 0.62f, 0.62f),
+        _ => null,
+    };
+
+    /// <summary>Rec. 709 relative luminance, for the contrast check in the tests.</summary>
+    public static float Luminance((float R, float G, float B) c) =>
+        (0.2126f * c.R) + (0.7152f * c.G) + (0.0722f * c.B);
 }

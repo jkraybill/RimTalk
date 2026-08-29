@@ -38,31 +38,11 @@ public class PlayLogEntry_RimTalkInteraction : PlayLogEntry_Interaction
         return _cachedString;
     }
 
-    /// <summary>
-    /// Tint the glyph by who was talking. rim-universe #43, tier one: the log had one
-    /// icon for every row and RimTalk rows carry no names, so a colonist's social tab
-    /// was a wall of undifferentiated speech.
-    ///
-    /// Colour rather than new art because IconFromPOV returns a Texture2D and this
-    /// returns a Color? — the hook for tinting already exists and needs no PNG, no
-    /// patch and no vanilla UI internals. Three glyphs are tier two; the portrait JK
-    /// actually wants does not fit through either hook and is costed in the issue.
-    /// </summary>
-    public override Color? IconColorFromPOV(Thing pov)
-    {
-        if (pov is not Pawn viewer) return base.IconColorFromPOV(pov);
-
-        return Speech.Of(viewer.thingIDNumber,
-                         initiator?.thingIDNumber ?? -1,
-                         recipient?.thingIDNumber ?? -1) switch
-        {
-            // Warm and forward for speaking, cool for being spoken to, dim for talking
-            // to yourself. Readable against the dark log, and distinguishable without
-            // relying on hue alone — the three differ in brightness as well.
-            SpeechDirection.Outward => new Color(1.00f, 0.85f, 0.45f),
-            SpeechDirection.Inward => new Color(0.55f, 0.80f, 1.00f),
-            SpeechDirection.Alone => new Color(0.62f, 0.62f, 0.62f),
-            _ => base.IconColorFromPOV(pov),
-        };
-    }
+    // No IconFromPOV/IconColorFromPOV override here on purpose. rim-universe #43 tier
+    // one put the tint on this class and it was invisible within minutes: SaveGamePatch
+    // rewrites every entry of this type in the live log into a plain
+    // PlayLogEntry_Interaction on each save, autosaves included, so the override stopped
+    // applying to rows that still looked like ours. Both hooks now live in
+    // SocialLogIconPatch, which patches PlayLogEntry_Interaction and therefore covers
+    // this class and its converted twin through one code path.
 }

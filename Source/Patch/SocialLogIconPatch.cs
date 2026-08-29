@@ -1,0 +1,105 @@
+using System.Collections.Generic;
+using System.Linq;
+using HarmonyLib;
+using RimTalk.Data;
+using RimTalk.Patches;
+using UnityEngine;
+using Verse;
+
+namespace RimTalk.Patch;
+
+/// <summary>
+/// The direction indicator on a colonist's social tab. rim-universe #43.
+///
+/// A RimTalk row is the generated line and nothing else, deliberately — no "X said to
+/// Y" scaffolding — so a tab full of them reads as a wall of speech with no way to
+/// tell what this colonist said from what was said to them. Vanilla rows escape that
+/// because their text names both parties.
+///
+/// PATCHED HERE RATHER THAN OVERRIDDEN ON THE ENTRY, and that is the whole point.
+/// SaveGamePatch rewrites every PlayLogEntry_RimTalkInteraction in the live log into
+/// a plain PlayLogEntry_Interaction on every save — autosaves included — so an
+/// override on our subclass stops applying to a row the moment the game saves. The
+/// text already survives that, through a postfix reading the world component; the
+/// icon did not, which is why tier one shipped and was never visible for more than a
+/// few minutes at a time.
+///
+/// The patch targets PlayLogEntry_Interaction and not LogEntry because vanilla
+/// declares its own IconFromPOV there. A postfix on the base virtual would never run
+/// for the entries this is about.
+/// </summary>
+[HarmonyPatch]
+public static class SocialLogIconPatch
+{
+    /// <summary>
+    /// Loaded once at startup. A missing texture is not worth an exception in a UI
+    /// draw loop that runs every frame, so a failed lookup leaves the vanilla glyph.
+    /// </summary>
+    [StaticConstructorOnStartup]
+    static class Icons
+    {
+        static readonly Dictionary<SpeechDirection, Texture2D> Cache = new();
+
+        static Icons()
+        {
+            foreach (var direction in new[] { SpeechDirection.Outward, SpeechDirection.Inward, SpeechDirection.Alone })
+            {
+                var path = Speech.IconPath(direction);
+                if (path == null) continue;
+
+                var tex = ContentFinder<Texture2D>.Get(path, false);
+                if (tex != null) Cache[direction] = tex;
+                else Util.Logger.Warning($"Speech direction glyph missing: Textures/{path}.png");
+            }
+        }
+
+        public static Texture2D For(SpeechDirection direction) =>
+            Cache.TryGetValue(direction, out var tex) ? tex : null;
+    }
+
+    static bool IsOurs(LogEntry entry) =>
+        entry is PlayLogEntry_RimTalkInteraction || InteractionTextPatch.IsRimTalkInteraction(entry);
+
+    /// <summary>
+    /// Who was talking, for a row that may or may not still be our subclass.
+    ///
+    /// GetConcerns is the one accessor that survives the save conversion: it yields
+    /// initiator then recipient on both shapes. A row concerning a single pawn is a
+    /// monologue, which is Alone rather than Outward — most rows in a quiet colony
+    /// are monologues, so getting that wrong would mislabel the majority of the log.
+    /// </summary>
+    static SpeechDirection? Direction(LogEntry entry, Thing pov)
+    {
+        if (pov is not Pawn viewer || !IsOurs(entry)) return null;
+
+        var concerns = entry.GetConcerns()?.OfType<Pawn>().ToList();
+        if (concerns == null || concerns.Count == 0) return null;
+
+        var initiator = concerns[0];
+        var recipient = concerns.Count > 1 ? concerns[1] : initiator;
+
+        return Speech.Of(viewer.thingIDNumber, initiator.thingIDNumber, recipient.thingIDNumber);
+    }
+
+    [HarmonyPatch(typeof(PlayLogEntry_Interaction), nameof(PlayLogEntry_Interaction.IconFromPOV))]
+    [HarmonyPostfix]
+    public static void IconFromPOV_Postfix(LogEntry __instance, Thing pov, ref Texture2D __result)
+    {
+        var direction = Direction(__instance, pov);
+        if (direction == null) return;
+
+        var tex = Icons.For(direction.Value);
+        if (tex != null) __result = tex;
+    }
+
+    [HarmonyPatch(typeof(PlayLogEntry_Interaction), nameof(PlayLogEntry_Interaction.IconColorFromPOV))]
+    [HarmonyPostfix]
+    public static void IconColorFromPOV_Postfix(LogEntry __instance, Thing pov, ref Color? __result)
+    {
+        var direction = Direction(__instance, pov);
+        if (direction == null) return;
+
+        var tint = Speech.Tint(direction.Value);
+        if (tint != null) __result = new Color(tint.Value.R, tint.Value.G, tint.Value.B);
+    }
+}
