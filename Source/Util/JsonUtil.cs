@@ -42,11 +42,38 @@ public static class JsonUtil
 
         if (string.IsNullOrWhiteSpace(json)) return false;
 
-        string sanitizedJson = Sanitize(json, typeof(T));
+        // ProtectMalformedQuotes is a REPAIR pass, and repairing what is not broken
+        // destroys it: its quote state machine sets inValue on '[', so every element
+        // of {"topics": ["a", "b"]} is judged by the object rule - a comma must be
+        // followed by a new "key": - which no array satisfies. It escapes each
+        // element's closing quote and the list arrives as one welded string. Nothing
+        // caught it for months because every IJsonData held a scalar until #44 added
+        // a List<string>.
+        //
+        // So try the structural clean-up alone first, and reach for the repair only
+        // when that genuinely fails. The judge has to be the deserializer itself:
+        // IsValidJson accepts smart quotes that DataContractJsonSerializer rejects,
+        // so gating on IsValidJson would skip the repair the smart-quote case needs.
+        if (TryRead<T>(Sanitize(json, typeof(T), repair: false), out result, out exception))
+            return true;
+
+        return TryRead<T>(Sanitize(json, typeof(T), repair: true), out result, out exception);
+    }
+
+    /// <summary>
+    /// One attempt. Never short-circuits on empty input: Sanitize returns "" for text
+    /// with no closing brace, and DeserializeFromJson rethrows whatever comes back
+    /// here, so a false with a null exception would surface as a NullReferenceException
+    /// instead of the parse failure it actually is.
+    /// </summary>
+    static bool TryRead<T>(string json, out T result, out Exception exception)
+    {
+        result = default;
+        exception = null;
 
         try
         {
-            using var stream = new MemoryStream(Encoding.UTF8.GetBytes(sanitizedJson));
+            using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
             var serializer = new DataContractJsonSerializer(typeof(T));
             result = (T)serializer.ReadObject(stream);
             return true;
@@ -63,8 +90,13 @@ public static class JsonUtil
     /// </summary>
     /// <param name="text">The raw string from the LLM.</param>
     /// <param name="targetType">The C# type we are trying to deserialize into.</param>
+    /// <param name="repair">
+    /// Run the quote-repair pass. Structural fixes (fences, surrounding prose, split
+    /// arrays, the enumerable wrap) are always safe and always applied; the quote
+    /// repair is not, so callers try false first. See TryDeserializeFromJson.
+    /// </param>
     /// <returns>A cleaned and likely valid JSON string.</returns>
-    public static string Sanitize(string text, Type targetType)
+    public static string Sanitize(string text, Type targetType, bool repair = true)
     {
         if (string.IsNullOrWhiteSpace(text))
         {
@@ -109,7 +141,8 @@ public static class JsonUtil
             }
         }
 
-        sanitized = ProtectMalformedQuotes(sanitized);
+        if (repair)
+            sanitized = ProtectMalformedQuotes(sanitized);
 
         bool isEnumerable = typeof(IEnumerable).IsAssignableFrom(targetType) && targetType != typeof(string);
         if (isEnumerable && sanitized.StartsWith("{"))
