@@ -129,7 +129,20 @@ public static class GossipOpinion
     /// save cannot disagree with a newer table. Anything unlisted is neutral and moves
     /// nothing, which is the right default for a modded tale nobody here has seen.
     /// </summary>
-    public static int Valence(string kind) => (kind ?? "").Trim() switch
+    public static int Valence(string kind)
+    {
+        var k = (kind ?? "").Trim();
+
+        // The Archive harvest stores its kinds as "Letter_<LetterDef>", because the
+        // two sources have disjoint vocabularies and merging them into one table
+        // would make a collision silent. ArchiveClause owns that half.
+        if (k.StartsWith("Letter_", System.StringComparison.Ordinal))
+            return ArchiveClause.Valence(k.Substring("Letter_".Length));
+
+        return TaleValence(k);
+    }
+
+    static int TaleValence(string kind) => (kind ?? "").Trim() switch
     {
         "SocialFight" or "Breakup" or "ExecutedPrisoner" or "IllnessRevealed" => -1,
 
