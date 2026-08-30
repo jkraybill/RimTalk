@@ -117,6 +117,36 @@ public static class NarrativeDebugView
         }
         Add("");
 
+        // ---- gossip, #22
+        var pool = Chronicle.GossipPool(now);
+        var selected = Find.Selector?.SingleSelectedObject as Pawn;
+        Header($"GOSSIP  ({pool.Count} item(s) in the fresh pool)");
+        if (pool.Count == 0)
+            Faint("  none — needs an event ABOUT somebody, harvested since the #22 build");
+        foreach (var (item, _) in pool.OrderByDescending(x => x.Item.Tick).Take(8))
+            Add($"  {NarrativeMath.ElapsedFine(now - item.Tick),-16} {item.Clause}  (known by {item.KnownBy.Count})");
+
+        if (selected != null)
+        {
+            var present = new List<int> { selected.thingIDNumber };
+            var could = GossipMath.For(pool.Select(x => x.Item), selected.thingIDNumber, present, now);
+            Faint(could.Count == 0
+                ? $"  {selected.LabelShort} has nothing to pass on right now"
+                : $"  {selected.LabelShort} could raise: {string.Join(" / ", could.Select(c => c.Clause))}");
+        }
+        else
+        {
+            Faint("  select a colonist to see what they could pass on");
+        }
+        Add("");
+
+        Header($"OPINION SHIFTS  ({GossipEffect.Recent.Count} recent)");
+        if (GossipEffect.Recent.Count == 0)
+            Faint("  none yet — somebody has to be TOLD something they did not know");
+        foreach (var line in GossipEffect.Recent.AsEnumerable().Reverse())
+            lines.Add(("  " + line, line.EndsWith("Nothing") ? Dim : Color.white));
+        Add("");
+
         // ---- deaths, which live in the other store on purpose
         Header($"DEATHS  ({NarrativeStore.All.Count})");
         foreach (var e in NarrativeStore.All.AsEnumerable().Reverse().Take(5))
@@ -148,7 +178,7 @@ public static class NarrativeDebugView
     /// </summary>
     static void DrawDevButtons(Rect rect)
     {
-        var w = (rect.width - 3 * Pad) / 4f;
+        var w = (rect.width - 4 * Pad) / 5f;
         var x = rect.x;
 
         if (Widgets.ButtonText(new Rect(x, rect.y, w, 24f), "Backdate pairs 3h"))
@@ -182,5 +212,57 @@ public static class NarrativeDebugView
             GoalService.EvaluateAll();
             Messages.Message("Nightly goal pass run early.", MessageTypeDefOf.NeutralEvent, false);
         }
+        x += w + Pad;
+
+        // #22. The honest path is "wait for two colonists to have a social fight while
+        // a third happens to be standing nearby", which can take a whole play session
+        // to occur by chance. This collapses the WAIT and fakes nothing else: the
+        // event is real, the subject is a real absent colonist, and who knows it is
+        // still decided by the same Witness rule.
+        if (Widgets.ButtonText(new Rect(x, rect.y, w, 24f), "Seed gossip"))
+            SeedGossip();
+    }
+
+    /// <summary>
+    /// Record a real chronicle entry about two colonists who are NOT selected, known
+    /// by whoever is selected. After this the selected pawn has something to pass on
+    /// the next time they talk to somebody the event is not about.
+    /// </summary>
+    static void SeedGossip()
+    {
+        var speaker = Find.Selector?.SingleSelectedObject as Pawn;
+        if (speaker == null)
+        {
+            Messages.Message("Select the colonist who should KNOW it first.",
+                             MessageTypeDefOf.RejectInput, false);
+            return;
+        }
+
+        var others = speaker.Map?.mapPawns?.FreeColonistsSpawned?
+            .Where(p => p != null && p != speaker && !p.Dead)
+            .Take(2)
+            .ToList() ?? new List<Pawn>();
+
+        if (others.Count < 2)
+        {
+            Messages.Message("Needs two other colonists on the map to be the subject of it.",
+                             MessageTypeDefOf.RejectInput, false);
+            return;
+        }
+
+        var a = others[0];
+        var b = others[1];
+        var clause = TaleClause.For("SocialFight", a.LabelShort, b.LabelShort, null);
+
+        var ok = Chronicle.Record(GenTicks.TicksGame, "SocialFight",
+                                  $"dev|{a.thingIDNumber}|{b.thingIDNumber}|{GenTicks.TicksGame}",
+                                  clause, a.thingIDNumber, b.thingIDNumber,
+                                  new List<int> { speaker.thingIDNumber });
+
+        Messages.Message(ok
+            ? $"{speaker.LabelShort} now knows: {clause}. Get them talking to somebody who is " +
+              $"not {a.LabelShort} or {b.LabelShort}."
+            : "Refused — an identical entry is already there (dedupe).",
+            MessageTypeDefOf.NeutralEvent, false);
     }
 }

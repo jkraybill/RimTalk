@@ -16,6 +16,24 @@ namespace RimTalk.Narrative;
 public static class GossipEffect
 {
     /// <summary>
+    /// The last few verdicts, for the Narrative panel.
+    ///
+    /// An opinion shift of two points inside a hundred-point scale is invisible in
+    /// the social tab unless you knew the number before, and "most hearings change
+    /// nothing" is the mechanic's honest behaviour — so a run where it never fires
+    /// and a run where it is broken look identical without this.
+    /// </summary>
+    public static readonly List<string> Recent = new();
+
+    const int MaxRecent = 12;
+
+    static void Note(string line)
+    {
+        Recent.Add(line);
+        if (Recent.Count > MaxRecent) Recent.RemoveAt(0);
+    }
+
+    /// <summary>
     /// Resolve one piece of gossip for one listener.
     ///
     /// Only ever called for news — an item the listener did not already know — so
@@ -37,6 +55,13 @@ public static class GossipEffect
         if (chance <= 0) return;
 
         var verdict = GossipOpinion.Resolve(delta, valence, chance, Rand.Range(0, 100), Rand.Range(0, 100));
+
+        // Recorded even when nothing moved. A panel that only shows the hits cannot
+        // tell "it never fired" from "it fired and rolled Nothing", which is the
+        // distinction the whole instrument exists for.
+        Note($"{listener.LabelShort} heard about {subject.LabelShort} from {speaker.LabelShort} " +
+             $"[{kind} {(valence > 0 ? "+" : "-")}] delta {delta}, {chance}% -> {verdict}");
+
         if (verdict == GossipVerdict.Nothing) return;
 
         if (verdict == GossipVerdict.Believed)
