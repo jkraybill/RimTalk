@@ -92,15 +92,20 @@ public static class PromptService
         return sb.ToString();
     }
 
-    /// <summary>Creates the full pawn context.</summary>
-    public static string CreatePawnContext(Pawn pawn, InfoLevel infoLevel = InfoLevel.Normal)
+    /// <summary>
+    /// Creates the full pawn context. Pass <paramref name="excludeSkillWant"/> = true
+    /// when generating a typed goal (#28): the skill-based want is bait the model will
+    /// copy verbatim, producing a statement that does not match its kind. #49.
+    /// </summary>
+    public static string CreatePawnContext(Pawn pawn, InfoLevel infoLevel = InfoLevel.Normal,
+                                           bool excludeSkillWant = false)
     {
         // Prose, not a form. Measured in the prompt lab: the same data written as
         // sentences produced 6-7 conversational turns where the field dump produced
         // one, and turned a weather report into "Potatoes should hold."
         // rim-universe, S166.
         if (Settings.Get().Context.ProsePrompt)
-            return Prose.ProseProfile.Build(pawn, infoLevel);
+            return Prose.ProseProfile.Build(pawn, infoLevel, excludeSkillWant);
 
         var sb = new StringBuilder();
         sb.Append(CreatePawnBackstory(pawn, infoLevel));

@@ -58,8 +58,12 @@ public static class GoalService
             // and a pawn with nothing to want is a pawn who talks about something else.
             if (shortlist.Count == 0) return;
 
-            var prompt = GoalText.Prompt(PromptService.CreatePawnContext(pawn),
-                                         ProseColonyText.Compose(facts), shortlist);
+            // excludeSkillWant: true — the skill-based "What X wants right now:" is bait
+            // the model copies verbatim, producing "eat from a table" under Kind=Shelter.
+            // rim-universe #49.
+            var prompt = GoalText.Prompt(
+                PromptService.CreatePawnContext(pawn, excludeSkillWant: true),
+                ProseColonyText.Compose(facts), shortlist);
             if (prompt == null) return;
 
             var data = await AIService.Query<GoalData>(new TalkRequest(prompt, pawn));

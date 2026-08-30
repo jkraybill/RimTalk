@@ -28,10 +28,14 @@ namespace RimTalk.Prose;
 /// </summary>
 public static class ProseProfile
 {
-    public static string Build(Pawn pawn, PromptService.InfoLevel level)
+    /// <summary>
+    /// Build the profile. Pass <paramref name="excludeSkillWant"/> = true when generating
+    /// a typed goal (#28): the skill-based want is bait the model will copy verbatim.
+    /// </summary>
+    public static string Build(Pawn pawn, PromptService.InfoLevel level, bool excludeSkillWant = false)
     {
         var facts = Gather(pawn, level);
-        return facts == null ? "" : ProseProfileText.Compose(facts);
+        return facts == null ? "" : ProseProfileText.Compose(facts, excludeSkillWant);
     }
 
     /// <summary>Reads the game. Internal so the mod's own dev tooling can dump it.</summary>

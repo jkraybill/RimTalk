@@ -68,7 +68,12 @@ public class PawnFacts
 /// </summary>
 public static class ProseProfileText
 {
-    public static string Compose(PawnFacts f)
+    /// <summary>
+    /// The full profile. Pass <paramref name="excludeSkillWant"/> = true when generating
+    /// a typed goal (#28): the skill-based want is bait the model will copy verbatim,
+    /// producing a statement that does not match its kind. rim-universe #49.
+    /// </summary>
+    public static string Compose(PawnFacts f, bool excludeSkillWant = false)
     {
         if (f == null) return "";
         var g = new Gram(f.Gender);
@@ -98,8 +103,13 @@ public static class ProseProfileText
 
         // 4. Something unresolved. Replaced by a real Need (#30) or Goal (#28)
         //    when those exist; until then, derived from what they are good at.
-        var want = Want(f, g);
-        if (want != null) paras.Add(want);
+        //    EXCLUDED when generating a typed goal: the model copies this verbatim,
+        //    producing "eat from a table" under Kind=Shelter. #49.
+        if (!excludeSkillWant)
+        {
+            var want = Want(f, g);
+            if (want != null) paras.Add(want);
+        }
 
         return string.Join("\n\n", paras.Where(p => !string.IsNullOrWhiteSpace(p)));
     }
