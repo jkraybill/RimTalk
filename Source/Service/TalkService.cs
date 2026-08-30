@@ -125,6 +125,9 @@ public static class TalkService
                         talkResponse.ParentTalkId = receivedResponses.Last().Id;
                     }
 
+                    // Who said it, so the NEXT line can be addressed to them.
+                    TalkHistory.RecordSpeaker(talkResponse.Id, talkResponse.Name);
+
                     receivedResponses.Add(talkResponse);
 
                     // Hand off to the main thread for display later; PawnState.TalkResponses itself must only ever be touched from the main thread.
@@ -283,11 +286,56 @@ public static class TalkService
         return talkResponse;
     }
 
+
+    /// <summary>
+    /// Who a generated line is addressed to. rim-universe S169, from JK's screenshot:
+    /// four lines of an obvious back-and-forth, every one of them logged as a
+    /// monologue.
+    ///
+    /// It was `talk.GetTarget() ?? pawn`. GetTarget reads the model's optional
+    /// "target" field, and the prompt only asks for it "if social interaction
+    /// occurs" — so ordinary conversation never carries one and the fallback made
+    /// every speaker their own recipient. That is the monologue signature, and it
+    /// silently disabled ApplySocialEffects too, which is guarded on
+    /// `pawn != recipient`.
+    ///
+    /// Three sources, most reliable first:
+    ///
+    ///  1. What the model said, when it said anything.
+    ///  2. The speaker of the line this one is REPLYING to. Not a guess — the
+    ///     ParentTalkId link is built as the stream arrives.
+    ///  3. The only other person in the scene, when there is exactly one. Two people
+    ///     in a room are talking to each other; three might not be, so a crowd falls
+    ///     through rather than being assigned a recipient at random.
+    ///
+    /// Falls back to the speaker, which is a real monologue: a lone colonist muttering
+    /// is a thing this mod deliberately does.
+    /// </summary>
+    private static Pawn RecipientOf(Pawn pawn, TalkResponse talk)
+    {
+        var stated = talk.GetTarget();
+        if (stated != null && stated != pawn) return stated;
+
+        var parentSpeaker = TalkHistory.GetSpeaker(talk.ParentTalkId);
+        if (parentSpeaker != null)
+        {
+            var replyingTo = Cache.GetByName(parentSpeaker)?.Pawn;
+            if (replyingTo != null && replyingTo != pawn) return replyingTo;
+        }
+
+        var others = PawnSelector.GetAllNearByPawns(pawn)
+            .Where(p => p != null && p != pawn && !p.Dead && (p.RaceProps?.Humanlike ?? false))
+            .Take(2)
+            .ToList();
+
+        return others.Count == 1 ? others[0] : pawn;
+    }
+
     private static void CreateInteraction(Pawn pawn, TalkResponse talk)
     {
         // Create the interaction log entry, which triggers the display of the talk bubble in-game.
         InteractionDef intDef = DefDatabase<InteractionDef>.GetNamed("RimTalkInteraction");
-        var recipient = talk.GetTarget() ?? pawn;
+        var recipient = RecipientOf(pawn, talk);
         var playLogEntryInteraction = new PlayLogEntry_RimTalkInteraction(intDef, pawn, recipient, null);
 
         if (playLogEntryInteraction.CachedString.NullOrEmpty())

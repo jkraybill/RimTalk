@@ -13,6 +13,29 @@ public static class TalkHistory
     private static readonly ConcurrentDictionary<Guid, int> SpokenTickCache = new() { [Guid.Empty] = 0 };
 
     /// <summary>
+    /// Who said each generated line. rim-universe S169.
+    ///
+    /// Needed because a reply's RECIPIENT is the speaker of the line it answers, and
+    /// that was the only fact missing when CreateInteraction had to decide who a line
+    /// was addressed to. It had been falling back to the speaker themselves, which
+    /// logs every ordinary two-person exchange as a monologue.
+    ///
+    /// Names rather than Pawns: this is written from the streaming callback, off the
+    /// main thread, and holding pawn references there is how the rest of this file
+    /// learned not to.
+    /// </summary>
+    private static readonly ConcurrentDictionary<Guid, string> SpeakerCache = new();
+
+    public static void RecordSpeaker(Guid id, string name)
+    {
+        if (id == Guid.Empty || string.IsNullOrWhiteSpace(name)) return;
+        SpeakerCache[id] = name;
+    }
+
+    public static string GetSpeaker(Guid id) =>
+        id != Guid.Empty && SpeakerCache.TryGetValue(id, out var name) ? name : null;
+
+    /// <summary>
     /// rim-universe #3. This was a ConcurrentBag, which is not a set: it has no hash
     /// index, so Contains walks the whole thing. IsTalkIgnored is called on the
     /// DISPLAY path for every generated talk, and the bag grows by one Guid every
@@ -212,6 +235,7 @@ public static class TalkHistory
     /// </summary>
     public static void Clear()
     {
+        SpeakerCache.Clear();
         MessageHistory.Clear();
         // clearing spokenCache may block child talks waiting to display
     }
