@@ -83,4 +83,16 @@ public static class GoalStore
     /// </summary>
     public static List<GoalEntry> ActiveEntries() =>
         All.Where(e => e != null && e.State == GoalState.Active).ToList();
+
+    /// <summary>
+    /// The DaysPassed when this entry was last evaluated. rim-universe #50: goals are
+    /// now evaluated per-pawn on first sleep of each day, not in a midnight batch.
+    /// </summary>
+    public static int LastEvaluatedDay(GoalEntry entry) => entry?.LastEvaluatedDay ?? -1;
+
+    /// <summary>Mark this entry as evaluated on the given day.</summary>
+    public static void MarkEvaluated(GoalEntry entry, int day)
+    {
+        if (entry != null) entry.LastEvaluatedDay = day;
+    }
 }

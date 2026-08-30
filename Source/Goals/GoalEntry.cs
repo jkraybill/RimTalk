@@ -40,6 +40,12 @@ public class GoalEntry : IExposable
     /// </summary>
     public bool Rewarded;
 
+    /// <summary>
+    /// The DaysPassed when this goal was last evaluated. rim-universe #50: goals are
+    /// now evaluated per-pawn on first sleep of each day, not in a midnight batch.
+    /// </summary>
+    public int LastEvaluatedDay;
+
     public GoalEntry() { }
 
     public GoalEntry(Pawn pawn, GoalKind kind, string statement, float target, int now, int span)
@@ -65,5 +71,6 @@ public class GoalEntry : IExposable
         Scribe_Values.Look(ref ExpiryTick, "expiryTick");
         Scribe_Values.Look(ref ResolvedTick, "resolvedTick");
         Scribe_Values.Look(ref Rewarded, "rewarded");
+        Scribe_Values.Look(ref LastEvaluatedDay, "lastEvaluatedDay");
     }
 }

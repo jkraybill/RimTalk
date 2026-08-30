@@ -97,7 +97,37 @@ public static class GoalService
     }
 
     /// <summary>
-    /// The nightly pass. Free, and the reason the feature is not a nag.
+    /// Evaluate one pawn's goals on sleep start. rim-universe #50.
+    ///
+    /// Called when a pawn lies down to sleep for the first time in a 24-hour period.
+    /// Staggers goal achievement so the player sees them one at a time, and makes the
+    /// achievement feel personal — it happens when the pawn rests, not at midnight.
+    /// </summary>
+    public static void EvaluateOnSleep(Pawn pawn)
+    {
+        if (pawn == null || pawn.Dead || !pawn.Spawned) return;
+
+        var day = GenDate.DaysPassed;
+        var entry = GoalStore.Active(pawn);
+        if (entry == null) return;
+
+        // Already evaluated today — one check per rest period.
+        if (GoalStore.LastEvaluatedDay(entry) >= day) return;
+        GoalStore.MarkEvaluated(entry, day);
+
+        var facts = ProseScene.GatherColony(pawn.Map);
+        var now = GenTicks.TicksGame;
+        var state = GoalMath.Evaluate(entry.Kind, entry.Target, entry.ExpiryTick, now, facts, entry.State);
+
+        if (!GoalStore.Resolve(entry, state, now)) return;
+
+        Reward(pawn, entry);
+        Announce(pawn, entry);
+    }
+
+    /// <summary>
+    /// The nightly fallback. Free, and kept for pawns who never sleep (vampires, etc.)
+    /// and for goals that predate the per-sleep evaluation.
     ///
     /// Grouped by map because the colony state is per-map and reading it once per
     /// goal would walk the resource counter a dozen times a night.
@@ -108,12 +138,16 @@ public static class GoalService
         // active ones stored, and leaving them unevaluated forever is the exact
         // "nags for a hundred days" failure — they should resolve out, not freeze.
         var now = GenTicks.TicksGame;
+        var day = GenDate.DaysPassed;
         var byMap = new Dictionary<Map, ColonyFacts>();
 
         foreach (var entry in GoalStore.ActiveEntries())
         {
             try
             {
+                // Skip if already evaluated today via EvaluateOnSleep
+                if (GoalStore.LastEvaluatedDay(entry) >= day) continue;
+
                 var pawn = Cache.Keys.FirstOrDefault(p => p?.thingIDNumber == entry.PawnId);
 
                 // Gone: dead, captured, left with a caravan. Abandoned rather than
@@ -129,6 +163,7 @@ public static class GoalService
                 if (!byMap.TryGetValue(map, out var facts))
                     byMap[map] = facts = ProseScene.GatherColony(map);
 
+                GoalStore.MarkEvaluated(entry, day);
                 var state = GoalMath.Evaluate(entry.Kind, entry.Target, entry.ExpiryTick, now,
                                               facts, entry.State);
                 if (!GoalStore.Resolve(entry, state, now)) continue;
