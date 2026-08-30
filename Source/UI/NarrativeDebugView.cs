@@ -141,6 +141,16 @@ public static class NarrativeDebugView
         }
         Add("");
 
+        // ---- invariants first: a violated one IS the finding
+        var checks = Narrative.Snapshot.Verdicts();
+        var broken = checks.Where(c => !c.Ok).ToList();
+        Header($"INVARIANTS  ({checks.Count(c => c.Ok && !c.Undecided)} holding, {broken.Count} VIOLATED, " +
+               $"{checks.Count(c => c.Undecided)} not enough evidence yet)");
+        foreach (var c in checks)
+            lines.Add(($"  {(c.Ok ? c.Undecided ? "?" : "ok" : "!!")} {c.Name,-32} {c.Detail}",
+                       c.Ok ? c.Undecided ? Dim : Color.white : Warn));
+        Add("");
+
         // ---- S169: the two fixes that are otherwise invisible from inside the game
         var srcs = Service.TalkService.RecipientSources;
         var spoken = srcs.Values.Sum();
@@ -196,7 +206,7 @@ public static class NarrativeDebugView
     /// </summary>
     static void DrawDevButtons(Rect rect)
     {
-        var w = (rect.width - 4 * Pad) / 5f;
+        var w = (rect.width - 5 * Pad) / 6f;
         var x = rect.x;
 
         if (Widgets.ButtonText(new Rect(x, rect.y, w, 24f), "Backdate pairs 3h"))
@@ -239,6 +249,14 @@ public static class NarrativeDebugView
         // still decided by the same Witness rule.
         if (Widgets.ButtonText(new Rect(x, rect.y, w, 24f), "Seed gossip"))
             SeedGossip();
+        x += w + Pad;
+
+        // Everything on this panel, as a file. It also writes itself on every save.
+        if (Widgets.ButtonText(new Rect(x, rect.y, w, 24f), "Dump snapshot"))
+            Messages.Message(Narrative.Snapshot.Write()
+                    ? $"Written to {Narrative.Snapshot.Path}"
+                    : "Could not write the snapshot — see the log.",
+                MessageTypeDefOf.NeutralEvent, false);
     }
 
     /// <summary>
