@@ -31,7 +31,8 @@ public static class Chronicle
     /// dedupe the delta is the same row five times and the bounded list fills with
     /// it. Returns whether anything was stored, so callers can log honestly.
     /// </summary>
-    public static bool Record(int tick, string kind, string key, string clause)
+    public static bool Record(int tick, string kind, string key, string clause,
+                              int subjectId = 0, int otherId = 0, List<int> knownBy = null)
     {
         var comp = Comp;
         if (comp == null || string.IsNullOrWhiteSpace(clause)) return false;
@@ -45,7 +46,12 @@ public static class Chronicle
             if (e.Key == key) return false;
         }
 
-        entries.Add(new ChronicleEntry(tick, kind, key, clause));
+        entries.Add(new ChronicleEntry(tick, kind, key, clause)
+        {
+            SubjectId = subjectId,
+            OtherId = otherId,
+            KnownBy = knownBy ?? new List<int>(),
+        });
         NarrativeMath.Trim(entries, MaxEntries);
         return true;
     }
@@ -88,4 +94,35 @@ public static class Chronicle
     public const int LatelyTicks = 120000;
 
     public static List<string> Lately(int now, int max) => Since(now - LatelyTicks, max);
+
+    /// <summary>
+    /// The gossip pool: recent entries, flattened for GossipMath. rim-universe #22.
+    ///
+    /// Returns the LIVE entries wrapped, not copies, because GossipMath.Tell writes
+    /// the knowledge back through this list — being told is the whole mechanic and a
+    /// copy would drop it on the floor.
+    /// </summary>
+    public static List<(GossipItem Item, ChronicleEntry Entry)> GossipPool(int now)
+    {
+        var comp = Comp;
+        var pool = new List<(GossipItem, ChronicleEntry)>();
+        if (comp == null) return pool;
+
+        foreach (var e in comp.ChronicleEntries)
+        {
+            if (e == null || (e.SubjectId == 0 && e.OtherId == 0)) continue;
+            if (now - e.Tick > GossipMath.FreshTicks) continue;
+
+            pool.Add((new GossipItem
+            {
+                Tick = e.Tick,
+                Clause = e.Clause,
+                SubjectId = e.SubjectId,
+                OtherId = e.OtherId,
+                KnownBy = e.KnownBy,        // same list object, deliberately
+            }, e));
+        }
+
+        return pool;
+    }
 }

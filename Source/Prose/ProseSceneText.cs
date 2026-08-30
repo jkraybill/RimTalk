@@ -119,6 +119,15 @@ public class SceneFacts
     /// works if a goal is spoken rather than only stored.
     /// </summary>
     public List<string> Wants = new();
+
+    /// <summary>
+    /// Talk about people who are not here, already composed. rim-universe #22.
+    ///
+    /// Arrives rendered because choosing it needs the game — who is present, who
+    /// knows what — while the wording is GossipText and testable. Null when there is
+    /// nothing the speaker could raise.
+    /// </summary>
+    public string Gossip;
 }
 
 /// <summary>
@@ -161,6 +170,11 @@ public static class ProseSceneText
         // the sentence that follows it about which scene this is.
         var lately = Lately(f, Shape(f));
         if (lately != null) lines.Add(lately);
+
+        // #22. After the colony's own news and before what anyone wants: it is the
+        // most conversational thing in the prompt and it belongs next to the people,
+        // not next to the weather.
+        if (!string.IsNullOrWhiteSpace(f.Gossip)) lines.Add(f.Gossip);
 
         // #28. After the chronicle — what has happened, then what somebody wants to
         // happen next — and before the instruction, like every other scene fact.

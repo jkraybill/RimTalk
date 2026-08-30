@@ -48,7 +48,14 @@ public static class TaleRecorder_Narrative
 
             var tick = GenTicks.TicksGame;
             var key = TaleClause.DedupeKey(kind, subject?.LabelShort, detail);
-            if (Chronicle.Record(tick, kind, key, clause))
+
+            // #22. Who it is about, and who was close enough to see it. Only humanlike
+            // participants count as subjects — the boar in "Kess hunted a boar" is the
+            // detail, not somebody the colony gossips about.
+            var known = Witness.Around(new[] { subject, other }, subject ?? other);
+
+            if (Chronicle.Record(tick, kind, key, clause,
+                                 subject?.thingIDNumber ?? 0, other?.thingIDNumber ?? 0, known))
                 Logger.Debug($"Chronicle: {clause}");
         }
         catch (System.Exception ex)

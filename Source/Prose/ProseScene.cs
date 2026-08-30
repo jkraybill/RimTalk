@@ -72,6 +72,8 @@ public static class ProseScene
             // #28. The speaking pawn first, so a two-hander shows theirs even when the
             // other person is the one with the louder ambition.
             Wants = Wants(pawns),
+            // #22. What the speaker could raise about people who are not here.
+            Gossip = GossipFor(pawns),
             Others = (pawns ?? new List<Pawn>())
                 .Where(p => p != null && p != pawn && !p.Dead && !p.IsPlayer())
                 .Select(p =>
@@ -210,5 +212,75 @@ public static class ProseScene
         var nets = map.powerNetManager?.AllNetsListForReading;
         if (nets == null || nets.Count == 0) return null;
         return nets.Any(n => n.CurrentEnergyGainRate() > 0f || n.CurrentStoredEnergy() > 0f);
+    }
+
+    /// <summary>
+    /// Talk about absent people. rim-universe #22.
+    ///
+    /// The speaker is pawns[0] — the block is what THEY could bring up, not what is
+    /// merely true, and that distinction is the Knowledge store's entire job.
+    ///
+    /// Telling happens here rather than after the reply, and that is deliberate: the
+    /// block is in the prompt by the time this returns, so everyone in the room has
+    /// been told whether or not the model chooses to use it. Waiting for the model to
+    /// prove it said something would mean parsing dialogue for comprehension, which is
+    /// the fragile half of every feature that has gone wrong in this repo.
+    /// </summary>
+    static string GossipFor(List<Pawn> pawns)
+    {
+        var people = (pawns ?? new List<Pawn>())
+            .Where(p => p != null && !p.Dead && !p.IsPlayer())
+            .Distinct()
+            .ToList();
+
+        var speaker = people.FirstOrDefault();
+        if (speaker == null || people.Count < 2) return null;
+
+        var now = GenTicks.TicksGame;
+        var present = people.Select(p => p.thingIDNumber).ToList();
+
+        var pool = Narrative.Chronicle.GossipPool(now);
+        var picked = Narrative.GossipMath.For(pool.Select(x => x.Item), speaker.thingIDNumber, present, now);
+        if (picked.Count == 0) return null;
+
+        // The knowledge write. Everybody else in the room hears it.
+        foreach (var listener in people.Skip(1))
+            Narrative.GossipMath.Tell(picked, listener.thingIDNumber);
+
+        var absent = picked
+            .SelectMany(i => new[] { i.SubjectId, i.OtherId })
+            .Where(id => id != 0 && !present.Contains(id))
+            .Distinct()
+            .Select(FindColonist)
+            .Where(p => p != null)
+            .Select(p => GossipText.Describe(p.LabelShort, WhatTheyAre(p)))
+            .Where(s => s != null)
+            .ToList();
+
+        return GossipText.Compose(picked.Select(i => i.Clause), absent);
+    }
+
+    /// <summary>A colonist by id, or null once they have left or died.</summary>
+    static Pawn FindColonist(int id) =>
+        Find.Maps?.SelectMany(m => m.mapPawns?.FreeColonistsSpawned ?? new List<Pawn>())
+            .FirstOrDefault(p => p != null && p.thingIDNumber == id);
+
+    /// <summary>
+    /// The one thing about an absent person worth a stranger's sentence: what they
+    /// are best at. Null below a threshold, because "Adrian is a miner" is only worth
+    /// saying when Adrian actually is one.
+    /// </summary>
+    const int NotableSkill = 8;
+
+    static string WhatTheyAre(Pawn p)
+    {
+        var best = p?.skills?.skills?
+            .Where(s => s != null && !s.TotallyDisabled)
+            .OrderByDescending(s => s.Level)
+            .FirstOrDefault();
+
+        return best == null || best.Level < NotableSkill
+            ? null
+            : GossipText.SkillNoun(best.def?.defName);
     }
 }
