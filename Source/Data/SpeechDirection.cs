@@ -80,12 +80,21 @@ public static class Speech
     /// A word rather than a whole sentence because it has to sit in front of a label
     /// that is localised, may be several words, and is not ours — "deep talk",
     /// "insult", whatever a mod adds next.
+    ///
+    /// "solo" covers the monologue. The first cut left it bare on the theory that a
+    /// monologue is neither inbound nor outbound, which is true and useless: JK hit a
+    /// grey bubble whose tooltip still said plain "Chitchat" and had to ask what it
+    /// meant. If the glyph makes a claim, the tooltip says the claim out loud.
     /// </summary>
     public static string Adjective(SpeechDirection direction) => direction switch
     {
         SpeechDirection.Outward => "outbound",
         SpeechDirection.Inward => "inbound",
-        _ => null,   // a monologue is neither, and an overheard row is not about you
+        SpeechDirection.Alone => "solo",
+        // Overheard is the only one left bare, and on purpose: it also gets no glyph,
+        // so the row keeps the vanilla hand and the vanilla tip together. Every row
+        // that shows one of our bubbles now says which bubble it is.
+        _ => null,
     };
 
     /// <summary>
