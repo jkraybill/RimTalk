@@ -3,6 +3,7 @@ using System.Linq;
 using HarmonyLib;
 using RimTalk.Data;
 using RimTalk.Patches;
+using RimWorld;
 using UnityEngine;
 using Verse;
 
@@ -61,6 +62,40 @@ public static class SocialLogIconPatch
         entry is PlayLogEntry_RimTalkInteraction || InteractionTextPatch.IsRimTalkInteraction(entry);
 
     /// <summary>
+    /// Vanilla rows we are willing to mark. The glyph is a speech bubble, so this is
+    /// deliberately the talking interactions and not every social event — an outbound
+    /// bubble on "Valley slowly approached Santo" would be wrong art for a romance
+    /// attempt, whatever the direction says.
+    /// </summary>
+    static bool IsSpeech(InteractionDef def) =>
+        def != null && (def == InteractionDefOf.Chitchat || def == InteractionDefOf.DeepTalk);
+
+    static InteractionDef DefOf(LogEntry entry) =>
+        AccessTools.Field(entry.GetType(), "intDef")?.GetValue(entry) as InteractionDef;
+
+    /// <summary>
+    /// Whether this row may carry one of our glyphs.
+    ///
+    /// Our own rows always may: they are the generated line and nothing else, so the
+    /// icon is the only thing that says who spoke. A vanilla row only may when its
+    /// sentence actually addresses the recipient — JK's rule, and see
+    /// Speech.ReadsAsAddressed for why that is a reading of English and not of state.
+    /// </summary>
+    static bool MayMark(LogEntry entry, Pawn viewer, SpeechDirection direction)
+    {
+        if (IsOurs(entry)) return true;
+        if (!IsSpeech(DefOf(entry))) return false;
+
+        // A monologue has no second party to be addressed, and a vanilla row always
+        // has one, so this only ever asks about a genuine two-pawn exchange.
+        if (direction is not (SpeechDirection.Outward or SpeechDirection.Inward)) return false;
+
+        var other = entry.GetConcerns()?.OfType<Pawn>().FirstOrDefault(p => p != viewer);
+        return other != null
+               && Speech.ReadsAsAddressed(entry.ToGameStringFromPOV(viewer), other.LabelShort);
+    }
+
+    /// <summary>
     /// Who was talking, for a row that may or may not still be our subclass.
     ///
     /// GetConcerns is the one accessor that survives the save conversion: it yields
@@ -70,7 +105,7 @@ public static class SocialLogIconPatch
     /// </summary>
     static SpeechDirection? Direction(LogEntry entry, Thing pov)
     {
-        if (pov is not Pawn viewer || !IsOurs(entry)) return null;
+        if (pov is not Pawn viewer) return null;
 
         var concerns = entry.GetConcerns()?.OfType<Pawn>().ToList();
         if (concerns == null || concerns.Count == 0) return null;
@@ -78,7 +113,8 @@ public static class SocialLogIconPatch
         var initiator = concerns[0];
         var recipient = concerns.Count > 1 ? concerns[1] : initiator;
 
-        return Speech.Of(viewer.thingIDNumber, initiator.thingIDNumber, recipient.thingIDNumber);
+        var direction = Speech.Of(viewer.thingIDNumber, initiator.thingIDNumber, recipient.thingIDNumber);
+        return MayMark(entry, viewer, direction) ? direction : null;
     }
 
     [HarmonyPatch(typeof(PlayLogEntry_Interaction), nameof(PlayLogEntry_Interaction.IconFromPOV))]

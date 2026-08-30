@@ -123,4 +123,56 @@ public static class Speech
         var head = char.ToUpperInvariant(word[0]) + word.Substring(1);
         return head + " " + char.ToLowerInvariant(first[0]) + first.Substring(1) + rest;
     }
+
+    /// <summary>
+    /// Whether a vanilla interaction line addresses the recipient, rather than
+    /// describing the two of them as a pair. rim-universe S169, JK's rule: an icon on
+    /// "Nicole and Olga joked about peppers" over-claims, because the sentence says
+    /// they talked, not that Nicole talked AT Olga.
+    ///
+    /// This has to read the sentence, and that is worth saying out loud: RimWorld's
+    /// Chitchat def carries three log templates for one interaction and picks between
+    /// them at render time.
+    ///
+    ///   [A] and [B] [talkedabout] [subject].          mutual
+    ///   [A] [talkedabout] [subject] with [B].         mutual
+    ///   [A] [commentedabout] [subject] to [B].        addressed
+    ///
+    /// The initiator and recipient are identical in all three. So "mutual" is a coin
+    /// flip in the prose, not a fact about the event, and this function is a reading
+    /// of English rather than of the game state.
+    ///
+    /// Fails closed: only "to &lt;name&gt;" counts as addressed. Anything unrecognised —
+    /// another language, a mod's own rule pack — keeps the vanilla icon and claims
+    /// nothing, which is where every row started.
+    /// </summary>
+    public static bool ReadsAsAddressed(string line, string recipientName)
+    {
+        if (string.IsNullOrWhiteSpace(line) || string.IsNullOrWhiteSpace(recipientName))
+            return false;
+
+        // Every occurrence, not the first. A sentence can open with the recipient's
+        // name - "Olga listened as Nicole ranted to Olga" - and an occurrence at index
+        // 0 has no preceding word to judge, so it must be skipped rather than end the
+        // scan. Getting that wrong made the whole line unreadable.
+        var at = line.IndexOf(recipientName, System.StringComparison.Ordinal);
+        while (at >= 0)
+        {
+            if (at > 0)
+            {
+                // The word immediately before the name, whatever punctuation follows.
+                var before = line.Substring(0, at).TrimEnd();
+                var space = before.LastIndexOf(' ');
+                var word = space < 0 ? before : before.Substring(space + 1);
+
+                if (word.Equals("to", System.StringComparison.OrdinalIgnoreCase)) return true;
+                if (word.Equals("and", System.StringComparison.OrdinalIgnoreCase)) return false;
+                if (word.Equals("with", System.StringComparison.OrdinalIgnoreCase)) return false;
+            }
+
+            at = line.IndexOf(recipientName, at + 1, System.StringComparison.Ordinal);
+        }
+
+        return false;
+    }
 }
