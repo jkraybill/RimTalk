@@ -47,10 +47,24 @@ public static class GossipMath
     public const int MaxItems = 2;
 
     /// <summary>
-    /// A day and a half. Shorter than the chronicle's "lately" window on purpose:
-    /// stale gossip is not gossip, it is history, and history already has a block.
+    /// Four days.
+    ///
+    /// Was a day and a half, on the reasoning that stale gossip is not gossip, it is
+    /// history, and history already has a block. The principle was right and the
+    /// number was set against an imagined event rate rather than a measured one.
+    ///
+    /// Measured, from JK's ten-day colony: nine chronicle entries in 600,000 ticks,
+    /// eight of them about a person. That is roughly one event a day, so a
+    /// day-and-a-half window holds about one item — and gossip then needs the right
+    /// two people to meet while that single item is still hot. The snapshot showed a
+    /// pool of 1 and zero opinion shifts, with every other part of the chain working.
+    ///
+    /// Four days holds three or four items, which is a conversation's worth. It is
+    /// also now LONGER than Chronicle.LatelyTicks rather than shorter, and that is the
+    /// right way round: a fight between two people is remembered a good while after
+    /// "there was a party" has stopped being worth mentioning.
     /// </summary>
-    public const int FreshTicks = 90000;
+    public const int FreshTicks = 240000;
 
     /// <summary>
     /// What <paramref name="speaker"/> could tell <paramref name="listener"/>,
