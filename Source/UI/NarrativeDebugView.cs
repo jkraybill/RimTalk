@@ -58,6 +58,7 @@ public static class NarrativeDebugView
 
     static readonly Color Head = new(0.7f, 0.85f, 1f);
     static readonly Color Dim = new(0.6f, 0.6f, 0.6f);
+    static readonly Color Warn = new(1f, 0.75f, 0.4f);
 
     static List<(string, Color)> Lines()
     {
@@ -138,6 +139,23 @@ public static class NarrativeDebugView
         {
             Faint("  select a colonist to see what they could pass on");
         }
+        Add("");
+
+        // ---- S169: the two fixes that are otherwise invisible from inside the game
+        var srcs = Service.TalkService.RecipientSources;
+        var spoken = srcs.Values.Sum();
+        Header($"WHO LINES WERE ADDRESSED TO  ({spoken} line(s))");
+        if (spoken == 0)
+            Faint("  nothing generated yet this session");
+        else
+            foreach (Service.TalkService.RecipientSource k in System.Enum.GetValues(typeof(Service.TalkService.RecipientSource)))
+            {
+                srcs.TryGetValue(k, out var n);
+                var pct = spoken == 0 ? 0 : 100 * n / spoken;
+                lines.Add(($"  {k,-18} {n,4}  ({pct}%)",
+                           k == Service.TalkService.RecipientSource.Monologue && pct > 50 ? Warn : Color.white));
+            }
+        Faint($"  social/mood effects applied: {Service.TalkService.SocialEffectsApplied}");
         Add("");
 
         Header($"OPINION SHIFTS  ({GossipEffect.Recent.Count} recent)");

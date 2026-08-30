@@ -314,13 +314,13 @@ public static class TalkService
     private static Pawn RecipientOf(Pawn pawn, TalkResponse talk)
     {
         var stated = talk.GetTarget();
-        if (stated != null && stated != pawn) return stated;
+        if (stated != null && stated != pawn) return Resolved(RecipientSource.Stated, stated);
 
         var parentSpeaker = TalkHistory.GetSpeaker(talk.ParentTalkId);
         if (parentSpeaker != null)
         {
             var replyingTo = Cache.GetByName(parentSpeaker)?.Pawn;
-            if (replyingTo != null && replyingTo != pawn) return replyingTo;
+            if (replyingTo != null && replyingTo != pawn) return Resolved(RecipientSource.ReplyChain, replyingTo);
         }
 
         var others = PawnSelector.GetAllNearByPawns(pawn)
@@ -328,7 +328,32 @@ public static class TalkService
             .Take(2)
             .ToList();
 
-        return others.Count == 1 ? others[0] : pawn;
+        return others.Count == 1
+            ? Resolved(RecipientSource.OnlyOtherPerson, others[0])
+            : Resolved(RecipientSource.Monologue, pawn);
+    }
+
+    public enum RecipientSource { Stated, ReplyChain, OnlyOtherPerson, Monologue }
+
+    /// <summary>
+    /// How each line's recipient was decided, counted. rim-universe S169.
+    ///
+    /// The fix that produced this is invisible from inside the game — a line is
+    /// addressed to somebody or it is not, and the only symptom either way is an icon.
+    /// A run that cannot say which of the three sources did the work is a run that
+    /// cannot tell "the reply chain is carrying it" from "everything is still falling
+    /// through to Monologue", which are the two outcomes worth distinguishing.
+    /// </summary>
+    public static readonly Dictionary<RecipientSource, int> RecipientSources = new();
+
+    /// <summary>How many conversations actually wrote a mood or social effect.</summary>
+    public static int SocialEffectsApplied;
+
+    private static Pawn Resolved(RecipientSource source, Pawn who)
+    {
+        RecipientSources.TryGetValue(source, out var n);
+        RecipientSources[source] = n + 1;
+        return who;
     }
 
 
@@ -375,6 +400,7 @@ public static class TalkService
             if (memory != null)
             {
                 recipient.needs?.mood?.thoughts?.memories?.TryGainMemory(memory, pawn);
+                SocialEffectsApplied++;
                 if (interactionType is InteractionType.Chat)
                 {
                     pawn.needs?.mood?.thoughts?.memories?.TryGainMemory(memory, recipient);
