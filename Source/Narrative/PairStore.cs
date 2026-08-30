@@ -43,9 +43,11 @@ public static class PairStore
         var people = speakers.Where(p => p != null).Distinct().ToList();
         if (people.Count < 2) return;
 
+        // NOT capped here. Each pair is cut to MaxExchangeLines out of their OWN
+        // lines in RecordOne; capping the whole conversation first could leave a pair
+        // with none of theirs at all.
         var kept = lines.Where(l => !string.IsNullOrWhiteSpace(l))
                         .Select(l => l.Trim())
-                        .TakeLast(MaxExchangeLines)
                         .ToList();
         if (kept.Count == 0) return;
 
@@ -74,7 +76,17 @@ public static class PairStore
             rec.LastMetTick = tick;
             rec.AName = a.LabelShort;
             rec.BName = b.LabelShort;
-            rec.LastExchange = new List<string>(lines);
+
+            // Only what these two said. A three-hander is three relationships, and
+            // each one remembers its own half of the room — handing all of them the
+            // whole transcript told the model "Scrooge and Kaito last spoke" and then
+            // showed it Syd talking.
+            var mine = PairMath.Between(lines, a.LabelShort, b.LabelShort, MaxExchangeLines);
+
+            // Both spoke, so this should never be empty; if a name ever fails to match
+            // they still met, and an empty exchange is handled downstream. Overwriting
+            // a good exchange with nothing would be the worse outcome.
+            if (mine.Count > 0) rec.LastExchange = mine;
         }
     }
 

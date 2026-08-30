@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 namespace RimTalk.Narrative;
 
 /// <summary>
@@ -66,4 +67,45 @@ public static class PairMath
     /// after one day makes every colony read the same way.
     /// </summary>
     public const int ManyTimes = 20;
+
+    /// <summary>
+    /// The lines in a conversation that these two actually spoke.
+    ///
+    /// rim-universe S169. PairStore.Record correctly forms every unordered pair among
+    /// the speakers, then handed the SAME full transcript to each of them — so a
+    /// three-hander stored Syd's lines under "Scrooge and Kaito", and the prompt told
+    /// the model those two last spoke and then showed it a third person talking. 10 of
+    /// 14 pair blocks in JK's 2026-08-30 log were contaminated that way.
+    ///
+    /// Filtering happens BEFORE the cap, which is the other half of the bug: capping
+    /// the whole conversation first could leave a pair with none of their own lines at
+    /// all, or with fewer than they had.
+    ///
+    /// Lines arrive as "Name: text", which is how TalkService formats them.
+    /// </summary>
+    public static List<string> Between(IEnumerable<string> lines, string a, string b, int max)
+    {
+        var kept = new List<string>();
+        if (lines == null) return kept;
+
+        foreach (var line in lines)
+            if (SpokenBy(line, a) || SpokenBy(line, b))
+                kept.Add(line.Trim());
+
+        return kept.Count <= max ? kept : kept.GetRange(kept.Count - max, max);
+    }
+
+    /// <summary>
+    /// Whether a "Name: text" line was spoken by this person. Compares the whole
+    /// speaker field rather than a prefix, so "Kai" does not claim "Kaito"'s lines.
+    /// </summary>
+    public static bool SpokenBy(string line, string name)
+    {
+        if (string.IsNullOrWhiteSpace(line) || string.IsNullOrWhiteSpace(name)) return false;
+
+        var colon = line.IndexOf(':');
+        return colon > 0
+               && line.Substring(0, colon).Trim()
+                      .Equals(name.Trim(), System.StringComparison.OrdinalIgnoreCase);
+    }
 }
