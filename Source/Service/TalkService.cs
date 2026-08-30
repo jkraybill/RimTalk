@@ -294,8 +294,8 @@ public static class TalkService
     ///
     /// It was `talk.GetTarget() ?? pawn`. GetTarget reads the model's optional
     /// "target" field, and the prompt only asks for it "if social interaction
-    /// occurs" — so ordinary conversation never carries one and the fallback made
-    /// every speaker their own recipient. That is the monologue signature, and it
+    /// occurs" — so 61% of lines in a real session carry none, and the fallback made
+    /// every one of those speakers their own recipient. That is the monologue signature, and it
     /// silently disabled ApplySocialEffects too, which is guarded on
     /// `pawn != recipient`.
     ///
@@ -331,6 +331,31 @@ public static class TalkService
         return others.Count == 1 ? others[0] : pawn;
     }
 
+
+    /// <summary>
+    /// Whether a social memory ABOUT this pawn will still resolve after a save.
+    /// rim-universe #47.
+    ///
+    /// Thought_MemorySocial stores its subject by reference. A raider talks, a
+    /// colonist gains a memory pointing at them, the raider dies and their corpse
+    /// burns, and the save carries a reference to nothing — which RimWorld reports as
+    /// "referenced (xml node name: otherPawn) but is not deep-saved. This will cause
+    /// errors during loading", sixteen times in one session and forty-six in the one
+    /// before.
+    ///
+    /// The player's own people are the ones the save keeps and the only ones a lasting
+    /// opinion is worth holding. A raider being memorable is not worth a corrupt load,
+    /// and RimTalk having a view on somebody already over the horizon buys nothing.
+    ///
+    /// Not a claim about who may TALK — enemies and other factions still speak, and
+    /// their lines still appear. Only about who gets a permanent memory written about
+    /// them.
+    /// </summary>
+    private static bool Persists(Pawn p) =>
+        p != null
+        && (p.RaceProps?.Humanlike ?? false)
+        && (p.IsFreeColonist || p.IsSlaveOfColony || p.IsPrisonerOfColony);
+
     private static void CreateInteraction(Pawn pawn, TalkResponse talk)
     {
         // Create the interaction log entry, which triggers the display of the talk bubble in-game.
@@ -343,7 +368,7 @@ public static class TalkService
         
         Find.PlayLog.Add(playLogEntryInteraction);
 
-        if (Settings.Get().ApplyMoodAndSocialEffects && pawn != recipient)
+        if (Settings.Get().ApplyMoodAndSocialEffects && pawn != recipient && Persists(recipient) && Persists(pawn))
         {
             var interactionType = talk.GetInteractionType();
             var memory = interactionType.GetThoughtDef();
