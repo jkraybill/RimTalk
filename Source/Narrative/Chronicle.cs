@@ -116,6 +116,7 @@ public static class Chronicle
             pool.Add((new GossipItem
             {
                 Tick = e.Tick,
+                Kind = e.Kind,
                 Clause = e.Clause,
                 SubjectId = e.SubjectId,
                 OtherId = e.OtherId,

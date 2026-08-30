@@ -243,9 +243,12 @@ public static class ProseScene
         var picked = Narrative.GossipMath.For(pool.Select(x => x.Item), speaker.thingIDNumber, present, now);
         if (picked.Count == 0) return null;
 
-        // The knowledge write. Everybody else in the room hears it.
+        // The knowledge write, and then the social one. Only what was NEWS to this
+        // listener moves an opinion — rehashing is allowed to happen and is not
+        // allowed to compound, and GossipMath.Tell returns exactly the new items.
         foreach (var listener in people.Skip(1))
-            Narrative.GossipMath.Tell(picked, listener.thingIDNumber);
+            foreach (var news in Narrative.GossipMath.Tell(picked, listener.thingIDNumber))
+                Narrative.GossipEffect.Apply(listener, speaker, FindColonist(news.SubjectId), news.Kind);
 
         var absent = picked
             .SelectMany(i => new[] { i.SubjectId, i.OtherId })

@@ -97,4 +97,76 @@
             </li>
         </stages>
     </ThoughtDef>
+
+    <!-- rim-universe #22 + #31 Social. Gossip that moved an opinion.
+
+         Small offsets and a low stack limit on purpose: this is the first thing in
+         the mod that writes to the simulation, and the cap plus the decay are what
+         stop a rumour mill from driving the colony to the ends of the scale. Two
+         points, four deep, gone in eight days. -->
+    <ThoughtDef>
+        <defName>RimTalk_GossipHeardGood</defName>
+        <thoughtClass>Thought_MemorySocial</thoughtClass>
+        <durationDays>8</durationDays>
+        <stackLimit>4</stackLimit>
+        <developmentalStageFilter>Child, Adult</developmentalStageFilter>
+        <socialTargetDevelopmentalStageFilter>Baby, Child, Adult</socialTargetDevelopmentalStageFilter>
+        <stages>
+            <li>
+                <label>heard something good</label>
+                <description>I heard something that made me think better of them. (RimTalk)</description>
+                <baseOpinionOffset>2</baseOpinionOffset>
+            </li>
+        </stages>
+    </ThoughtDef>
+
+    <ThoughtDef>
+        <defName>RimTalk_GossipHeardBad</defName>
+        <thoughtClass>Thought_MemorySocial</thoughtClass>
+        <durationDays>8</durationDays>
+        <stackLimit>4</stackLimit>
+        <developmentalStageFilter>Child, Adult</developmentalStageFilter>
+        <socialTargetDevelopmentalStageFilter>Baby, Child, Adult</socialTargetDevelopmentalStageFilter>
+        <stages>
+            <li>
+                <label>heard something bad</label>
+                <description>I heard something that made me think worse of them. (RimTalk)</description>
+                <baseOpinionOffset>-2</baseOpinionOffset>
+            </li>
+        </stages>
+    </ThoughtDef>
+
+    <!-- About the SPEAKER, not the subject. Being kept in the loop is worth a little;
+         being the one who is always talking about people costs a little more. -->
+    <ThoughtDef>
+        <defName>RimTalk_GossipToldMe</defName>
+        <thoughtClass>Thought_MemorySocial</thoughtClass>
+        <durationDays>6</durationDays>
+        <stackLimit>3</stackLimit>
+        <developmentalStageFilter>Child, Adult</developmentalStageFilter>
+        <socialTargetDevelopmentalStageFilter>Baby, Child, Adult</socialTargetDevelopmentalStageFilter>
+        <stages>
+            <li>
+                <label>tells me things</label>
+                <description>They tell me what is going on around here. (RimTalk)</description>
+                <baseOpinionOffset>1</baseOpinionOffset>
+            </li>
+        </stages>
+    </ThoughtDef>
+
+    <ThoughtDef>
+        <defName>RimTalk_GossipTalksAboutPeople</defName>
+        <thoughtClass>Thought_MemorySocial</thoughtClass>
+        <durationDays>6</durationDays>
+        <stackLimit>3</stackLimit>
+        <developmentalStageFilter>Child, Adult</developmentalStageFilter>
+        <socialTargetDevelopmentalStageFilter>Baby, Child, Adult</socialTargetDevelopmentalStageFilter>
+        <stages>
+            <li>
+                <label>talks about people</label>
+                <description>They talk about people behind their backs. (RimTalk)</description>
+                <baseOpinionOffset>-2</baseOpinionOffset>
+            </li>
+        </stages>
+    </ThoughtDef>
 </Defs>

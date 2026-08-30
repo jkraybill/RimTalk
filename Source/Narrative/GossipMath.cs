@@ -10,6 +10,7 @@ namespace RimTalk.Narrative;
 public class GossipItem
 {
     public int Tick;
+    public string Kind;          // the TaleDef defName, for GossipOpinion.Valence
     public string Clause;
     public int SubjectId;
     public int OtherId;
