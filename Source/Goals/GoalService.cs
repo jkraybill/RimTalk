@@ -52,10 +52,14 @@ public static class GoalService
             var facts = ProseScene.GatherColony(pawn?.Map);
             var shortlist = GoalStore.Allowed(pawn, GoalMath.Candidates(facts), GenTicks.TicksGame);
 
-            // Nothing wrong here, or everything wrong here is on cooldown. Both are
-            // real answers and neither is worth an API call: #28's own mitigation for
-            // taxing the player's strategy is that goals come from actual deficiencies,
-            // and a pawn with nothing to want is a pawn who talks about something else.
+            // rim-universe #52: filter to goals this pawn's job qualifies them for.
+            // A cook owns food security; a doctor owns medicine; a constructor owns shelter.
+            shortlist = FilterByJob(pawn, shortlist);
+
+            // Nothing wrong here, or everything wrong here is on cooldown, or this pawn
+            // has no job for any deficiency. All are real answers and none is worth an
+            // API call: #28's mitigation is that goals come from actual deficiencies,
+            // and a pawn with nothing they OWN to want is a pawn who talks about something else.
             if (shortlist.Count == 0) return;
 
             // excludeSkillWant: true — the skill-based "What X wants right now:" is bait
@@ -223,5 +227,65 @@ public static class GoalService
             $"{entry.Statement}\n\n{pawn.LabelShort} has been after this for " +
             $"{Narrative.NarrativeMath.Elapsed(entry.ResolvedTick - entry.SetTick)}.",
             LetterDefOf.PositiveEvent, new LookTargets(pawn));
+    }
+
+    /// <summary>
+    /// Filter goals to those this pawn's job qualifies them for. rim-universe #52.
+    ///
+    /// A cook owns food security; a doctor owns medicine; a constructor owns shelter.
+    /// Makes goals feel personal rather than interchangeable colony-wide priorities.
+    /// </summary>
+    static List<GoalKind> FilterByJob(Pawn pawn, List<GoalKind> candidates)
+    {
+        if (pawn?.workSettings == null || candidates == null || candidates.Count == 0)
+            return candidates ?? new List<GoalKind>();
+
+        return candidates.Where(k => QualifiesFor(pawn, k)).ToList();
+    }
+
+    /// <summary>
+    /// Whether this pawn's work assignments qualify them for this goal kind.
+    /// </summary>
+    static bool QualifiesFor(Pawn pawn, GoalKind kind)
+    {
+        var ws = pawn?.workSettings;
+        if (ws == null) return false;
+
+        // Helper: check if a work type is enabled
+        bool Has(WorkTypeDef def) => def != null && ws.WorkIsActive(def);
+
+        return kind switch
+        {
+            // Food: cooks, growers, or hunters
+            GoalKind.FoodSecurity =>
+                Has(WorkTypeDefOf.Cooking) ||
+                Has(WorkTypeDefOf.Growing) ||
+                Has(WorkTypeDefOf.Hunting),
+
+            // Medicine: doctors
+            GoalKind.Medicine =>
+                Has(WorkTypeDefOf.Doctor),
+
+            // Shelter: constructors
+            GoalKind.Shelter =>
+                Has(WorkTypeDefOf.Construction),
+
+            // Power: researchers or constructors (someone has to build/fix it)
+            GoalKind.Power =>
+                Has(WorkTypeDefOf.Research) ||
+                Has(WorkTypeDefOf.Construction),
+
+            // Defence: hunters (they shoot) or constructors (they build turrets)
+            GoalKind.BaseDefence =>
+                Has(WorkTypeDefOf.Hunting) ||
+                Has(WorkTypeDefOf.Construction),
+
+            // Companionship: wardens or handlers (social jobs)
+            GoalKind.Companionship =>
+                Has(WorkTypeDefOf.Warden) ||
+                Has(WorkTypeDefOf.Handling),
+
+            _ => false,
+        };
     }
 }
