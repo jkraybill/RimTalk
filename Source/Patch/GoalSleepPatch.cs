@@ -13,7 +13,7 @@ namespace RimTalk.Patch;
 /// their goals at the same moment and the player saw a stack of letters. Evaluating
 /// on sleep-start staggers the notifications and makes the achievement feel personal.
 /// </summary>
-[HarmonyPatch(typeof(JobDriver_LayDown), nameof(JobDriver_LayDown.MakeNewToils))]
+[HarmonyPatch(typeof(JobDriver_LayDown), "MakeNewToils")]
 public static class GoalSleepPatch
 {
     /// <summary>

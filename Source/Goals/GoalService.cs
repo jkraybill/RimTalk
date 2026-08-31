@@ -251,39 +251,38 @@ public static class GoalService
         var ws = pawn?.workSettings;
         if (ws == null) return false;
 
-        // Helper: check if a work type is enabled
-        bool Has(WorkTypeDef def) => def != null && ws.WorkIsActive(def);
+        // Helper: check if a work type is enabled by defName
+        bool Has(string defName)
+        {
+            var def = DefDatabase<WorkTypeDef>.GetNamedSilentFail(defName);
+            return def != null && ws.WorkIsActive(def);
+        }
 
         return kind switch
         {
             // Food: cooks, growers, or hunters
             GoalKind.FoodSecurity =>
-                Has(WorkTypeDefOf.Cooking) ||
-                Has(WorkTypeDefOf.Growing) ||
-                Has(WorkTypeDefOf.Hunting),
+                Has("Cooking") || Has("Growing") || Has("Hunting"),
 
             // Medicine: doctors
             GoalKind.Medicine =>
-                Has(WorkTypeDefOf.Doctor),
+                Has("Doctor"),
 
             // Shelter: constructors
             GoalKind.Shelter =>
-                Has(WorkTypeDefOf.Construction),
+                Has("Construction"),
 
             // Power: researchers or constructors (someone has to build/fix it)
             GoalKind.Power =>
-                Has(WorkTypeDefOf.Research) ||
-                Has(WorkTypeDefOf.Construction),
+                Has("Research") || Has("Construction"),
 
             // Defence: hunters (they shoot) or constructors (they build turrets)
             GoalKind.BaseDefence =>
-                Has(WorkTypeDefOf.Hunting) ||
-                Has(WorkTypeDefOf.Construction),
+                Has("Hunting") || Has("Construction"),
 
             // Companionship: wardens or handlers (social jobs)
             GoalKind.Companionship =>
-                Has(WorkTypeDefOf.Warden) ||
-                Has(WorkTypeDefOf.Handling),
+                Has("Warden") || Has("Handling"),
 
             _ => false,
         };

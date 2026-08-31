@@ -27,12 +27,18 @@ public static class BackstoryTooltipPatch
 /// <summary>
 /// Captures the pawn when the Bio tab starts drawing.
 /// </summary>
-[HarmonyPatch(typeof(ITab_Pawn_Character), nameof(ITab_Pawn_Character.FillTab))]
+[HarmonyPatch(typeof(ITab_Pawn_Character), "FillTab")]
 public static class BioTabFillPatch
 {
     public static void Prefix(ITab_Pawn_Character __instance)
     {
-        BackstoryTooltipPatch.CurrentPawn = __instance.PawnToShowInfoAbout;
+        // PawnToShowInfoAbout is protected, so use reflection on the instance's type hierarchy
+        var prop = __instance.GetType().GetProperty("PawnToShowInfoAbout",
+            System.Reflection.BindingFlags.Instance |
+            System.Reflection.BindingFlags.NonPublic |
+            System.Reflection.BindingFlags.Public |
+            System.Reflection.BindingFlags.FlattenHierarchy);
+        BackstoryTooltipPatch.CurrentPawn = prop?.GetValue(__instance) as Pawn;
     }
 
     public static void Postfix()
