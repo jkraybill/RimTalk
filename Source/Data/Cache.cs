@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using RimTalk.Service;
 using RimTalk.Util;
 using RimWorld;
 using Verse;
@@ -70,6 +71,10 @@ public static class Cache
 
         // Ensure player state/name is valid.
         InitializePlayerPawn();
+
+        // rim-universe #51. Personality expansion runs first: it produces topics,
+        // speech style, and preferences that feed everything downstream.
+        Service.PersonalityExpansionService.TryGenerate();
 
         // rim-universe #37. Here rather than in a spawn patch: this already runs on the
         // main thread every few seconds and already walks every eligible pawn, and one

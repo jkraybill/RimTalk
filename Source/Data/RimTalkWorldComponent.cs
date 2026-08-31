@@ -68,6 +68,12 @@ public class RimTalkWorldComponent(World world) : WorldComponent(world)
     /// </summary>
     public List<Goals.GoalEntry> GoalEntries = new();
 
+    /// <summary>
+    /// Expanded personalities derived from backstory. rim-universe #51. Generated once
+    /// when a pawn enters the colony's orbit; feeds profiles, goals, gossip, topics.
+    /// </summary>
+    public List<PawnPersonality> PersonalityEntries = new();
+
     public override void ExposeData()
     {
         base.ExposeData();
@@ -144,6 +150,17 @@ public class RimTalkWorldComponent(World world) : WorldComponent(world)
 
         try
         {
+            Scribe_Collections.Look(ref PersonalityEntries, "rimtalkPersonalityEntries", LookMode.Deep);
+        }
+        catch (System.Exception ex)
+        {
+            Logger.Error($"Failed to save/load personalities. Resetting to prevent save corruption. Error: {ex.Message}");
+            PersonalityEntries = new List<PawnPersonality>();
+        }
+        PersonalityEntries ??= new List<PawnPersonality>();
+
+        try
+        {
             Scribe_Collections.Look(ref TopicEntries, "rimtalkTopicEntries", LookMode.Deep);
         }
         catch (System.Exception ex)
@@ -197,6 +214,7 @@ public class RimTalkWorldComponent(World world) : WorldComponent(world)
         ChronicleEntries ??= new List<Narrative.ChronicleEntry>();
         PairRecords ??= new List<Narrative.PairRecord>();
         GoalEntries ??= new List<Goals.GoalEntry>();
+        PersonalityEntries ??= new List<PawnPersonality>();
 
         // After RimTalk.cs's TalkHistory.Clear(), which runs on every load. #9: that
         // call is why no colony ever remembered a conversation across a save.

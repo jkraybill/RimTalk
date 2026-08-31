@@ -46,6 +46,7 @@ public class RimTalk : GameComponent
         // Same contract again: the arrival/topic attempt budgets are keyed on
         // thingIDNumber, which is per-save, and a reload is meant to be the retry.
         Narrative.ArrivalService.Clear();
+        PersonalityExpansionService.Clear();
         PatchThoughtHandlerGetDistinctMoodThoughtGroups.Clear();
         Cache.GetAll().ToList().ForEach(pawnState => pawnState.IgnoreAllTalkResponses());
         Cache.InitializePlayerPawn();
