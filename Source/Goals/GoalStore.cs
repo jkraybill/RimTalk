@@ -85,6 +85,13 @@ public static class GoalStore
         All.Where(e => e != null && e.State == GoalState.Active).ToList();
 
     /// <summary>
+    /// Goal kinds currently held by any pawn. Used to enforce mutual exclusivity:
+    /// if one pawn wants FoodSecurity, nobody else gets that goal until it resolves.
+    /// </summary>
+    public static HashSet<GoalKind> ActiveKinds() =>
+        ActiveEntries().Select(e => e.Kind).ToHashSet();
+
+    /// <summary>
     /// The DaysPassed when this entry was last evaluated. rim-universe #50: goals are
     /// now evaluated per-pawn on first sleep of each day, not in a midnight batch.
     /// </summary>

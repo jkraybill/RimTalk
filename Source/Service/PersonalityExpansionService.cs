@@ -18,9 +18,16 @@ namespace RimTalk.Service;
 public static class PersonalityExpansionService
 {
     static bool _generating;
+    static DateTime? _generatingSince;
+    const int StuckAfterSeconds = 120; // 2 minutes is generous for a single API call
     static readonly AttemptBudget Budget = new();
 
-    public static void Clear() => Budget.Clear();
+    public static void Clear()
+    {
+        Budget.Clear();
+        _generating = false;
+        _generatingSince = null;
+    }
 
     /// <summary>Whether this pawn needs a personality expansion.</summary>
     static bool NeedsPersonality(Pawn pawn) =>
@@ -39,11 +46,59 @@ public static class PersonalityExpansionService
 
     public static void TryGenerate()
     {
-        var pawn = NextNeeding();
-        if (pawn == null) return;
+        Logger.Message("Personality: TryGenerate called");
 
+        // Check for stuck state before checking _generating
+        if (_generating && _generatingSince != null &&
+            (DateTime.Now - _generatingSince.Value).TotalSeconds >= StuckAfterSeconds)
+        {
+            Logger.Warning($"Personality generation stuck for {StuckAfterSeconds}s, releasing slot");
+            _generating = false;
+            _generatingSince = null;
+        }
+
+        if (_generating)
+        {
+            Logger.Message("Personality: skipped (already generating)");
+            return;
+        }
+        if (AIService.IsBusy())
+        {
+            Logger.Message("Personality: skipped (AI busy)");
+            return;
+        }
+        if (Find.World == null)
+        {
+            Logger.Message("Personality: skipped (no world)");
+            return;
+        }
+
+        // Check each pawn
+        var candidates = Cache.Keys.Where(p => ArrivalService.InOrbit(p)).ToList();
+        Logger.Message($"Personality: {candidates.Count} pawns in orbit");
+
+        foreach (var p in candidates.Take(3))
+        {
+            var has = PersonalityStore.Has(p);
+            var exhausted = Budget.Exhausted(p.thingIDNumber);
+            Logger.Message($"Personality: {p.LabelShort} has={has} exhausted={exhausted}");
+        }
+
+        var pawn = candidates.FirstOrDefault(NeedsPersonality);
+        if (pawn == null)
+        {
+            Logger.Message("Personality: no pawn needs generation");
+            return;
+        }
+
+        Logger.Message($"Personality: starting generation for {pawn.LabelShort}");
         _generating = true;
-        _ = GenerateFor(pawn).ContinueWith(_ => _generating = false);
+        _generatingSince = DateTime.Now;
+        _ = GenerateFor(pawn).ContinueWith(_ =>
+        {
+            _generating = false;
+            _generatingSince = null;
+        });
     }
 
     static async Task GenerateFor(Pawn pawn)
@@ -51,10 +106,19 @@ public static class PersonalityExpansionService
         try
         {
             var prompt = PersonalityText.Prompt(pawn);
-            if (string.IsNullOrWhiteSpace(prompt)) return;
+            if (string.IsNullOrWhiteSpace(prompt))
+            {
+                Logger.Message($"Personality: prompt was empty for {pawn.LabelShort}");
+                return;
+            }
 
-            var request = new TalkRequest(prompt, pawn);
+            Logger.Message($"Personality: querying API for {pawn.LabelShort}");
+            var request = new TalkRequest(prompt, pawn)
+            {
+                Context = "You are a character backstory generator. Return ONLY valid JSON matching the requested schema. No prose, no markdown, no explanation — just the JSON object."
+            };
             var data = await AIService.Query<PersonalityExpansionData>(request);
+            Logger.Message($"Personality: got response for {pawn.LabelShort}, narrative={data?.Narrative?.Length ?? 0} chars");
 
             var personality = PersonalityText.Accept(pawn, data);
             if (personality == null)
@@ -67,7 +131,7 @@ public static class PersonalityExpansionService
 
             Budget.Succeeded(pawn.thingIDNumber);
             PersonalityStore.Record(personality);
-            Logger.Debug($"Personality: {pawn.LabelShort} — {personality.SpeechStyle}, " +
+            Logger.Message($"Personality: {pawn.LabelShort} — {personality.SpeechStyle}, " +
                          $"loves {personality.LovedFood}, hates {personality.HatedAnimal}");
         }
         catch (Exception e)

@@ -207,4 +207,23 @@ public static class GoalMath
         if (now >= expiryTick) return GoalState.Expired;
         return GoalState.Active;
     }
+
+    /// <summary>Format ticks as "X days" for UI display.</summary>
+    public static string ElapsedDays(int ticks)
+    {
+        var days = ticks / 60000f;
+        if (days < 1f) return "less than a day";
+        if (days < 2f) return "1 day";
+        return $"{(int)days} days";
+    }
+
+    /// <summary>Format remaining ticks as "X days" for UI display.</summary>
+    public static string RemainingDays(int ticks)
+    {
+        if (ticks <= 0) return "expired";
+        var days = ticks / 60000f;
+        if (days < 1f) return "less than a day";
+        if (days < 2f) return "1 day";
+        return $"{(int)days} days";
+    }
 }

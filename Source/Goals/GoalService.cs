@@ -38,9 +38,39 @@ public static class GoalService
 
     public static void TryGenerate()
     {
-        var pawn = NextNeeding();
-        if (pawn == null) return;
+        // Diagnostic logging
+        if (_generating)
+        {
+            Logger.Message("Goal: skipped (already generating)");
+            return;
+        }
+        if (AIService.IsBusy())
+        {
+            Logger.Message("Goal: skipped (AI busy)");
+            return;
+        }
+        if (Find.World == null)
+        {
+            Logger.Message("Goal: skipped (no world)");
+            return;
+        }
 
+        var candidates = Cache.Keys.Where(p => ArrivalService.InOrbit(p)).Take(3).ToList();
+        Logger.Message($"Goal: {candidates.Count} pawns in orbit, Goals setting={Settings.Get().Context.Goals}");
+        foreach (var p in candidates)
+        {
+            var hasRoom = GoalStore.HasRoom(p);
+            Logger.Message($"Goal: {p.LabelShort} hasRoom={hasRoom}");
+        }
+
+        var pawn = NextNeeding();
+        if (pawn == null)
+        {
+            Logger.Message("Goal: no pawn needs a goal");
+            return;
+        }
+
+        Logger.Message($"Goal: starting generation for {pawn.LabelShort}");
         _generating = true;
         _ = GenerateFor(pawn).ContinueWith(_ => _generating = false);
     }
@@ -55,6 +85,11 @@ public static class GoalService
             // rim-universe #52: filter to goals this pawn's job qualifies them for.
             // A cook owns food security; a doctor owns medicine; a constructor owns shelter.
             shortlist = FilterByJob(pawn, shortlist);
+
+            // Mutual exclusivity: if someone already has FoodSecurity, nobody else gets it
+            // until theirs resolves. Prevents the whole colony chanting the same goal.
+            var activeKinds = GoalStore.ActiveKinds();
+            shortlist = shortlist.Where(k => !activeKinds.Contains(k)).ToList();
 
             // Nothing wrong here, or everything wrong here is on cooldown, or this pawn
             // has no job for any deficiency. All are real answers and none is worth an
@@ -222,11 +257,33 @@ public static class GoalService
         if (!Settings.Get().Context.NarrativeLetters) return;
         if (Find.LetterStack == null) return;
 
+        var duration = Narrative.NarrativeMath.Elapsed(entry.ResolvedTick - entry.SetTick);
+        var achievement = DescribeAchievement(entry.Kind, entry.Target);
+
+        var body = $"{pawn.LabelShort} achieved a short-term goal after {duration}.\n\n" +
+                   $"\"{entry.Statement}\"\n\n" +
+                   $"{achievement}\n\n" +
+                   $"{pawn.LabelShort} is satisfied.";
+
         Find.LetterStack.ReceiveLetter(
-            $"{pawn.LabelShort} got what they wanted",
-            $"{entry.Statement}\n\n{pawn.LabelShort} has been after this for " +
-            $"{Narrative.NarrativeMath.Elapsed(entry.ResolvedTick - entry.SetTick)}.",
+            $"{pawn.LabelShort}: short-term goal met",
+            body,
             LetterDefOf.PositiveEvent, new LookTargets(pawn));
+    }
+
+    /// <summary>What actually satisfied the goal, in plain terms.</summary>
+    static string DescribeAchievement(GoalKind kind, float target)
+    {
+        return kind switch
+        {
+            GoalKind.FoodSecurity => $"The colony now has {target:0}+ days of food secured.",
+            GoalKind.Medicine => $"The colony now has {target:0}+ medicine stockpiled.",
+            GoalKind.Shelter => "Everyone in the colony now has a bed.",
+            GoalKind.Power => "The colony's power grid is back online.",
+            GoalKind.BaseDefence => $"The colony now has {target:0}+ defensive positions.",
+            GoalKind.Companionship => $"The colony now has {target:0}+ people.",
+            _ => "The goal was achieved.",
+        };
     }
 
     /// <summary>

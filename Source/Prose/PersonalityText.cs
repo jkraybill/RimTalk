@@ -24,7 +24,7 @@ public static class PersonalityText
         sb.AppendLine("Expand this character's backstory into a rich personality.");
         sb.AppendLine();
         sb.AppendLine("From their background, derive:");
-        sb.AppendLine("- A 2-3 paragraph narrative expanding their history");
+        sb.AppendLine("- A 2-3 paragraph narrative expanding their history (all paragraphs in ONE string, separated by \\n\\n)");
         sb.AppendLine("- Their speech style (one word: folksy, formal, clipped, rambling, dry, warm)");
         sb.AppendLine("- 2-3 personality quirks (habits, preferences, pet peeves)");
         sb.AppendLine("- 4-5 topics they bring up in idle conversation");
@@ -38,6 +38,8 @@ public static class PersonalityText
         // Backstory
         sb.AppendLine("[Character]");
         sb.AppendLine($"Name: {pawn.LabelShort}");
+        var pronoun = pawn.gender == Gender.Female ? "she/her" : "he/him";
+        sb.AppendLine($"Gender: {pawn.gender} (use {pronoun} pronouns)");
 
         if (pawn.story?.Childhood != null)
         {
@@ -98,9 +100,9 @@ public static class PersonalityText
         }
 
         sb.AppendLine();
-        sb.AppendLine("Reply with JSON only:");
+        sb.AppendLine("Reply with JSON only (narrative must be a single string with \\n\\n between paragraphs):");
         sb.AppendLine("{");
-        sb.AppendLine("  \"narrative\": \"...\",");
+        sb.AppendLine("  \"narrative\": \"First paragraph...\\n\\nSecond paragraph...\\n\\nThird paragraph...\",");
         sb.AppendLine("  \"speechStyle\": \"...\",");
         sb.AppendLine("  \"quirks\": [\"...\", \"...\"],");
         sb.AppendLine("  \"topics\": [\"...\", \"...\", \"...\"],");
