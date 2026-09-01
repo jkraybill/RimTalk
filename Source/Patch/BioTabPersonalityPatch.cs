@@ -105,44 +105,16 @@ public static class BioTabPersonalityPatch
         });
     }
 
-    /// <summary>Describe what will satisfy this goal, with current progress.</summary>
-    private static string DescribeCriteriaWithProgress(Pawn pawn, GoalKind kind, float target)
-    {
-        var facts = ProseScene.GatherColony(pawn?.Map);
-        var (current, showProgress) = GetCurrentValue(kind, facts);
-
-        var criteria = kind switch
-        {
-            GoalKind.FoodSecurity => $"Have {target:0}+ days of food stockpiled",
-            GoalKind.Medicine => $"Have {target:0}+ medicine in storage",
-            GoalKind.Shelter => "Everyone has a bed",
-            GoalKind.Power => "Colony power grid is online",
-            GoalKind.BaseDefence => $"Have {target:0}+ defensive positions",
-            GoalKind.Companionship => $"Have {target:0}+ colonists",
-            _ => "Unknown",
-        };
-
-        if (showProgress && current >= 0)
-            criteria += $" (Progress: {current:0}/{target:0})";
-
-        return criteria;
-    }
-
-    private static (float current, bool showProgress) GetCurrentValue(GoalKind kind, ColonyFacts facts)
-    {
-        if (facts == null) return (-1, false);
-
-        return kind switch
-        {
-            GoalKind.FoodSecurity => (facts.FoodDays, true),
-            GoalKind.Medicine => (facts.MedicineCount, true),
-            GoalKind.Shelter => (facts.Colonists - facts.ColonistsWithoutBed, false),
-            GoalKind.Power => (facts.HasPower == true ? 1 : 0, false),
-            GoalKind.BaseDefence => (facts.Turrets, true),
-            GoalKind.Companionship => (facts.Colonists, true),
-            _ => (-1, false),
-        };
-    }
+    /// <summary>
+    /// Describe what will satisfy this goal, with current progress.
+    ///
+    /// The wording, the rounding and the decision about which kinds carry a number
+    /// all live in GoalMath, where they are tested for real. This is the map read
+    /// and nothing else — the twin that used to live here rounded to nearest on
+    /// both halves and could print "3/3" on an unmet goal.
+    /// </summary>
+    private static string DescribeCriteriaWithProgress(Pawn pawn, GoalKind kind, float target) =>
+        GoalMath.Criteria(kind, target, ProseScene.GatherColony(pawn?.Map));
 
     [HarmonyPatch(typeof(CharacterCardUtility), "DoTopStack")]
     public static class DoTopStack_Patch

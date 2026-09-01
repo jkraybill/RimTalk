@@ -208,6 +208,152 @@ public static class GoalMath
         return GoalState.Active;
     }
 
+    /// <summary>
+    /// Mutual exclusivity, colony-wide: one pawn per kind. S170.
+    ///
+    /// If somebody already carries FoodSecurity, nobody else is offered it until
+    /// theirs resolves — otherwise the whole colony chants the same goal, which is
+    /// the sameness #28 exists to remove, arrived at from the other direction.
+    ///
+    /// Empty out is a real answer and the caller returns without an API call.
+    /// Order is the deficiency ranking from Candidates() and survives.
+    /// </summary>
+    public static List<GoalKind> Exclusive(IEnumerable<GoalKind> shortlist,
+                                           IEnumerable<GoalKind> activeKinds)
+    {
+        if (shortlist == null) return new List<GoalKind>();
+        if (activeKinds == null) return shortlist.ToList();
+        var taken = activeKinds.ToHashSet();
+        return shortlist.Where(k => !taken.Contains(k)).ToList();
+    }
+
+    /// <summary>
+    /// Whether these work assignments qualify a pawn for this kind. #52.
+    ///
+    /// A cook owns food security; a doctor owns medicine; a constructor owns shelter.
+    /// Takes the enabled WorkTypeDef names rather than a Pawn so the mapping is
+    /// testable — DefDatabase lookup stays at the call site.
+    /// </summary>
+    public static bool Qualifies(GoalKind kind, IEnumerable<string> activeWorkTypes)
+    {
+        if (activeWorkTypes == null) return false;
+        var w = activeWorkTypes.ToHashSet();
+        bool Has(string d) => w.Contains(d);
+
+        return kind switch
+        {
+            GoalKind.FoodSecurity  => Has("Cooking") || Has("Growing") || Has("Hunting"),
+            GoalKind.Medicine      => Has("Doctor"),
+            GoalKind.Shelter       => Has("Construction"),
+            GoalKind.Power         => Has("Research") || Has("Construction"),
+            GoalKind.BaseDefence   => Has("Hunting") || Has("Construction"),
+            GoalKind.Companionship => Has("Warden") || Has("Handling"),
+            _ => false,
+        };
+    }
+
+    /// <summary>
+    /// Filter a shortlist to what this pawn's jobs qualify them for.
+    ///
+    /// null activeWorkTypes is "could not be read", NOT "nothing enabled", and passes
+    /// the shortlist through untouched — a pawn whose assignments are unreadable must
+    /// not silently stop wanting things. An EMPTY set is a real answer and keeps
+    /// nothing. The pre-S171 pair answered these two states inconsistently: the
+    /// filter kept everything on a null workSettings while the per-kind check kept
+    /// nothing, two readings of one state inside one pipeline.
+    /// </summary>
+    public static List<GoalKind> ByJob(IEnumerable<GoalKind> candidates,
+                                       IEnumerable<string> activeWorkTypes)
+    {
+        if (candidates == null) return new List<GoalKind>();
+        if (activeWorkTypes == null) return candidates.ToList();
+        var w = activeWorkTypes.ToHashSet();
+        return candidates.Where(k => Qualifies(k, w)).ToList();
+    }
+
+    /// <summary>
+    /// The tooltip's "Success:" line, with progress where a number means something.
+    /// S170. This is the player's only answer to "why has this not completed?".
+    /// </summary>
+    public static string Criteria(GoalKind kind, float target, ColonyFacts c)
+    {
+        // Both halves round AWAY from claiming success, and they round in opposite
+        // directions to do it. S170 used `{v:0}` on both, which rounds to nearest,
+        // and that produced a tooltip reading "Progress: 3/3" on a goal IsMet says is
+        // not met — FoodDays 2.5 printed as 3, and a target of 19.4 printed as 19.
+        // The player is then staring at a completed goal that never completes, with
+        // the tooltip that exists to answer exactly that question telling them a lie.
+        //
+        // floor(current) >= ceil(target) implies current >= target, always. So a
+        // readout of N/N is now a fact about the predicate rather than about
+        // formatting. The cost is the honest direction: a met goal can briefly read
+        // 14/15, and it resolves that night anyway.
+        var shownTarget = Ceil(target);
+
+        var text = kind switch
+        {
+            GoalKind.FoodSecurity  => $"Have {shownTarget}+ days of food stockpiled",
+            GoalKind.Medicine      => $"Have {shownTarget}+ medicine in storage",
+            GoalKind.Shelter       => "Everyone has a bed",
+            GoalKind.Power         => "Colony power grid is online",
+            GoalKind.BaseDefence   => $"Have {shownTarget}+ defensive positions",
+            GoalKind.Companionship => $"Have {shownTarget}+ colonists",
+            _ => "Unknown",
+        };
+
+        var (current, show) = Progress(kind, c);
+        if (show && current >= 0) text += $" (Progress: {Floor(current)}/{shownTarget})";
+        return text;
+    }
+
+    /// <summary>
+    /// What actually satisfied the goal, for the completion letter.
+    ///
+    /// Same Ceil as Criteria, and that is the whole point of it living here: the
+    /// letter and the tooltip are two renderings of ONE target and must print one
+    /// number. They did not. GoalService held a third copy of this wording with
+    /// {target:0}, so a goal shown as "Have 20+ defensive positions" completed with
+    /// a letter reading "now has 19+" — the same float, two bars, and nothing in a
+    /// green suite to notice.
+    /// </summary>
+    public static string Achievement(GoalKind kind, float target)
+    {
+        var t = Ceil(target);
+        return kind switch
+        {
+            GoalKind.FoodSecurity  => $"The colony now has {t}+ days of food secured.",
+            GoalKind.Medicine      => $"The colony now has {t}+ medicine stockpiled.",
+            GoalKind.Shelter       => "Everyone in the colony now has a bed.",
+            GoalKind.Power         => "The colony's power grid is back online.",
+            GoalKind.BaseDefence   => $"The colony now has {t}+ defensive positions.",
+            GoalKind.Companionship => $"The colony now has {t}+ people.",
+            _ => "The goal was achieved.",
+        };
+    }
+
+    static int Floor(float v) => (int)System.Math.Floor(v);
+    static int Ceil(float v) => (int)System.Math.Ceiling(v);
+
+    /// <summary>
+    /// Current value and whether it is worth printing. Shelter and Power are states
+    /// rather than counts; "Everyone has a bed (Progress: 5/0)" is worse than nothing.
+    /// -1 stays -1 so the caller drops it: unknown is not zero.
+    /// </summary>
+    public static (float Current, bool Show) Progress(GoalKind kind, ColonyFacts c)
+    {
+        if (c == null) return (-1f, false);
+        return kind switch
+        {
+            GoalKind.FoodSecurity  => (c.FoodDays, true),
+            GoalKind.Medicine      => (c.MedicineCount, true),
+            GoalKind.Shelter       => (c.Colonists - c.ColonistsWithoutBed, false),
+            GoalKind.Power         => (c.HasPower == true ? 1f : 0f, false),
+            GoalKind.BaseDefence   => (c.Turrets, true),
+            GoalKind.Companionship => (c.Colonists, true),
+            _ => (-1f, false),
+        };
+    }
+
     /// <summary>Format ticks as "X days" for UI display.</summary>
     public static string ElapsedDays(int ticks)
     {

@@ -84,12 +84,11 @@ public static class GoalService
 
             // rim-universe #52: filter to goals this pawn's job qualifies them for.
             // A cook owns food security; a doctor owns medicine; a constructor owns shelter.
-            shortlist = FilterByJob(pawn, shortlist);
+            shortlist = GoalMath.ByJob(shortlist, ActiveWorkTypes(pawn));
 
             // Mutual exclusivity: if someone already has FoodSecurity, nobody else gets it
             // until theirs resolves. Prevents the whole colony chanting the same goal.
-            var activeKinds = GoalStore.ActiveKinds();
-            shortlist = shortlist.Where(k => !activeKinds.Contains(k)).ToList();
+            shortlist = GoalMath.Exclusive(shortlist, GoalStore.ActiveKinds());
 
             // Nothing wrong here, or everything wrong here is on cooldown, or this pawn
             // has no job for any deficiency. All are real answers and none is worth an
@@ -271,77 +270,30 @@ public static class GoalService
             LetterDefOf.PositiveEvent, new LookTargets(pawn));
     }
 
-    /// <summary>What actually satisfied the goal, in plain terms.</summary>
-    static string DescribeAchievement(GoalKind kind, float target)
-    {
-        return kind switch
-        {
-            GoalKind.FoodSecurity => $"The colony now has {target:0}+ days of food secured.",
-            GoalKind.Medicine => $"The colony now has {target:0}+ medicine stockpiled.",
-            GoalKind.Shelter => "Everyone in the colony now has a bed.",
-            GoalKind.Power => "The colony's power grid is back online.",
-            GoalKind.BaseDefence => $"The colony now has {target:0}+ defensive positions.",
-            GoalKind.Companionship => $"The colony now has {target:0}+ people.",
-            _ => "The goal was achieved.",
-        };
-    }
+    /// <summary>What actually satisfied the goal, in plain terms. GoalMath owns the
+    /// wording so the letter and the Bio-tab tooltip cannot drift apart.</summary>
+    static string DescribeAchievement(GoalKind kind, float target) =>
+        GoalMath.Achievement(kind, target);
 
     /// <summary>
-    /// Filter goals to those this pawn's job qualifies them for. rim-universe #52.
+    /// The WorkTypeDef names this pawn actually has enabled, for #52's job gate.
     ///
-    /// A cook owns food security; a doctor owns medicine; a constructor owns shelter.
-    /// Makes goals feel personal rather than interchangeable colony-wide priorities.
+    /// null when the assignments cannot be read — NOT an empty set. GoalMath.ByJob
+    /// treats the two differently on purpose: unreadable passes the shortlist
+    /// through, empty keeps nothing. The pre-S171 pair disagreed about this, with
+    /// FilterByJob keeping everything on a null workSettings while QualifiesFor
+    /// kept nothing, in the same pipeline.
     /// </summary>
-    static List<GoalKind> FilterByJob(Pawn pawn, List<GoalKind> candidates)
-    {
-        if (pawn?.workSettings == null || candidates == null || candidates.Count == 0)
-            return candidates ?? new List<GoalKind>();
-
-        return candidates.Where(k => QualifiesFor(pawn, k)).ToList();
-    }
-
-    /// <summary>
-    /// Whether this pawn's work assignments qualify them for this goal kind.
-    /// </summary>
-    static bool QualifiesFor(Pawn pawn, GoalKind kind)
+    static List<string> ActiveWorkTypes(Pawn pawn)
     {
         var ws = pawn?.workSettings;
-        if (ws == null) return false;
+        if (ws == null) return null;
 
-        // Helper: check if a work type is enabled by defName
-        bool Has(string defName)
+        var names = new List<string>();
+        foreach (var def in DefDatabase<WorkTypeDef>.AllDefsListForReading)
         {
-            var def = DefDatabase<WorkTypeDef>.GetNamedSilentFail(defName);
-            return def != null && ws.WorkIsActive(def);
+            if (def != null && ws.WorkIsActive(def)) names.Add(def.defName);
         }
-
-        return kind switch
-        {
-            // Food: cooks, growers, or hunters
-            GoalKind.FoodSecurity =>
-                Has("Cooking") || Has("Growing") || Has("Hunting"),
-
-            // Medicine: doctors
-            GoalKind.Medicine =>
-                Has("Doctor"),
-
-            // Shelter: constructors
-            GoalKind.Shelter =>
-                Has("Construction"),
-
-            // Power: researchers or constructors (someone has to build/fix it)
-            GoalKind.Power =>
-                Has("Research") || Has("Construction"),
-
-            // Defence: hunters (they shoot) or constructors (they build turrets)
-            GoalKind.BaseDefence =>
-                Has("Hunting") || Has("Construction"),
-
-            // Companionship: wardens or handlers (social jobs)
-            GoalKind.Companionship =>
-                Has("Warden") || Has("Handling"),
-
-            _ => false,
-        };
+        return names;
     }
 }

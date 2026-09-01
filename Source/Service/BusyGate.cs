@@ -30,7 +30,7 @@ public static class BusyGate
     /// connection can legitimately take minutes. Five is past any of that and well
     /// short of a play session.
     /// </summary>
-    public const int StuckAfterSeconds = 60;
+    public const int StuckAfterSeconds = 300;
 
     /// <summary>
     /// True when the flag should be forced back down. False when it is not set at all,
