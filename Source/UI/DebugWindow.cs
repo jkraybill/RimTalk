@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using RimTalk.Data;
 using RimTalk.Service;
 using RimTalk.Source.Data;
+using RimTalk.Util;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -93,6 +94,9 @@ public class DebugWindow : Window
     private string _tempPromptSegmentsText;
     private List<PromptMessageSegment> _tempPromptSegments = [];
     private readonly HashSet<int> _expandedPromptSegmentIndices = new();
+    private Texture2D _cachedImageTexture;
+    private string _cachedImageBase64;
+    private Guid _cachedImageLogId = Guid.Empty;
 
     private DebugViewMode _viewMode;
     private string _sortColumn;
@@ -104,6 +108,7 @@ public class DebugWindow : Window
     private const string ControlNameTextSearch = "TextSearchField";
     private const string ControlNameDetailResponse = "DetailResponseField";
     private const string ControlNameDetailMessages = "DetailMessagesField";
+    private const string ControlNameDetailPromptMessages = "DetailPromptMessagesField";
 
     // Styles
     private GUIStyle _contextStyle;
@@ -112,12 +117,10 @@ public class DebugWindow : Window
     public DebugWindow()
     {
         doCloseX = true;
+        closeOnClickedOutside = false;
         draggable = true;
         resizeable = true;
         absorbInputAroundWindow = false;
-        closeOnClickedOutside = false;
-        closeOnAccept = false;
-        closeOnCancel = true;
         preventCameraMotion = false;
 
         var settings = Settings.Get();
@@ -126,7 +129,7 @@ public class DebugWindow : Window
         _sortAscending = settings.DebugSortAscending;
         _expandedPawns = [];
 
-        _maxRows = 500;
+        _maxRows = ApiHistory.MaxHistoryCount;
         _pawnFilter = string.Empty;
         _textSearch = string.Empty;
         _stateFilter = State.None;
@@ -138,6 +141,13 @@ public class DebugWindow : Window
     public override void PreClose()
     {
         base.PreClose();
+        if (_cachedImageTexture != null)
+        {
+            UnityEngine.Object.Destroy(_cachedImageTexture);
+            _cachedImageTexture = null;
+        }
+        _cachedImageLogId = Guid.Empty;
+
         var settings = Settings.Get();
         settings.DebugSortColumn = _sortColumn;
         settings.DebugSortAscending = _sortAscending;
@@ -170,37 +180,45 @@ public class DebugWindow : Window
 
     public override void DoWindowContents(Rect inRect)
     {
-        HandleGlobalClicks(inRect);
-        UpdateData();
+        Text.WordWrap = false;
+        try
+        {
+            HandleGlobalClicks(inRect);
+            UpdateData();
 
-        const float bottomSectionHeight = 150f;
-        const float spacing = 10f;
+            const float bottomSectionHeight = 150f;
+            const float spacing = 10f;
 
-        float contentHeight = inRect.height - bottomSectionHeight - spacing;
+            float contentHeight = inRect.height - bottomSectionHeight - spacing;
 
-        // LEFT PANE (Table + Filters) vs RIGHT PANE (Details)
-        float leftWidth = inRect.width * 0.60f - (spacing / 2);
-        float rightWidth = inRect.width * 0.40f - (spacing / 2);
+            // LEFT PANE (Table + Filters) vs RIGHT PANE (Details)
+            float leftWidth = inRect.width * 0.60f - (spacing / 2);
+            float rightWidth = inRect.width * 0.40f - (spacing / 2);
 
-        var leftPaneRect = new Rect(inRect.x, inRect.y, leftWidth, contentHeight);
-        var detailsRect = new Rect(leftPaneRect.xMax + spacing, inRect.y, rightWidth, contentHeight);
+            var leftPaneRect = new Rect(inRect.x, inRect.y, leftWidth, contentHeight);
+            var detailsRect = new Rect(leftPaneRect.xMax + spacing, inRect.y, rightWidth, contentHeight);
 
-        DrawLeftPane(leftPaneRect);
-        DrawDetailsPanel(detailsRect);
+            DrawLeftPane(leftPaneRect);
+            DrawDetailsPanel(detailsRect);
 
-        // Bottom Section
-        var bottomRect = new Rect(inRect.x, leftPaneRect.yMax + spacing, inRect.width, bottomSectionHeight);
-        float graphWidth = bottomRect.width * 0.50f;
-        float statsWidth = bottomRect.width * 0.30f;
-        float actionsWidth = bottomRect.width * 0.20f - (spacing * 2);
+            // Bottom Section
+            var bottomRect = new Rect(inRect.x, leftPaneRect.yMax + spacing, inRect.width, bottomSectionHeight);
+            float graphWidth = bottomRect.width * 0.50f;
+            float statsWidth = bottomRect.width * 0.30f;
+            float actionsWidth = bottomRect.width * 0.20f - (spacing * 2);
 
-        var graphRect = new Rect(bottomRect.x, bottomRect.y, graphWidth, bottomRect.height);
-        var statsRect = new Rect(graphRect.xMax + spacing, bottomRect.y, statsWidth, bottomRect.height);
-        var actionsRect = new Rect(statsRect.xMax + spacing, bottomRect.y, actionsWidth, bottomRect.height);
+            var graphRect = new Rect(bottomRect.x, bottomRect.y, graphWidth, bottomRect.height);
+            var statsRect = new Rect(graphRect.xMax + spacing, bottomRect.y, statsWidth, bottomRect.height);
+            var actionsRect = new Rect(statsRect.xMax + spacing, bottomRect.y, actionsWidth, bottomRect.height);
 
-        DrawGraph(graphRect);
-        DrawStatsSection(statsRect);
-        DrawBottomActions(actionsRect);
+            DrawGraph(graphRect);
+            DrawStatsSection(statsRect);
+            DrawBottomActions(actionsRect);
+        }
+        finally
+        {
+            Text.WordWrap = true;
+        }
     }
 
     private void UpdateData()
@@ -398,13 +416,20 @@ public class DebugWindow : Window
         {
             var options = new List<FloatMenuOption>
             {
-                new($"{lastPrefix} 200", () => _maxRows = 200),
-                new($"{lastPrefix} 500", () => _maxRows = 500),
-                new($"{lastPrefix} 1000", () => _maxRows = 1000),
-                new($"{lastPrefix} 2000", () => _maxRows = 2000)
+                new($"{lastPrefix} 200", () => SetMaxRows(200)),
+                new($"{lastPrefix} 500", () => SetMaxRows(500)),
+                new($"{lastPrefix} 1000", () => SetMaxRows(1000)),
+                new($"{lastPrefix} 2000", () => SetMaxRows(2000))
             };
             Find.WindowStack.Add(new FloatMenu(options));
         }
+    }
+
+    private void SetMaxRows(int count)
+    {
+        _maxRows = count;
+        ApiHistory.MaxHistoryCount = count;
+        ApiHistory.TrimHistory();
     }
 
     private void DrawActiveRequestsTable(Rect rect)
@@ -504,11 +529,9 @@ public class DebugWindow : Window
             Widgets.Label(recRect, "-");
         currentX += ARRecipientWidth + ColumnPadding;
 
-        // 4. Prompt (Truncated)
-        string prompt = req.Prompt ?? "";
-        Text.WordWrap = false;
+        // 4. Prompt (Truncated, Single Line)
+        string prompt = (req.Prompt ?? "").Replace("\r", "").Replace("\n", " ");
         Widgets.Label(new Rect(currentX, rowY, promptWidth, RowHeight), prompt);
-        Text.WordWrap = true;
         currentX += promptWidth + ColumnPadding;
 
         // 5. Type
@@ -595,7 +618,17 @@ public class DebugWindow : Window
         if (rowIndex % 2 == 0) Widgets.DrawBoxSolid(rowRect, new Color(0.15f, 0.15f, 0.15f, 0.4f));
 
         bool isSelected = _selectedLog != null && _selectedLog.Id == request.Id;
-        if (isSelected) Widgets.DrawBoxSolid(rowRect, new Color(0.2f, 0.25f, 0.35f, 0.45f));
+        bool isSameConversation = !isSelected && _selectedLog != null && _selectedLog.ConversationId >= 0 &&
+                                  _selectedLog.ConversationId == request.ConversationId;
+
+        if (isSelected)
+            Widgets.DrawBoxSolid(rowRect, new Color(0.2f, 0.25f, 0.35f, 0.45f));
+        else if (isSameConversation)
+            Widgets.DrawBoxSolid(rowRect, new Color(0.18f, 0.22f, 0.28f, 0.35f));
+
+        // Left accent color bar indicating conversation group
+        Color groupColor = UIUtil.GetConversationColor(request.ConversationId, fallbackMuted: true);
+        Widgets.DrawBoxSolid(new Rect(xOffset, rowY, 3.5f, RowHeight), groupColor);
 
         float currentX = xOffset + 5f;
         Widgets.Label(new Rect(currentX, rowRect.y, TimestampColumnWidth, RowHeight),
@@ -606,15 +639,13 @@ public class DebugWindow : Window
         {
             string pawnName = request.Name ?? "-";
             var pawnNameRect = new Rect(currentX, rowRect.y, PawnColumnWidth, RowHeight);
-            var pawn = _pawnStates.FirstOrDefault(p => p.Pawn.LabelShort == pawnName)?.Pawn;
+            var pawn = request.TalkRequest?.ResolvePawnState(pawnName)?.Pawn ?? Cache.GetByName(pawnName)?.Pawn;
             UIUtil.DrawClickablePawnName(pawnNameRect, pawnName, pawn);
             currentX += PawnColumnWidth + ColumnPadding;
         }
 
-        string resp = request.Response ?? _generating;
-        Text.WordWrap = false;
+        string resp = (request.Response ?? _generating).Replace("\r", "").Replace("\n", " ");
         Widgets.Label(new Rect(currentX, rowRect.y, responseColumnWidth, RowHeight), resp);
-        Text.WordWrap = true;
         currentX += responseColumnWidth + ColumnPadding;
 
         string interactionType = request.InteractionType ?? "-";
@@ -627,9 +658,18 @@ public class DebugWindow : Window
         currentX += TimeColumnWidth + ColumnPadding;
 
         int count = request.Payload?.TokenCount ?? 0;
-        string tokenCountText = count != 0
-            ? count.ToString()
-            : request.IsFirstDialogue ? "-" : "";
+        if (count == 0 && request.Channel == Channel.User && request.ConversationId >= 0)
+        {
+            var payload = ApiHistory.GetPayload(request);
+            count = payload?.TokenCount ?? 0;
+        }
+        else if (count != 0 && request.ConversationId >= 0)
+        {
+            if (ApiHistory.GetAll().Any(l => l.ConversationId == request.ConversationId && l.Channel == Channel.User))
+                count = 0;
+        }
+
+        string tokenCountText = count > 0 ? count.ToString() : "";
         Widgets.Label(new Rect(currentX, rowRect.y, TokensColumnWidth, RowHeight), tokenCountText);
         currentX += TokensColumnWidth + ColumnPadding;
 
@@ -656,13 +696,10 @@ public class DebugWindow : Window
         Widgets.DrawBoxSolid(rect, new Color(0.08f, 0.08f, 0.1f, 0.8f));
         InitializeContextStyle();
 
-        var inner = rect.ContractedBy(8f);
+        var inner = rect.ContractedBy(4f);
         GUI.BeginGroup(inner);
 
         float y = 0f;
-        Text.Font = GameFont.Small;
-        Widgets.Label(new Rect(0f, y, inner.width, 24f), "RimTalk.DebugWindow.Details".Translate());
-        y += 26f;
 
         if (_selectedLog == null)
         {
@@ -701,9 +738,9 @@ public class DebugWindow : Window
 
         Text.Font = GameFont.Tiny;
         GUI.color = Color.gray;
-        Widgets.Label(new Rect(0f, y, inner.width, 18f), header.ToString());
+        Widgets.Label(new Rect(0f, y, inner.width, 24f), header.ToString());
         GUI.color = Color.white;
-        y += 22f;
+        y += 24f;
 
         float buttonsRowH = 24f;
         float btnW = 88f;
@@ -721,11 +758,18 @@ public class DebugWindow : Window
         {
             btnX += btnW + 6f;
             Rect reportRect = new Rect(btnX, y, btnW, buttonsRowH);
+            var payload = ApiHistory.GetPayload(_selectedLog);
+            GUI.enabled = payload != null;
             if (Widgets.ButtonText(reportRect, "RimTalk.DebugWindow.ApiLog".Translate()))
             {
-                GUIUtility.systemCopyBuffer = _selectedLog.Payload?.ToString();
-                Messages.Message("RimTalk.DebugWindow.Copied".Translate(), MessageTypeDefOf.TaskCompletion, false);
+                string payloadText = payload?.ToString();
+                if (!string.IsNullOrEmpty(payloadText))
+                {
+                    GUIUtility.systemCopyBuffer = payloadText;
+                    Messages.Message("RimTalk.DebugWindow.Copied".Translate(), MessageTypeDefOf.TaskCompletion, false);
+                }
             }
+            GUI.enabled = true;
         }
 
         // Resend Button
@@ -761,14 +805,18 @@ public class DebugWindow : Window
         float blockSpacing = 10f;
         float headerH = 18f;
 
+        UpdateCachedImage();
+
         // Calculate heights dynamically based on current content
         float viewWidth = scrollOuter.width - 16f;
         float textAreaWidth = viewWidth - 8f;
         float respH = Mathf.Max(40f,
             _monoTinyStyle.CalcHeight(new GUIContent(_tempResponse), textAreaWidth) + 10f);
+        float imgH = _cachedImageTexture != null ? 140f : 0f;
         float msgH = CalculatePromptSegmentsHeight(_tempPromptSegments, viewWidth);
 
         var viewH = headerH + respH + blockSpacing +
+                    (imgH > 0f ? imgH + blockSpacing : 0f) +
                     msgH + 10f;
 
         var view = new Rect(0f, 0f, scrollOuter.width - 16f, viewH);
@@ -787,6 +835,13 @@ public class DebugWindow : Window
             readOnly: true);
         yy += blockSpacing;
 
+        // Attached Image Block
+        if (_cachedImageTexture != null)
+        {
+            DrawImageAttachmentBlock(ref yy, view.width, _cachedImageTexture);
+            yy += blockSpacing;
+        }
+
         // Prompt Messages Block (segmented, collapsible)
         DrawPromptMessagesBlock(ref yy, view.width, "RimTalk.DebugWindow.PromptMessages".Translate(),
             _tempPromptSegments, _tempPromptSegmentsText);
@@ -794,6 +849,119 @@ public class DebugWindow : Window
         Widgets.EndScrollView();
 
         GUI.EndGroup();
+    }
+
+    private void UpdateCachedImage()
+    {
+        if (_selectedLog == null)
+        {
+            ClearCachedImage();
+            return;
+        }
+
+        string imageBase64 = _selectedLog.TalkRequest?.ImageBase64;
+
+        if (string.IsNullOrEmpty(imageBase64) && _selectedLog.ConversationId >= 0)
+        {
+            foreach (var item in ApiHistory.GetAll())
+            {
+                if (item.ConversationId == _selectedLog.ConversationId && !string.IsNullOrEmpty(item.TalkRequest?.ImageBase64))
+                {
+                    imageBase64 = item.TalkRequest.ImageBase64;
+                    break;
+                }
+            }
+        }
+
+        if (string.IsNullOrEmpty(imageBase64))
+        {
+            ClearCachedImage();
+            return;
+        }
+
+        if (_selectedLog.Id != _cachedImageLogId)
+        {
+            ClearCachedImage();
+
+            try
+            {
+                byte[] bytes = Convert.FromBase64String(imageBase64);
+                var tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
+                if (tex.LoadImage(bytes))
+                {
+                    _cachedImageTexture = tex;
+                    _cachedImageBase64 = imageBase64;
+                    _cachedImageLogId = _selectedLog.Id;
+                }
+                else
+                {
+                    UnityEngine.Object.Destroy(tex);
+                }
+            }
+            catch (Exception ex)
+            {
+                Util.Logger.Error($"Failed to decode ImageBase64 for DebugWindow: {ex.Message}");
+            }
+        }
+    }
+
+    private void ClearCachedImage()
+    {
+        if (_cachedImageTexture != null)
+        {
+            UnityEngine.Object.Destroy(_cachedImageTexture);
+            _cachedImageTexture = null;
+        }
+        _cachedImageBase64 = null;
+        _cachedImageLogId = Guid.Empty;
+    }
+
+    private void DrawImageAttachmentBlock(ref float y, float width, Texture2D texture)
+    {
+        float headerHeight = 18f;
+        Text.Font = GameFont.Tiny;
+        GUI.color = new Color(0.4f, 0.8f, 1f);
+
+        string labelText = "RimTalk.DebugWindow.AttachedImage".Translate();
+        Vector2 labelSize = Text.CalcSize(labelText);
+        Rect labelRect = new Rect(0f, y, labelSize.x, headerHeight);
+        Widgets.Label(labelRect, labelText);
+
+        // Draw Copy Icon next to label
+        Rect copyRect = new Rect(labelRect.xMax + 8f, y, 16f, 16f);
+        if (Widgets.ButtonImage(copyRect, TexButton.Copy))
+        {
+            if (VisionUtil.CopyImageToClipboard(texture, _cachedImageBase64))
+            {
+                Messages.Message("RimTalk.DebugWindow.ImageCopied".Translate(), MessageTypeDefOf.TaskCompletion, false);
+            }
+            else if (!string.IsNullOrEmpty(_cachedImageBase64))
+            {
+                GUIUtility.systemCopyBuffer = _cachedImageBase64;
+                Messages.Message("RimTalk.DebugWindow.Copied".Translate(), MessageTypeDefOf.TaskCompletion, false);
+            }
+        }
+        TooltipHandler.TipRegion(copyRect, "RimTalk.DebugWindow.CopyImage".Translate());
+
+        GUI.color = Color.white;
+        y += headerHeight;
+
+        float imgHeight = 110f;
+        float imgWidth = Mathf.Min(width - 8f, imgHeight * ((float)texture.width / Mathf.Max(1, texture.height)));
+        var boxRect = new Rect(0f, y, width, imgHeight + 8f);
+        Widgets.DrawBoxSolid(boxRect, new Color(0.05f, 0.05f, 0.05f, 0.55f));
+
+        var drawRect = new Rect(4f, y + 4f, imgWidth, imgHeight);
+        GUI.DrawTexture(drawRect, texture, ScaleMode.ScaleToFit);
+
+        if (Widgets.ButtonInvisible(boxRect))
+        {
+            Find.WindowStack.Add(new Dialog_ImageViewer(texture));
+            SoundDefOf.Click.PlayOneShotOnCamera();
+        }
+        TooltipHandler.TipRegion(boxRect, "RimTalk.DebugWindow.ClickToExpandImage".Translate());
+
+        y += imgHeight + 8f;
     }
 
     private void DrawSelectableBlock(ref float y, float width, string title, ref string content, float contentHeight,
@@ -886,42 +1054,114 @@ public class DebugWindow : Window
             return;
         }
 
-        const float messageHeaderHeight = 22f;
+        const float messageHeaderHeight = 24f;
         const float messageSpacing = 6f;
 
         for (int i = 0; i < segments.Count; i++)
         {
             var segment = segments[i];
+            bool isExpanded = _expandedPromptSegmentIndices.Contains(i);
             string preview = GetPromptMessagePreview(segment.Content);
             string roleLabel = GetRoleLabel(segment.Role);
+            Color roleColor = GetRoleColor(segment.Role);
             string entryName = string.IsNullOrWhiteSpace(segment.EntryName) ? "Entry" : segment.EntryName;
-            string state = _expandedPromptSegmentIndices.Contains(i) ? "[-]" : "[+]";
-            string label = $"{state} {i + 1}. {entryName} ({roleLabel}): {preview}";
 
             var headerRect = new Rect(0f, y, width, messageHeaderHeight);
-            Widgets.DrawBoxSolid(headerRect, new Color(0.12f, 0.12f, 0.12f, 0.6f));
-            Widgets.Label(new Rect(headerRect.x + 6f, headerRect.y + 2f, headerRect.width - 12f, headerRect.height),
-                label);
+            bool isMouseOverHeader = Mouse.IsOver(headerRect);
 
-            if (Widgets.ButtonInvisible(headerRect))
+            // Distinct background for expanded vs collapsed (with hover feedback)
+            if (isExpanded)
             {
-                if (_expandedPromptSegmentIndices.Contains(i))
+                Widgets.DrawBoxSolid(headerRect, new Color(0.18f, 0.24f, 0.35f, 0.95f));
+                // Left accent bar
+                Widgets.DrawBoxSolid(new Rect(0f, y, 3.5f, messageHeaderHeight), roleColor);
+            }
+            else
+            {
+                Color collapsedBg = isMouseOverHeader
+                    ? new Color(0.18f, 0.20f, 0.25f, 0.85f)
+                    : new Color(0.12f, 0.13f, 0.16f, 0.70f);
+                Widgets.DrawBoxSolid(headerRect, collapsedBg);
+            }
+
+            // Copy button for individual segment (on right edge of header)
+            Rect copyBtnRect = new Rect(headerRect.xMax - 22f, y + (messageHeaderHeight - 16f) / 2f, 16f, 16f);
+            if (Widgets.ButtonImage(copyBtnRect, TexButton.Copy))
+            {
+                GUIUtility.systemCopyBuffer = segment.Content ?? "";
+                Messages.Message("RimTalk.DebugWindow.Copied".Translate(), MessageTypeDefOf.TaskCompletion, false);
+            }
+            TooltipHandler.TipRegion(copyBtnRect, "RimTalk.DebugWindow.Copy".Translate());
+
+            // Header Text components (Single line)
+            Text.Font = GameFont.Tiny;
+            Text.Anchor = TextAnchor.MiddleLeft;
+            float currentX = 8f;
+            float maxTextRight = copyBtnRect.x - 6f;
+
+            // 1. Index & Entry Name
+            string titleText = $"{i + 1}. {entryName}";
+            Vector2 titleSize = Text.CalcSize(titleText);
+            var titleRect = new Rect(currentX, y, titleSize.x, messageHeaderHeight);
+            GUI.color = Color.white;
+            Widgets.Label(titleRect, titleText);
+            currentX += titleSize.x + 5f;
+
+            // 2. Role Badge
+            string roleText = $"({roleLabel})";
+            Vector2 roleSize = Text.CalcSize(roleText);
+            var roleRect = new Rect(currentX, y, roleSize.x, messageHeaderHeight);
+            GUI.color = roleColor;
+            Widgets.Label(roleRect, roleText);
+            currentX += roleSize.x + 2f;
+
+            // 3. Separator
+            string sep = ": ";
+            Vector2 sepSize = Text.CalcSize(sep);
+            var sepRect = new Rect(currentX, y, sepSize.x, messageHeaderHeight);
+            GUI.color = new Color(0.6f, 0.6f, 0.6f);
+            Widgets.Label(sepRect, sep);
+            currentX += sepSize.x;
+
+            // 4. Preview Text (Single line)
+            float previewWidth = Mathf.Max(0f, maxTextRight - currentX);
+            if (previewWidth > 10f)
+            {
+                var previewRect = new Rect(currentX, y, previewWidth, messageHeaderHeight);
+                GUI.color = isExpanded ? new Color(0.85f, 0.88f, 0.92f) : new Color(0.70f, 0.73f, 0.77f);
+                Widgets.Label(previewRect, preview);
+            }
+
+            // Reset text settings
+            Text.Anchor = TextAnchor.UpperLeft;
+            GUI.color = Color.white;
+
+            // Header toggle click region (excluding copy button)
+            Rect clickRect = new Rect(headerRect.x, headerRect.y, headerRect.width - 24f, messageHeaderHeight);
+            if (Widgets.ButtonInvisible(clickRect))
+            {
+                if (isExpanded)
                     _expandedPromptSegmentIndices.Remove(i);
                 else
                     _expandedPromptSegmentIndices.Add(i);
+                SoundDefOf.Click.PlayOneShotOnCamera();
             }
 
             y += messageHeaderHeight;
 
-            if (_expandedPromptSegmentIndices.Contains(i))
+            // Expanded Body Section
+            if (isExpanded)
             {
                 string safeContent = segment.Content ?? "";
-                float bodyHeight = Mathf.Max(40f,
-                    _monoTinyStyle.CalcHeight(new GUIContent(safeContent), width - 8f) + 10f);
+                float bodyHeight = Mathf.Max(45f,
+                    _monoTinyStyle.CalcHeight(new GUIContent(safeContent), width - 16f) + 14f);
                 var bodyRect = new Rect(0f, y, width, bodyHeight);
-                Widgets.DrawBoxSolid(bodyRect, new Color(0.05f, 0.05f, 0.05f, 0.55f));
 
-                var textRect = bodyRect.ContractedBy(4f);
+                // Body background with left role-colored accent line
+                Widgets.DrawBoxSolid(bodyRect, new Color(0.06f, 0.07f, 0.09f, 0.90f));
+                Widgets.DrawBoxSolid(new Rect(0f, y, 3.5f, bodyHeight), new Color(roleColor.r, roleColor.g, roleColor.b, 0.5f));
+
+                var textRect = new Rect(bodyRect.x + 8f, bodyRect.y + 6f, bodyRect.width - 14f, bodyRect.height - 12f);
                 string newContent = GUI.TextArea(textRect, safeContent, _monoTinyStyle);
                 if (newContent != safeContent)
                 {
@@ -995,7 +1235,7 @@ public class DebugWindow : Window
             UIUtil.DrawClickablePawnName(pawnNameRect, pawnKey, pawnState.Pawn);
             currentX += GroupedPawnNameWidth + ColumnPadding;
 
-            string lastResponse = GetLastResponseForPawn(pawnKey);
+            string lastResponse = GetLastResponseForPawn(pawnKey).Replace("\r", "").Replace("\n", " ");
             Widgets.Label(new Rect(currentX, rowRect.y, responseColumnWidth, RowHeight), lastResponse);
             currentX += responseColumnWidth + ColumnPadding;
 
@@ -1455,38 +1695,70 @@ public class DebugWindow : Window
 
     private static List<PromptMessageSegment> ResolvePromptSegments(ApiLog log)
     {
-        var request = log?.TalkRequest;
-        if (request?.PromptMessageSegments != null && request.PromptMessageSegments.Count > 0)
-            return request.PromptMessageSegments;
-
-        var segments = new List<PromptMessageSegment>();
-        if (request == null) return segments;
-
-        if (request.PromptMessages != null && request.PromptMessages.Count > 0)
+        var targetLog = log;
+        if (targetLog != null && targetLog.TalkRequest?.PromptMessageSegments == null &&
+            targetLog.TalkRequest?.PromptMessages == null && targetLog.ConversationId >= 0)
         {
+            foreach (var item in ApiHistory.GetAll())
+            {
+                if (item.ConversationId == targetLog.ConversationId && item.Channel != Channel.User &&
+                    (item.TalkRequest?.PromptMessageSegments != null || item.TalkRequest?.PromptMessages != null))
+                {
+                    targetLog = item;
+                    break;
+                }
+            }
+        }
+
+        var request = targetLog?.TalkRequest;
+        string imageBase64 = request?.ImageBase64;
+        if (string.IsNullOrEmpty(imageBase64) && log != null && log.ConversationId >= 0)
+        {
+            foreach (var item in ApiHistory.GetAll())
+            {
+                if (item.ConversationId == log.ConversationId && !string.IsNullOrEmpty(item.TalkRequest?.ImageBase64))
+                {
+                    imageBase64 = item.TalkRequest.ImageBase64;
+                    break;
+                }
+            }
+        }
+
+        if (request?.PromptMessageSegments != null && request.PromptMessageSegments.Count > 0)
+        {
+            var result = request.PromptMessageSegments.ToList();
+            if (!string.IsNullOrEmpty(imageBase64) && !result.Any(s => s.EntryId == "attached-image-base64"))
+            {
+                result.Add(new PromptMessageSegment(
+                    "attached-image-base64",
+                    "RimTalk.DebugWindow.AttachedImageBase64".Translate(),
+                    Role.User,
+                    $"data:image/jpeg;base64,{imageBase64}"));
+            }
+            return result;
+        }
+
+        if (request?.PromptMessages != null && request.PromptMessages.Count > 0)
+        {
+            var segments = new List<PromptMessageSegment>();
             for (int i = 0; i < request.PromptMessages.Count; i++)
             {
                 var (role, content) = request.PromptMessages[i];
                 segments.Add(new PromptMessageSegment($"message-{i}", $"{"RimTalk.DebugWindow.FormatEntry".Translate()} {i + 1}", role, content));
             }
+
+            if (!string.IsNullOrEmpty(imageBase64))
+            {
+                segments.Add(new PromptMessageSegment(
+                    "attached-image-base64",
+                    "RimTalk.DebugWindow.AttachedImageBase64".Translate(),
+                    Role.User,
+                    $"data:image/jpeg;base64,{imageBase64}"));
+            }
             return segments;
         }
 
-        var instruction = $"{Constant.Instruction}\n{request.Context}";
-        segments.Add(new PromptMessageSegment("system-instruction", "RimTalk.DebugWindow.SystemInstruction".Translate(), Role.System, instruction));
-
-        if (request.Initiator != null)
-        {
-            foreach (var (role, message) in TalkHistory.GetMessageHistory(request.Initiator))
-            {
-                segments.Add(new PromptMessageSegment("chat-history", "RimTalk.DebugWindow.ChatHistory".Translate(), role, message));
-            }
-        }
-
-        if (!string.IsNullOrWhiteSpace(request.Prompt))
-            segments.Add(new PromptMessageSegment("input-prompt", "RimTalk.DebugWindow.InputPrompt".Translate(), Role.User, request.Prompt));
-
-        return segments;
+        return new List<PromptMessageSegment>();
     }
 
     private float CalculatePromptSegmentsHeight(List<PromptMessageSegment> segments, float width)
@@ -1495,7 +1767,7 @@ public class DebugWindow : Window
         if (segments == null || segments.Count == 0)
             return height + 20f;
 
-        const float messageHeaderHeight = 22f;
+        const float messageHeaderHeight = 24f;
         const float messageSpacing = 6f;
 
         for (int i = 0; i < segments.Count; i++)
@@ -1504,8 +1776,8 @@ public class DebugWindow : Window
             if (_expandedPromptSegmentIndices.Contains(i))
             {
                 string content = segments[i].Content ?? "";
-                height += Mathf.Max(40f,
-                    _monoTinyStyle.CalcHeight(new GUIContent(content), width - 8f) + 10f);
+                height += Mathf.Max(45f,
+                    _monoTinyStyle.CalcHeight(new GUIContent(content), width - 16f) + 14f);
             }
             height += messageSpacing;
         }
@@ -1519,8 +1791,9 @@ public class DebugWindow : Window
             return "(empty)";
 
         var firstLine = content.Replace("\r", "").Split('\n')[0].Trim();
-        if (firstLine.Length > 80)
-            firstLine = firstLine.Substring(0, 77) + "...";
+        firstLine = System.Text.RegularExpressions.Regex.Replace(firstLine, @"\s+", " ");
+        if (firstLine.Length > 90)
+            firstLine = firstLine.Substring(0, 87) + "...";
 
         return firstLine;
     }
@@ -1528,6 +1801,17 @@ public class DebugWindow : Window
     private static string GetRoleLabel(Role role)
     {
         return role == Role.AI ? "Assistant" : role.ToString();
+    }
+
+    private static Color GetRoleColor(Role role)
+    {
+        return role switch
+        {
+            Role.System => new Color(0.95f, 0.78f, 0.35f),
+            Role.User => new Color(0.40f, 0.80f, 1.0f),
+            Role.AI => new Color(0.45f, 0.90f, 0.55f),
+            _ => new Color(0.85f, 0.85f, 0.85f)
+        };
     }
 
     /// <summary>

@@ -72,8 +72,6 @@
     <!-- Settings.cs -->
     <RimTalk.Settings.BasicSettings>基本設定</RimTalk.Settings.BasicSettings>
     <RimTalk.Settings.PromptSetting>提示詞設定</RimTalk.Settings.PromptSetting>
-    <RimTalk.Settings.ImportPreset>導入</RimTalk.Settings.ImportPreset>
-    <RimTalk.Settings.ExportPreset>導出</RimTalk.Settings.ExportPreset>
     <RimTalk.Settings.ShowVariables>變數參考</RimTalk.Settings.ShowVariables>
     <RimTalk.Settings.ResetConfirm>確定要將所有提示詞預設和參考數據重置為默認值嗎？此操作無法撤銷。</RimTalk.Settings.ResetConfirm>
     
@@ -86,9 +84,6 @@
     <RimTalk.Settings.PromptPreset.Activate>啟動</RimTalk.Settings.PromptPreset.Activate>
     <RimTalk.Settings.PromptPreset.Duplicate>複製</RimTalk.Settings.PromptPreset.Duplicate>
     <RimTalk.Settings.PromptPreset.Delete>刪除</RimTalk.Settings.PromptPreset.Delete>
-    <RimTalk.Settings.PromptPreset.SectionSystem>系統 (System)</RimTalk.Settings.PromptPreset.SectionSystem>
-    <RimTalk.Settings.PromptPreset.SectionHistory>歷史 (History)</RimTalk.Settings.PromptPreset.SectionHistory>
-    <RimTalk.Settings.PromptPreset.SectionPrompt>提示 (Prompt)</RimTalk.Settings.PromptPreset.SectionPrompt>
     <RimTalk.Settings.PromptPreset.NewEntry>+ 新建條目</RimTalk.Settings.PromptPreset.NewEntry>
     <RimTalk.Settings.PromptPreset.NewEntryName>新條目</RimTalk.Settings.PromptPreset.NewEntryName>
     <RimTalk.Settings.PromptPreset.SelectEntryToEdit>選擇一個條目進行編輯</RimTalk.Settings.PromptPreset.SelectEntryToEdit>
@@ -100,7 +95,6 @@
     <RimTalk.Settings.PromptPreset.PositionRelative>相對</RimTalk.Settings.PromptPreset.PositionRelative>
     <RimTalk.Settings.PromptPreset.PositionInChat>聊天內</RimTalk.Settings.PromptPreset.PositionInChat>
     <RimTalk.Settings.PromptPreset.Depth>深度：</RimTalk.Settings.PromptPreset.Depth>
-    <RimTalk.Settings.PromptPreset.Content>內容：</RimTalk.Settings.PromptPreset.Content>
     <RimTalk.Settings.PromptPreset.ModVariables>Mod 變數</RimTalk.Settings.PromptPreset.ModVariables>
     <RimTalk.Settings.PromptPreset.VariablePreviewHint>顯示所有可用的對象、屬性和函數。遊戲內可用時顯示實際值。</RimTalk.Settings.PromptPreset.VariablePreviewHint>
     
@@ -119,7 +113,6 @@
     <RimTalk.Settings.PromptPreset.PreviewError>生成預覽時出錯：{0}</RimTalk.Settings.PromptPreset.PreviewError>
     
     <!-- Simple/Advanced Mode -->
-    <RimTalk.Settings.SimpleModeTip>角色資料、聊天歷史和上下文資訊會自動包含。</RimTalk.Settings.SimpleModeTip>
     <RimTalk.Settings.AdvancedModeWarning>高級模式允許您完全控制提示條目、變數和訊息順序。您當前的指令將被保留。\n此功能仍在測試中，可能會出現意外行為。您要繼續嗎？</RimTalk.Settings.AdvancedModeWarning>
     <RimTalk.Settings.PromptHelp>幫助</RimTalk.Settings.PromptHelp>
     <RimTalk.Settings.AdvancedHelpContent>進階預設指南
@@ -181,9 +174,17 @@ Scriban 魔法 (動態內容)
     <RimTalk.Settings.EventFilter>事件過濾器</RimTalk.Settings.EventFilter>
     <RimTalk.Settings.ApiKey>雲端 API 金鑰</RimTalk.Settings.ApiKey>
     <RimTalk.Settings.GetFreeApiKey>獲取免費 API 金鑰</RimTalk.Settings.GetFreeApiKey>
-    <RimTalk.Settings.AICooldown>AI 冷卻時間（秒）：{0}</RimTalk.Settings.AICooldown>
+    <RimTalk.Settings.AICooldown>AI 冷卻時間（秒）</RimTalk.Settings.AICooldown>
+    <RimTalk.Settings.AICooldownTooltip>嘗試生成新 AI 對話前的基礎等待時間（秒）。</RimTalk.Settings.AICooldownTooltip>
+    <RimTalk.Settings.ReplyInterval>對話回覆間隔（秒）</RimTalk.Settings.ReplyInterval>
+    <RimTalk.Settings.ReplyIntervalTooltip>對話中上一句與下一句回覆之間的延遲時間（秒）。</RimTalk.Settings.ReplyIntervalTooltip>
     <RimTalk.Settings.OverrideInteractions>使用 AI 對話覆蓋所有互動</RimTalk.Settings.OverrideInteractions>
     <RimTalk.Settings.OverrideInteractionsTooltip>啟用此選項以允許 AI 覆蓋並重新生成所有互動的對話（包括 vanilla RimWorld 和其他模組）。注意：AI 對話具有上方設定的冷卻期。要更頻繁地生成對話，請降低冷卻時間。</RimTalk.Settings.OverrideInteractionsTooltip>
+    <RimTalk.Settings.SettingsButton>設定</RimTalk.Settings.SettingsButton>
+    <RimTalk.Settings.FastTrackInteractionsTitle>快速互動</RimTalk.Settings.FastTrackInteractionsTitle>
+    <RimTalk.Settings.FastTrackInteractionsDesc>選擇哪些互動應立即觸發對話（跳過常規對話冷卻）。未選中的互動將遵循標準冷卻時間。</RimTalk.Settings.FastTrackInteractionsDesc>
+    <RimTalk.Settings.SelectAll>全選</RimTalk.Settings.SelectAll>
+    <RimTalk.Settings.DeselectAll>全部取消</RimTalk.Settings.DeselectAll>
     <RimTalk.Settings.AllowSimultaneousConversations>允許同時進行多個對話</RimTalk.Settings.AllowSimultaneousConversations>
     <RimTalk.Settings.AllowSimultaneousConversationsTooltip>啟用後，多組 Pawn 可以同時交談。如果您希望一次只看到一個對話，或者如果同時發生的對話太多，請關閉此選項。</RimTalk.Settings.AllowSimultaneousConversationsTooltip>
     <RimTalk.Settings.DisplayTalkWhenDrafted>徵召時顯示對話</RimTalk.Settings.DisplayTalkWhenDrafted>
@@ -207,6 +208,8 @@ Scriban 魔法 (動態內容)
     <RimTalk.Settings.AllowBabiesToTalkTooltip>啟用此選項以允許嬰兒和幼兒參與由 AI 生成的對話。</RimTalk.Settings.AllowBabiesToTalkTooltip>
     <RimTalk.Settings.AllowNonHumanToTalk>允許非人類說話</RimTalk.Settings.AllowNonHumanToTalk>
     <RimTalk.Settings.AllowNonHumanToTalkTooltip>如果非人類生物（動物、機械族或自訂種族）被賦予了語音鏈接催化劑（可從商人處獲得），則允許它們說話。</RimTalk.Settings.AllowNonHumanToTalkTooltip>
+    <RimTalk.Settings.AllowAnnouncement>允許通告功能</RimTalk.Settings.AllowAnnouncement>
+    <RimTalk.Settings.AllowAnnouncementTooltip>允許殖民者和角色向附近的成員廣播通告。</RimTalk.Settings.AllowAnnouncementTooltip>
     <RimTalk.Settings.ApplyMoodAndSocialEffects>應用心情和社交影響</RimTalk.Settings.ApplyMoodAndSocialEffects>
     <RimTalk.Settings.ApplyMoodAndSocialEffectsTooltip>對話可以根據對話的情緒影響 Pawn 的心情和人際關係。</RimTalk.Settings.ApplyMoodAndSocialEffectsTooltip>
 
@@ -215,8 +218,19 @@ Scriban 魔法 (動態內容)
     <RimTalk.Settings.PlayerDialogueMode.AIDrivenPawnOnly>自動生成：僅角色</RimTalk.Settings.PlayerDialogueMode.AIDrivenPawnOnly>
     <RimTalk.Settings.PlayerToNpc>玩家對 NPC：</RimTalk.Settings.PlayerToNpc>
     <RimTalk.Settings.PlayerName>玩家名稱</RimTalk.Settings.PlayerName>
-    <RimTalk.Settings.PlayerNameTooltip>NPC 在對話中如何稱呼玩家。</RimTalk.Settings.PlayerNameTooltip>
-    <RimTalk.Settings.PlayerDialogueModeTooltip>選擇玩家在對話中的互動方式。\n\n已禁用：玩家不能參與對話。\n手動回覆：您自己輸入所有玩家回應；不會自動生成任何內容。\n自動生成回覆：AI 在對話中自動生成玩家回應。</RimTalk.Settings.PlayerDialogueModeTooltip>
+    <RimTalk.Settings.PlayerNameTooltip>當你參與對話時所顯示的名稱，代表殖民者對你的認知。</RimTalk.Settings.PlayerNameTooltip>
+    <RimTalk.Settings.PlayerPersona>玩家人設</RimTalk.Settings.PlayerPersona>
+    <RimTalk.Settings.PlayerPersonaTooltip>描述玩家的性格、語氣和說話風格。AI 生成玩家台詞或與玩家對話時會參考此項。</RimTalk.Settings.PlayerPersonaTooltip>
+    <RimTalk.Settings.Configure>設定</RimTalk.Settings.Configure>
+    <RimTalk.PlayerSettings.Title>自訂對話設定</RimTalk.PlayerSettings.Title>
+    <RimTalk.PlayerSettings.Instruct>設定玩家的對話參與方式、名稱和人設。</RimTalk.PlayerSettings.Instruct>
+    <RimTalk.PlayerSettings.ModeDesc>• 禁用：玩家不參與對話，但仍可直接輸入並讓角色之間進行對話。
+• 手動回覆：玩家手動輸入首句對話；不會自動生成玩家台詞。
+• 自動生成：僅角色：玩家發起對話後，後續對話僅由角色之間自動進行。
+• 自動生成：角色+玩家：AI 會自動生成角色和玩家雙方的台詞。（套用玩家人設）</RimTalk.PlayerSettings.ModeDesc>
+    <RimTalk.PlayerSettings.PersonaOnlyAIDriven>（僅在「自動生成：角色+玩家」模式下生效）</RimTalk.PlayerSettings.PersonaOnlyAIDriven>
+    <RimTalk.PlayerSettings.Save>儲存</RimTalk.PlayerSettings.Save>
+    <RimTalk.PlayerSettings.Saved>玩家對話設定已儲存。</RimTalk.PlayerSettings.Saved>
 
     <RimTalk.Settings.PauseAtSpeed>高速時暫停 AI</RimTalk.Settings.PauseAtSpeed>
     <RimTalk.Settings.DisableAiAtSpeedTooltip>為了減少 API 調用，當遊戲速度設定為此級別或更高時，AI 將暫停。</RimTalk.Settings.DisableAiAtSpeedTooltip>
@@ -249,7 +263,7 @@ Scriban 魔法 (動態內容)
 
     <!-- Settings_Api.cs -->
     <RimTalk.Settings.GoogleApiKeyLabel>Google AI API 金鑰：</RimTalk.Settings.GoogleApiKeyLabel>
-    <RimTalk.Settings.GoogleApiKeyDesc>使用免費的 Gemma-4-26b-a4b 模型。如需其他模型或提供商，請使用進階設定。</RimTalk.Settings.GoogleApiKeyDesc>
+    <RimTalk.Settings.GoogleApiKeyDesc>使用免費的 gemma-4-31b 模型。如需其他模型或提供商，請使用進階設定。</RimTalk.Settings.GoogleApiKeyDesc>
     <RimTalk.Settings.GetFreeApiKeyButton>獲取免費 API 金鑰</RimTalk.Settings.GetFreeApiKeyButton>
     <RimTalk.Settings.SwitchToAdvancedSettings>切換到進階設定</RimTalk.Settings.SwitchToAdvancedSettings>
     <RimTalk.Settings.SwitchToSimpleSettings>切換到簡易設定</RimTalk.Settings.SwitchToSimpleSettings>
@@ -262,7 +276,6 @@ Scriban 魔法 (動態內容)
     <RimTalk.Settings.ProviderHeader>供應商</RimTalk.Settings.ProviderHeader>
     <RimTalk.Settings.ApiKeyHeader>API 金鑰</RimTalk.Settings.ApiKeyHeader>
     <RimTalk.Settings.ModelHeader>模型</RimTalk.Settings.ModelHeader>
-    <RimTalk.Settings.CustomModelHeader>自訂模型</RimTalk.Settings.CustomModelHeader>
     <RimTalk.Settings.EnabledHeader>已啟用</RimTalk.Settings.EnabledHeader>
     <RimTalk.Settings.EnableDisableApiConfigTooltip>啟用或禁用此 API 設定</RimTalk.Settings.EnableDisableApiConfigTooltip>
     <RimTalk.Settings.LocalProviderConfiguration>本地供應商設定</RimTalk.Settings.LocalProviderConfiguration>
@@ -273,7 +286,6 @@ Scriban 魔法 (動態內容)
     <RimTalk.Settings.CustomizeRequestTooltip>自訂請求 JSON（溫度、思考等級等）</RimTalk.Settings.CustomizeRequestTooltip>
     <RimTalk.Settings.CustomizeRequestTitle>自訂請求：{0} ({1})</RimTalk.Settings.CustomizeRequestTitle>
     <RimTalk.Settings.CustomizeRequestDesc>為此 LLM 設定自訂 JSON 請求參數。這些值將合併到發送給 API 的請求載荷中（例如：temperature、reasoning_effort、max_tokens、thinking 參數等）。</RimTalk.Settings.CustomizeRequestDesc>
-    <RimTalk.Settings.ResetToDefault>恢復預設</RimTalk.Settings.ResetToDefault>
     <RimTalk.Settings.FormatJson>格式化 JSON</RimTalk.Settings.FormatJson>
     <RimTalk.Settings.ClearOverride>清空</RimTalk.Settings.ClearOverride>
     <RimTalk.Settings.CustomJsonSave>儲存</RimTalk.Settings.CustomJsonSave>
@@ -330,6 +342,11 @@ Scriban 魔法 (動態內容)
     <RimTalk.Settings.ConversationHistoryCount.Tooltip>每個會話包含多輪對話，可能會顯著增加 Token 數量</RimTalk.Settings.ConversationHistoryCount.Tooltip>
     <RimTalk.Settings.MaxPawnContextCount>包含的最大殖民者數量</RimTalk.Settings.MaxPawnContextCount>
     <RimTalk.Settings.MaxPawnContextCount.Tooltip>控制可參與對話的殖民者最大數量</RimTalk.Settings.MaxPawnContextCount.Tooltip>
+    <RimTalk.Settings.MaxEventsCount>包含的最大事件數量</RimTalk.Settings.MaxEventsCount>
+    <RimTalk.Settings.MaxEventsCount.Tooltip>控制上下文中包含的最新活躍殖民地事件和通知信件的最大數量</RimTalk.Settings.MaxEventsCount.Tooltip>
+    <RimTalk.Settings.IncludeEvents>啟用殖民地事件</RimTalk.Settings.IncludeEvents>
+    <RimTalk.Settings.IncludeEvents.Tooltip>控制上下文中是否包含最新活躍殖民地事件和通知信件，並指定最大包含數量</RimTalk.Settings.IncludeEvents.Tooltip>
+    <RimTalk.Settings.ExternalEventModDetected>檢測到外部事件擴充模組 (RimTalk Event+)。為防止提示詞重複，內置殖民地事件預設已停用。如果您希望同時使用，請勾選此項。</RimTalk.Settings.ExternalEventModDetected>
 
     <RimTalk.Settings.PawnInfo>殖民者資訊</RimTalk.Settings.PawnInfo>
     <RimTalk.Settings.IncludeRace>種族</RimTalk.Settings.IncludeRace>
@@ -355,6 +372,8 @@ Scriban 魔法 (動態內容)
     <RimTalk.Settings.IncludeCleanliness>清潔度</RimTalk.Settings.IncludeCleanliness>
     <RimTalk.Settings.IncludeSurroundings>附近的物品</RimTalk.Settings.IncludeSurroundings>
     <RimTalk.Settings.IncludeWealth>殖民地財富</RimTalk.Settings.IncludeWealth>
+    <RimTalk.Settings.IncludeTopicKeywords>生成新的對話話題</RimTalk.Settings.IncludeTopicKeywords>
+    <RimTalk.Settings.IncludeTopicKeywords.Tooltip>當殖民者周圍沒有具體事件或上下文可供討論時，有50%的機率隨機生成一個新的對話話題。</RimTalk.Settings.IncludeTopicKeywords.Tooltip>
 
     <!-- DebugWindow.cs -->
     <RimTalk.DebugWindow.ViewByTime>依時間</RimTalk.DebugWindow.ViewByTime>
@@ -363,7 +382,6 @@ Scriban 魔法 (動態內容)
     <RimTalk.DebugWindow.FilterPawn>名稱</RimTalk.DebugWindow.FilterPawn>
     <RimTalk.DebugWindow.Search>搜尋</RimTalk.DebugWindow.Search>
     <RimTalk.DebugWindow.State>狀態</RimTalk.DebugWindow.State>
-    <RimTalk.DebugWindow.Limit>限制</RimTalk.DebugWindow.Limit>
     <RimTalk.DebugWindow.StateAll>所有狀態</RimTalk.DebugWindow.StateAll>
     <RimTalk.DebugWindow.StatePending>等待</RimTalk.DebugWindow.StatePending>
     <RimTalk.DebugWindow.StateIgnored>忽略</RimTalk.DebugWindow.StateIgnored>
@@ -374,7 +392,6 @@ Scriban 魔法 (動態內容)
     <RimTalk.DebugWindow.Last>最近</RimTalk.DebugWindow.Last>
     <RimTalk.DebugWindow.AutoScroll>自動捲動</RimTalk.DebugWindow.AutoScroll>
     <RimTalk.DebugWindow.TooltipSelectForDetails>選擇一列展示細節</RimTalk.DebugWindow.TooltipSelectForDetails>
-    <RimTalk.DebugWindow.Details>細節</RimTalk.DebugWindow.Details>
     <RimTalk.DebugWindow.SelectRowHint>點擊請求獲取上下文和提示詞</RimTalk.DebugWindow.SelectRowHint>
     <RimTalk.DebugWindow.Resend>重新傳送</RimTalk.DebugWindow.Resend>
     <RimTalk.DebugWindow.ResendTooltip>編輯上下文與提示詞，然後重新傳送以測試對話。</RimTalk.DebugWindow.ResendTooltip>
@@ -389,12 +406,11 @@ Scriban 魔法 (動態內容)
     <RimTalk.DebugWindow.Prompt>提示詞 (Prompt)</RimTalk.DebugWindow.Prompt>
     <RimTalk.DebugWindow.Response>回應 (Response)</RimTalk.DebugWindow.Response>
     <RimTalk.DebugWindow.PromptMessages>請求詳情</RimTalk.DebugWindow.PromptMessages>
-    <RimTalk.DebugWindow.Contexts>上下文 (Contexts)</RimTalk.DebugWindow.Contexts>
     <RimTalk.DebugWindow.Generating>[正在生成...]</RimTalk.DebugWindow.Generating>
+    <RimTalk.DebugWindow.Canceled>[已取消]</RimTalk.DebugWindow.Canceled>
     <RimTalk.DebugWindow.StatusDisabled>已禁用</RimTalk.DebugWindow.StatusDisabled>
     <RimTalk.DebugWindow.StatusProcessing>處理中</RimTalk.DebugWindow.StatusProcessing>
     <RimTalk.DebugWindow.StatusIdle>閒置</RimTalk.DebugWindow.StatusIdle>
-    <RimTalk.DebugWindow.GroupByPawn>按角色分組</RimTalk.DebugWindow.GroupByPawn>
     <RimTalk.DebugWindow.ModSettings>設定</RimTalk.DebugWindow.ModSettings>
     <RimTalk.DebugWindow.Export>匯出</RimTalk.DebugWindow.Export>
     <RimTalk.DebugWindow.ResetLogs>重置日誌</RimTalk.DebugWindow.ResetLogs>
@@ -431,22 +447,32 @@ Scriban 魔法 (動態內容)
     <RimTalk.DebugWindow.SystemInstruction>系統指令 (System Instruction)</RimTalk.DebugWindow.SystemInstruction>
     <RimTalk.DebugWindow.ChatHistory>聊天歷史 (Chat History)</RimTalk.DebugWindow.ChatHistory>
     <RimTalk.DebugWindow.InputPrompt>輸入提示詞 (Input Prompt)</RimTalk.DebugWindow.InputPrompt>
-    <RimTalk.DebugWindow.TooltipPromptResponse>提示：\n{0}\n\n回應：\n{1}</RimTalk.DebugWindow.TooltipPromptResponse>
 
 
     <!-- Overlay.cs -->
     <RimTalk.Overlay.Debug>偵錯</RimTalk.Overlay.Debug>
     <RimTalk.Overlay.Option>懸浮窗選項</RimTalk.Overlay.Option>
     <RimTalk.Overlay.DrawAboveUI>顯示在介面之上</RimTalk.Overlay.DrawAboveUI>
+    <RimTalk.Overlay.ShowGroupColors>顯示對話組顏色</RimTalk.Overlay.ShowGroupColors>
+    <RimTalk.Overlay.ShowTargetName>顯示對話目標 [A-&gt;B]</RimTalk.Overlay.ShowTargetName>
+    <RimTalk.Overlay.AlignNameColumn>對齊名稱欄</RimTalk.Overlay.AlignNameColumn>
     <RimTalk.Overlay.Opacity>不透明度</RimTalk.Overlay.Opacity>
     <RimTalk.Overlay.FontSize>字體大小</RimTalk.Overlay.FontSize>
+    <RimTalk.Overlay.TurnOff>關閉懸浮窗</RimTalk.Overlay.TurnOff>
+    <RimTalk.Overlay.TurnOffTooltip>關閉懸浮窗。\n你可以根據設定點擊右下角圖示或底部標籤重新開啟。</RimTalk.Overlay.TurnOffTooltip>
 
     <!-- FloatMenuMakerMapGetOptionsPatch.cs -->
     <RimTalk.FloatMenu.ChatWith>與 {0} 聊天</RimTalk.FloatMenu.ChatWith>
     <RimTalk.Gizmo.ChatWithTarget>與 {0} 聊天</RimTalk.Gizmo.ChatWithTarget>
     <RimTalk.Gizmo.ChatWithTargetDesc>發起與 {0} 的對話。</RimTalk.Gizmo.ChatWithTargetDesc>
+    <RimTalk.Gizmo.Announce>發布通告</RimTalk.Gizmo.Announce>
+    <RimTalk.Gizmo.AnnounceDesc>讓 {0} 向周圍的所有角色大聲通告。</RimTalk.Gizmo.AnnounceDesc>
     <RimTalk.FloatMenu.WhatToSayToSelf>你想對 {0} 說什麼？</RimTalk.FloatMenu.WhatToSayToSelf>
     <RimTalk.FloatMenu.WhatToSayToOther>你想讓 {0} 對 {1} 說什麼？</RimTalk.FloatMenu.WhatToSayToOther>
+    <RimTalk.FloatMenu.WhatToAnnounceToSelf>你想向 {0} 及周圍通報什麼？</RimTalk.FloatMenu.WhatToAnnounceToSelf>
+    <RimTalk.FloatMenu.WhatToAnnounceToOther>你想讓 {0} 向周圍通報什麼？</RimTalk.FloatMenu.WhatToAnnounceToOther>
+    <RimTalk.FloatMenu.DirectModeTooltip>常規對話 (按Tab鍵切換)</RimTalk.FloatMenu.DirectModeTooltip>
+    <RimTalk.FloatMenu.AnnounceModeTooltip>向周圍廣播通報 (按Tab鍵切換)</RimTalk.FloatMenu.AnnounceModeTooltip>
     <RimTalk.FloatMenu.Send>發送</RimTalk.FloatMenu.Send>
     <RimTalk.FloatMenu.Cancel>取消</RimTalk.FloatMenu.Cancel>
 
@@ -456,4 +482,54 @@ Scriban 魔法 (動態內容)
     <RimTalk.ScribanVar.Category.Context>上下文</RimTalk.ScribanVar.Category.Context>
     <RimTalk.ScribanVar.Category.GameStatic>遊戲對象 (靜態)</RimTalk.ScribanVar.Category.GameStatic>
     <RimTalk.ScribanVar.Category.System>系統</RimTalk.ScribanVar.Category.System>
+
+    <RimTalk.TalkService.VisionUnsupportedFallback>當前模型（{0}）不支援圖像輸入，已在無圖像的情況下繼續對話。</RimTalk.TalkService.VisionUnsupportedFallback>
+    <RimTalk.Settings.CustomDialogue>自訂對話</RimTalk.Settings.CustomDialogue>
+    <RimTalk.PlayerSettings.SectionPlayer>玩家對話設定</RimTalk.PlayerSettings.SectionPlayer>
+    <RimTalk.PlayerSettings.SectionPresets>對話預設管理</RimTalk.PlayerSettings.SectionPresets>
+    <RimTalk.PlayerSettings.AddPreset>新增</RimTalk.PlayerSettings.AddPreset>
+    <RimTalk.PlayerSettings.ResetPresetsConfirm>確定要將所有預設恢復為預設推薦設定嗎？</RimTalk.PlayerSettings.ResetPresetsConfirm>
+    <RimTalk.PlayerSettings.PresetsDesc>啟用的預設將直接顯示在殖民者右鍵選單中作為快捷對話選項。</RimTalk.PlayerSettings.PresetsDesc>
+    <RimTalk.PlayerSettings.Preset1.Title>基地環境與生活</RimTalk.PlayerSettings.Preset1.Title>
+    <RimTalk.PlayerSettings.Preset1.Prompt>環顧我們的基地，你覺得這裡的設施和日常生活怎麼樣？</RimTalk.PlayerSettings.Preset1.Prompt>
+    <RimTalk.PlayerSettings.Preset2.Title>心情與問候</RimTalk.PlayerSettings.Preset2.Title>
+    <RimTalk.PlayerSettings.Preset2.Prompt>最近身體狀況和心情如何？有什麼心事或困擾嗎？</RimTalk.PlayerSettings.Preset2.Prompt>
+    <RimTalk.PlayerSettings.Preset3.Title>防線與戰術檢查</RimTalk.PlayerSettings.Preset3.Title>
+    <RimTalk.PlayerSettings.Preset3.Prompt>看看我們的防線和裝備狀況，有什麼需要加強的戰術薄弱點嗎？</RimTalk.PlayerSettings.Preset3.Prompt>
+    <RimTalk.PlayerSettings.Preset4.Title>工作與安全通知</RimTalk.PlayerSettings.Preset4.Title>
+    <RimTalk.PlayerSettings.Preset4.Prompt>大家注意！請務必注意安全，專注做好今天各自負責的工作！</RimTalk.PlayerSettings.Preset4.Prompt>
+    <RimTalk.PlayerSettings.Enabled>啟用</RimTalk.PlayerSettings.Enabled>
+    <RimTalk.PlayerSettings.PresetTitleTooltip>右鍵點擊殖民者時顯示的選單標題。</RimTalk.PlayerSettings.PresetTitleTooltip>
+    <RimTalk.PlayerSettings.Vision>📷 視覺</RimTalk.PlayerSettings.Vision>
+    <RimTalk.PlayerSettings.VisionTooltip>勾選時，將在對話請求中附帶當前螢幕截圖。（截圖時可能會出現短暫閃爍）</RimTalk.PlayerSettings.VisionTooltip>
+    <RimTalk.PlayerSettings.Announce>📢 公告</RimTalk.PlayerSettings.Announce>
+    <RimTalk.PlayerSettings.AnnounceTooltip>勾選時，將以向附近所有殖民者喊話的公告形式進行對話。</RimTalk.PlayerSettings.AnnounceTooltip>
+    <RimTalk.PlayerSettings.AllowCustomConversation>啟用自訂對話</RimTalk.PlayerSettings.AllowCustomConversation>
+    <RimTalk.PlayerSettings.AllowCustomConversationTooltip>啟用殖民者對話指令、Gizmo以及右鍵對話預設選單。</RimTalk.PlayerSettings.AllowCustomConversationTooltip>
+    <RimTalk.PlayerSettings.AllowDirectPlayerTalk>允許玩家 ↔ 殖民者直接對話</RimTalk.PlayerSettings.AllowDirectPlayerTalk>
+    <RimTalk.PlayerSettings.AllowDirectPlayerTalkTooltip>允許玩家以「Player」身份直接向殖民者搭話或接收回應。取消勾選時只能指示殖民者之間進行對話。</RimTalk.PlayerSettings.AllowDirectPlayerTalkTooltip>
+    <RimTalk.PlayerSettings.AllowPlayerAiGen>AI自動生成玩家台詞（套用人設）</RimTalk.PlayerSettings.AllowPlayerAiGen>
+    <RimTalk.PlayerSettings.AllowPlayerAiGenTooltip>勾選時，AI將在對話中根據玩家人設自動生成玩家的後續台詞。取消勾選時，玩家只說出使用者手動輸入的台詞。</RimTalk.PlayerSettings.AllowPlayerAiGenTooltip>
+    <RimTalk.PlayerSettings.PromptLabel>發送的對話提示詞（問題 / 指示）：</RimTalk.PlayerSettings.PromptLabel>
+    <RimTalk.FloatMenu.AttachPhotoTooltip>切換螢幕截圖附件（Ctrl+1）（截圖時可能會出現短暫閃爍）</RimTalk.FloatMenu.AttachPhotoTooltip>
+    <RimTalk.DebugWindow.AttachedImage>附帶圖像（點擊放大）：</RimTalk.DebugWindow.AttachedImage>
+    <RimTalk.DebugWindow.AttachedImageBase64>附帶圖像 (Base64)</RimTalk.DebugWindow.AttachedImageBase64>
+    <RimTalk.DebugWindow.ClickToExpandImage>點擊以在大視窗中查看圖像。</RimTalk.DebugWindow.ClickToExpandImage>
+    <RimTalk.DebugWindow.CopyImage>複製圖像（剪貼簿）</RimTalk.DebugWindow.CopyImage>
+    <RimTalk.DebugWindow.ImageCopied>圖像已複製到剪貼簿。</RimTalk.DebugWindow.ImageCopied>
+    <RimTalk.PlayerSettings.DisabledNotice>自訂對話已停用。殖民者右鍵選單與玩家對話功能將不會生效。</RimTalk.PlayerSettings.DisabledNotice>
+    <RimTalk.PlayerSettings.NewPresetName>新對話預設</RimTalk.PlayerSettings.NewPresetName>
+    <RimTalk.PlayerSettings.PresetTitleHeader>標題 / 選單名</RimTalk.PlayerSettings.PresetTitleHeader>
+    <RimTalk.PlayerSettings.PresetTitlePlaceholder>對話預設標題...</RimTalk.PlayerSettings.PresetTitlePlaceholder>
+
+    <!-- VersionSwitcher.cs -->
+    <RimTalk.VersionSwitcher.RollbackLabel>回滾舊版本</RimTalk.VersionSwitcher.RollbackLabel>
+    <RimTalk.VersionSwitcher.SwitchToPrevious>複製舊版本（本地模組）</RimTalk.VersionSwitcher.SwitchToPrevious>
+    <RimTalk.VersionSwitcher.SwitchToSpecificVer>複製 {0}（本地模組）</RimTalk.VersionSwitcher.SwitchToSpecificVer>
+    <RimTalk.VersionSwitcher.NoPreviousDllFound>在模組目錄中未找到舊版本檔案 (LastVersion/)。</RimTalk.VersionSwitcher.NoPreviousDllFound>
+    <RimTalk.VersionSwitcher.ConfirmRollbackTitle>回滾至版本 ({0})</RimTalk.VersionSwitcher.ConfirmRollbackTitle>
+    <RimTalk.VersionSwitcher.ConfirmRollbackPrompt>將 RimTalk ({0}) 複製到本地 'RimWorld/Mods/RimTalk' 目錄？</RimTalk.VersionSwitcher.ConfirmRollbackPrompt>
+    <RimTalk.VersionSwitcher.ProceedRollback>複製</RimTalk.VersionSwitcher.ProceedRollback>
+    <RimTalk.VersionSwitcher.RestartRequiredTitle>複製完成</RimTalk.VersionSwitcher.RestartRequiredTitle>
+    <RimTalk.VersionSwitcher.LocalModCreatedPrompt>已複製到 'RimWorld/Mods/RimTalk'。\n\n請在模組選單中停用 Steam 版本，啟用本地模組後重新啟動 RimWorld。</RimTalk.VersionSwitcher.LocalModCreatedPrompt>
 </LanguageData>

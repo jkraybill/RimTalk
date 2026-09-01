@@ -11,6 +11,7 @@
     <RimTalk.TalkService.APIError>API 오류가 발생했습니다</RimTalk.TalkService.APIError>
     <RimTalk.TalkService.TryingNextAPI>다음 API ({0}) 시도 중</RimTalk.TalkService.TryingNextAPI>
     <RimTalk.TalkService.GenerationFailed>RimTalk 생성 실패</RimTalk.TalkService.GenerationFailed>
+    <RimTalk.TalkService.VisionUnsupportedFallback>현재 모델({0})이 이미지를 지원하지 않아 이미지 없이 대화를 진행했습니다.</RimTalk.TalkService.VisionUnsupportedFallback>
 
     <!-- Persona -->
     <RimTalk.Persona.CheerfulHelper>쾌활한 도우미 - 따뜻하고, 낙천적이며, 격려가 넘칩니다. 항상 기운을 북돋아 주려고 노력합니다.</RimTalk.Persona.CheerfulHelper>
@@ -72,8 +73,6 @@
     <!-- Settings.cs -->
     <RimTalk.Settings.BasicSettings>기본 설정</RimTalk.Settings.BasicSettings>
     <RimTalk.Settings.PromptSetting>프롬프트 설정</RimTalk.Settings.PromptSetting>
-    <RimTalk.Settings.ImportPreset>가져오기</RimTalk.Settings.ImportPreset>
-    <RimTalk.Settings.ExportPreset>내보내기</RimTalk.Settings.ExportPreset>
     <RimTalk.Settings.ShowVariables>레퍼런스</RimTalk.Settings.ShowVariables>
     <RimTalk.Settings.ResetConfirm>모든 프롬프트 프리셋과 레퍼런스 데이터를 기본값으로 재설정하시겠습니까? 이 작업은 되돌릴 수 없습니다.</RimTalk.Settings.ResetConfirm>
     
@@ -86,9 +85,6 @@
     <RimTalk.Settings.PromptPreset.Activate>활성화</RimTalk.Settings.PromptPreset.Activate>
     <RimTalk.Settings.PromptPreset.Duplicate>복제</RimTalk.Settings.PromptPreset.Duplicate>
     <RimTalk.Settings.PromptPreset.Delete>삭제</RimTalk.Settings.PromptPreset.Delete>
-    <RimTalk.Settings.PromptPreset.SectionSystem>시스템 (System)</RimTalk.Settings.PromptPreset.SectionSystem>
-    <RimTalk.Settings.PromptPreset.SectionHistory>히스토리 (History)</RimTalk.Settings.PromptPreset.SectionHistory>
-    <RimTalk.Settings.PromptPreset.SectionPrompt>프롬프트 (Prompt)</RimTalk.Settings.PromptPreset.SectionPrompt>
     <RimTalk.Settings.PromptPreset.NewEntry>+ 새 항목</RimTalk.Settings.PromptPreset.NewEntry>
     <RimTalk.Settings.PromptPreset.NewEntryName>새 항목</RimTalk.Settings.PromptPreset.NewEntryName>
     <RimTalk.Settings.PromptPreset.SelectEntryToEdit>편집할 항목을 선택하세요</RimTalk.Settings.PromptPreset.SelectEntryToEdit>
@@ -100,7 +96,6 @@
     <RimTalk.Settings.PromptPreset.PositionRelative>상대적</RimTalk.Settings.PromptPreset.PositionRelative>
     <RimTalk.Settings.PromptPreset.PositionInChat>채팅내</RimTalk.Settings.PromptPreset.PositionInChat>
     <RimTalk.Settings.PromptPreset.Depth>깊이:</RimTalk.Settings.PromptPreset.Depth>
-    <RimTalk.Settings.PromptPreset.Content>내용:</RimTalk.Settings.PromptPreset.Content>
     <RimTalk.Settings.PromptPreset.ModVariables>모드 변수</RimTalk.Settings.PromptPreset.ModVariables>
     <RimTalk.Settings.PromptPreset.VariablePreviewHint>사용 가능한 모든 객체, 속성, 함수를 표시합니다. 가능하면 게임 내 값이 표시됩니다.</RimTalk.Settings.PromptPreset.VariablePreviewHint>
     
@@ -119,7 +114,6 @@
     <RimTalk.Settings.PromptPreset.PreviewError>미리보기 생성 중 오류 발생: {0}</RimTalk.Settings.PromptPreset.PreviewError>
     
     <!-- Simple/Advanced Mode -->
-    <RimTalk.Settings.SimpleModeTip>캐릭터 프로필, 채팅 기록, 컨텍스트가 자동으로 포함됩니다.</RimTalk.Settings.SimpleModeTip>
     <RimTalk.Settings.AdvancedModeWarning>고급 모드에서는 프롬프트 항목, 변수 및 메시지 순서를 완전히 제어할 수 있습니다. 현재 지침은 유지됩니다.\n이 기능은 아직 테스트 중이며, 예상치 못한 동작이 발생할 수 있습니다. 계속하시겠습니까?</RimTalk.Settings.AdvancedModeWarning>
     <RimTalk.Settings.PromptHelp>도움말</RimTalk.Settings.PromptHelp>
     <RimTalk.Settings.AdvancedHelpContent>고급 프리셋 가이드
@@ -181,9 +175,17 @@ Scriban 매직 (동적 콘텐츠)
     <RimTalk.Settings.EventFilter>이벤트 필터</RimTalk.Settings.EventFilter>
     <RimTalk.Settings.ApiKey>클라우드 API 키</RimTalk.Settings.ApiKey>
     <RimTalk.Settings.GetFreeApiKey>무료 API 키 받기</RimTalk.Settings.GetFreeApiKey>
-    <RimTalk.Settings.AICooldown>AI 재사용 대기시간 (초): {0}</RimTalk.Settings.AICooldown>
+    <RimTalk.Settings.AICooldown>AI 재사용 대기시간 (초)</RimTalk.Settings.AICooldown>
+    <RimTalk.Settings.AICooldownTooltip>새로운 AI 대화 생성을 시도하기 전 대기하는 기본 시간(초)입니다.</RimTalk.Settings.AICooldownTooltip>
+    <RimTalk.Settings.ReplyInterval>답변 간격 (초)</RimTalk.Settings.ReplyInterval>
+    <RimTalk.Settings.ReplyIntervalTooltip>대화 중 이전 발언과 다음 답변 사이의 지연 시간(초)입니다.</RimTalk.Settings.ReplyIntervalTooltip>
     <RimTalk.Settings.OverrideInteractions>모든 상호작용을 AI 대화로 덮어쓰기</RimTalk.Settings.OverrideInteractions>
     <RimTalk.Settings.OverrideInteractionsTooltip>이 옵션을 활성화하면 AI가 모든 상호작용(바닐라 림월드 및 다른 모드 포함)의 대화를 덮어쓰고 다시 생성할 수 있습니다. 참고: AI 대화에는 위에 설정된 재사용 대기시간이 있습니다. 대화를 더 자주 생성하려면 재사용 대기시간을 줄이세요.</RimTalk.Settings.OverrideInteractionsTooltip>
+    <RimTalk.Settings.SettingsButton>설정</RimTalk.Settings.SettingsButton>
+    <RimTalk.Settings.FastTrackInteractionsTitle>빠른 처리 상호작용</RimTalk.Settings.FastTrackInteractionsTitle>
+    <RimTalk.Settings.FastTrackInteractionsDesc>일반 대화 쿨다운을 건너뛰고 즉시 대화를 생성할 상호작용을 선택합니다. 선택되지 않은 상호작용은 기본 쿨다운 주기를 따릅니다.</RimTalk.Settings.FastTrackInteractionsDesc>
+    <RimTalk.Settings.SelectAll>모두 선택</RimTalk.Settings.SelectAll>
+    <RimTalk.Settings.DeselectAll>모두 해제</RimTalk.Settings.DeselectAll>
     <RimTalk.Settings.AllowSimultaneousConversations>동시다발적 대화 허용</RimTalk.Settings.AllowSimultaneousConversations>
     <RimTalk.Settings.AllowSimultaneousConversationsTooltip>활성화하면 여러 캐릭터들이 동시에 대화를 나누는 모습을 볼 수 있습니다. 대화가 너무 많거나 한 번에 한 대화만 보고 싶다면 비활성화하세요.</RimTalk.Settings.AllowSimultaneousConversationsTooltip>
     <RimTalk.Settings.DisplayTalkWhenDrafted>소집 시 대화 표시</RimTalk.Settings.DisplayTalkWhenDrafted>
@@ -207,6 +209,8 @@ Scriban 매직 (동적 콘텐츠)
     <RimTalk.Settings.AllowBabiesToTalkTooltip>이 옵션을 활성화하면 영아와 유아가 AI 생성 대화를 할 수 있습니다.</RimTalk.Settings.AllowBabiesToTalkTooltip>
     <RimTalk.Settings.AllowNonHumanToTalk>비인간 말하도록 허용</RimTalk.Settings.AllowNonHumanToTalk>
     <RimTalk.Settings.AllowNonHumanToTalkTooltip>동물, 메카노이드, 커스텀 종족이 상인에게서 음성 연결 촉매를 획득하면 말할 수 있도록 허용합니다.</RimTalk.Settings.AllowNonHumanToTalkTooltip>
+    <RimTalk.Settings.AllowAnnouncement>공지 기능 허용</RimTalk.Settings.AllowAnnouncement>
+    <RimTalk.Settings.AllowAnnouncementTooltip>정착민과 폰이 주변 폰들에게 공지할 수 있도록 허용합니다.</RimTalk.Settings.AllowAnnouncementTooltip>
     <RimTalk.Settings.ApplyMoodAndSocialEffects>기분 및 사회적 영향 적용</RimTalk.Settings.ApplyMoodAndSocialEffects>
     <RimTalk.Settings.ApplyMoodAndSocialEffectsTooltip>대화 내용에 따라 주민의 기분과 관계에 영향을 줍니다.</RimTalk.Settings.ApplyMoodAndSocialEffectsTooltip>
 
@@ -215,9 +219,41 @@ Scriban 매직 (동적 콘텐츠)
     <RimTalk.Settings.PlayerDialogueMode.AIDrivenPawnOnly>자동 생성: 폰 전용</RimTalk.Settings.PlayerDialogueMode.AIDrivenPawnOnly>
     <RimTalk.Settings.PlayerToNpc>플레이어 ↔ NPC:</RimTalk.Settings.PlayerToNpc>
     <RimTalk.Settings.PlayerName>플레이어 이름</RimTalk.Settings.PlayerName>
-    <RimTalk.Settings.PlayerNameTooltip>NPC가 대화에서 플레이어를 부를 때 사용하는 이름입니다.</RimTalk.Settings.PlayerNameTooltip>
-    <RimTalk.Settings.PlayerDialogueModeTooltip>플레이어가 대화에 참여하는 방식을 선택하세요.\n\n비활성화: 플레이어는 대화에 참여하지 않습니다.\n수동 답변: 모든 플레이어 답변을 직접 입력합니다. 자동 생성 없음.\n자동 생성 답변: 대화 중 AI가 플레이어의 답변을 자동으로 생성합니다.</RimTalk.Settings.PlayerDialogueModeTooltip>
     <RimTalk.Settings.PlayerNameTooltip>당신이 대화에 참여할 때 표시되는 이름으로, 식민자들이 당신을 어떻게 인식하는지를 나타냅니다.</RimTalk.Settings.PlayerNameTooltip>
+    <RimTalk.Settings.PlayerPersona>플레이어 페르소나</RimTalk.Settings.PlayerPersona>
+    <RimTalk.Settings.PlayerPersonaTooltip>플레이어의 성격, 말투 및 행동 양식을 설정합니다. AI가 플레이어 대사를 생성하거나 대화할 때 반영됩니다.</RimTalk.Settings.PlayerPersonaTooltip>
+    <RimTalk.Settings.CustomDialogue>커스텀 대화</RimTalk.Settings.CustomDialogue>
+    <RimTalk.PlayerSettings.SectionPlayer>플레이어 대화 설정</RimTalk.PlayerSettings.SectionPlayer>
+    <RimTalk.PlayerSettings.SectionPresets>대화 프리셋 관리</RimTalk.PlayerSettings.SectionPresets>
+    <RimTalk.PlayerSettings.Title>유저 지정 대화 및 프리셋 설정</RimTalk.PlayerSettings.Title>
+    <RimTalk.PlayerSettings.AddPreset>추가</RimTalk.PlayerSettings.AddPreset>
+    <RimTalk.PlayerSettings.ResetPresetsConfirm>모든 프리셋을 기본 추천 프리셋으로 복원하시겠습니까?</RimTalk.PlayerSettings.ResetPresetsConfirm>
+    <RimTalk.PlayerSettings.PresetsDesc>활성화된 프리셋은 폰 우클릭 메뉴에 즉시 대화 옵션으로 표시됩니다.</RimTalk.PlayerSettings.PresetsDesc>
+    <RimTalk.PlayerSettings.Preset1.Title>기지 환경과 생활</RimTalk.PlayerSettings.Preset1.Title>
+    <RimTalk.PlayerSettings.Preset1.Prompt>우리 기지 둘러보면서 느끼는 건데, 시설이나 전반적인 정착지 생활 어때?</RimTalk.PlayerSettings.Preset1.Prompt>
+    <RimTalk.PlayerSettings.Preset2.Title>기분과 안부 묻기</RimTalk.PlayerSettings.Preset2.Title>
+    <RimTalk.PlayerSettings.Preset2.Prompt>요즘 몸 상태나 기분은 좀 어때? 마음에 걸리는 일 있어?</RimTalk.PlayerSettings.Preset2.Prompt>
+    <RimTalk.PlayerSettings.Preset3.Title>방어선 및 전술 점검</RimTalk.PlayerSettings.Preset3.Title>
+    <RimTalk.PlayerSettings.Preset3.Prompt>우리 방어선과 무장 상태 좀 봐줘. 침략에 대비해서 보강할 곳 보여?</RimTalk.PlayerSettings.Preset3.Prompt>
+    <RimTalk.PlayerSettings.Preset4.Title>작업 및 안전 공지</RimTalk.PlayerSettings.Preset4.Title>
+    <RimTalk.PlayerSettings.Preset4.Prompt>다들 주목! 안전에 각별히 유의하면서 오늘 맡은 일에 집중하자!</RimTalk.PlayerSettings.Preset4.Prompt>
+    <RimTalk.PlayerSettings.Enabled>활성화</RimTalk.PlayerSettings.Enabled>
+    <RimTalk.PlayerSettings.PresetTitleTooltip>폰 우클릭 시 표시될 메뉴 제목입니다.</RimTalk.PlayerSettings.PresetTitleTooltip>
+    <RimTalk.PlayerSettings.Vision>📷 비전</RimTalk.PlayerSettings.Vision>
+    <RimTalk.PlayerSettings.VisionTooltip>체크 시 대화 요청과 함께 현재 화면 스크린샷을 첨부합니다. (화면 캡처 시 일시적인 깜빡임이 발생할 수 있습니다)</RimTalk.PlayerSettings.VisionTooltip>
+    <RimTalk.PlayerSettings.Announce>📢 공지</RimTalk.PlayerSettings.Announce>
+    <RimTalk.PlayerSettings.AnnounceTooltip>체크 시 주변 모든 폰에게 외치는 공지 형태로 대화합니다.</RimTalk.PlayerSettings.AnnounceTooltip>
+    <RimTalk.PlayerSettings.AllowCustomConversation>커스텀 대화 활성화</RimTalk.PlayerSettings.AllowCustomConversation>
+    <RimTalk.PlayerSettings.AllowCustomConversationTooltip>폰 대화 지시, 기즈모 및 우클릭 대화 프리셋 메뉴를 활성화합니다.</RimTalk.PlayerSettings.AllowCustomConversationTooltip>
+    <RimTalk.PlayerSettings.AllowDirectPlayerTalk>플레이어 ↔ 폰 직접 대화 허용</RimTalk.PlayerSettings.AllowDirectPlayerTalk>
+    <RimTalk.PlayerSettings.AllowDirectPlayerTalkTooltip>플레이어가 'Player'로서 폰에게 직접 말을 걸거나 응답을 받습니다. 체크 해제 시 폰들끼리의 대화 지시만 가능합니다.</RimTalk.PlayerSettings.AllowDirectPlayerTalkTooltip>
+    <RimTalk.PlayerSettings.AllowPlayerAiGen>플레이어 대사도 AI가 자동 생성 (페르소나 적용)</RimTalk.PlayerSettings.AllowPlayerAiGen>
+    <RimTalk.PlayerSettings.AllowPlayerAiGenTooltip>체크 시 AI가 플레이어의 페르소나에 맞춰 대화 중 플레이어의 후속 대사를 자동으로 생성합니다. 체크 해제 시 플레이어는 사용자가 직접 입력한 대사만 말합니다.</RimTalk.PlayerSettings.AllowPlayerAiGenTooltip>
+    <RimTalk.PlayerSettings.PromptLabel>전송할 대화 프롬프트 (질문 / 지시문):</RimTalk.PlayerSettings.PromptLabel>
+    <RimTalk.PlayerSettings.Instruct>플레이어의 대화 참여 방식, 이름 및 페르소나를 설정합니다.</RimTalk.PlayerSettings.Instruct>
+    <RimTalk.PlayerSettings.PersonaOnlyAIDriven>(자동 생성: 폰+플레이어 모드에서만 활성화됩니다)</RimTalk.PlayerSettings.PersonaOnlyAIDriven>
+    <RimTalk.PlayerSettings.Save>저장</RimTalk.PlayerSettings.Save>
+    <RimTalk.PlayerSettings.Saved>설정이 저장되었습니다.</RimTalk.PlayerSettings.Saved>
 
     <RimTalk.Settings.PauseAtSpeed>고속에서 AI 일시정지</RimTalk.Settings.PauseAtSpeed>
     <RimTalk.Settings.DisableAiAtSpeedTooltip>API 호출을 줄이기 위해 게임 속도가 이 수준 이상으로 설정되면 AI가 일시정지됩니다.</RimTalk.Settings.DisableAiAtSpeedTooltip>
@@ -250,7 +286,7 @@ Scriban 매직 (동적 콘텐츠)
 
     <!-- Settings_Api.cs -->
     <RimTalk.Settings.GoogleApiKeyLabel>Google AI API 키:</RimTalk.Settings.GoogleApiKeyLabel>
-    <RimTalk.Settings.GoogleApiKeyDesc>무료 Gemma-4-26b-a4b 모델을 사용합니다. 다른 모델이나 제공업체를 사용하려면 고급 설정을 이용하세요.</RimTalk.Settings.GoogleApiKeyDesc>
+    <RimTalk.Settings.GoogleApiKeyDesc>무료 gemma-4-31b 모델을 사용합니다. 다른 모델이나 제공업체를 사용하려면 고급 설정을 이용하세요.</RimTalk.Settings.GoogleApiKeyDesc>
     <RimTalk.Settings.GetFreeApiKeyButton>무료 API 키 받기</RimTalk.Settings.GetFreeApiKeyButton>
     <RimTalk.Settings.SwitchToAdvancedSettings>고급 설정으로 전환</RimTalk.Settings.SwitchToAdvancedSettings>
     <RimTalk.Settings.SwitchToSimpleSettings>간단한 설정으로 전환</RimTalk.Settings.SwitchToSimpleSettings>
@@ -263,8 +299,7 @@ Scriban 매직 (동적 콘텐츠)
     <RimTalk.Settings.ProviderHeader>서비스</RimTalk.Settings.ProviderHeader>
     <RimTalk.Settings.ApiKeyHeader>API 키</RimTalk.Settings.ApiKeyHeader>
     <RimTalk.Settings.ModelHeader>모델</RimTalk.Settings.ModelHeader>
-    <RimTalk.Settings.CustomModelHeader>사용자 지정 모델</RimTalk.Settings.CustomModelHeader>
-    <RimTalk.Settings.EnabledHeader>활성화됨</RimTalk.Settings.EnabledHeader>
+    <RimTalk.Settings.EnabledHeader>활성화</RimTalk.Settings.EnabledHeader>
     <RimTalk.Settings.EnableDisableApiConfigTooltip>이 API 구성을 활성화 또는 비활성화합니다.</RimTalk.Settings.EnableDisableApiConfigTooltip>
     <RimTalk.Settings.LocalProviderConfiguration>로컬 서비스 구성</RimTalk.Settings.LocalProviderConfiguration>
     <RimTalk.Settings.BaseUrlLabel>URL:</RimTalk.Settings.BaseUrlLabel>
@@ -274,7 +309,6 @@ Scriban 매직 (동적 콘텐츠)
     <RimTalk.Settings.CustomizeRequestTooltip>요청 JSON 사용자 정의 (온도, 추론 수준 등)</RimTalk.Settings.CustomizeRequestTooltip>
     <RimTalk.Settings.CustomizeRequestTitle>요청 사용자 정의: {0} ({1})</RimTalk.Settings.CustomizeRequestTitle>
     <RimTalk.Settings.CustomizeRequestDesc>이 LLM에 대한 사용자 지정 JSON 요청 매개변수를 구성합니다. 설정된 값은 API로 전송되는 요청 페이로드에 병합됩니다(예: temperature, reasoning_effort, max_tokens, thinking 매개변수 등).</RimTalk.Settings.CustomizeRequestDesc>
-    <RimTalk.Settings.ResetToDefault>기본값으로 복원</RimTalk.Settings.ResetToDefault>
     <RimTalk.Settings.FormatJson>JSON 정렬</RimTalk.Settings.FormatJson>
     <RimTalk.Settings.ClearOverride>초기화</RimTalk.Settings.ClearOverride>
     <RimTalk.Settings.CustomJsonSave>저장</RimTalk.Settings.CustomJsonSave>
@@ -331,6 +365,11 @@ Scriban 매직 (동적 콘텐츠)
     <RimTalk.Settings.ConversationHistoryCount.Tooltip>각 세션은 여러 대화 턴을 포함하며 토큰 수가 크게 증가할 수 있습니다</RimTalk.Settings.ConversationHistoryCount.Tooltip>
     <RimTalk.Settings.MaxPawnContextCount>포함할 최대 폰 수</RimTalk.Settings.MaxPawnContextCount>
     <RimTalk.Settings.MaxPawnContextCount.Tooltip>대화에 참여할 수 있는 폰의 최대 수를 설정합니다</RimTalk.Settings.MaxPawnContextCount.Tooltip>
+    <RimTalk.Settings.MaxEventsCount>포함할 최대 이벤트 수</RimTalk.Settings.MaxEventsCount>
+    <RimTalk.Settings.MaxEventsCount.Tooltip>컨텍스트에 포함할 최신 활성 이벤트 및 알림 편지의 최대 수를 설정합니다</RimTalk.Settings.MaxEventsCount.Tooltip>
+    <RimTalk.Settings.IncludeEvents>정착지 이벤트 활성화</RimTalk.Settings.IncludeEvents>
+    <RimTalk.Settings.IncludeEvents.Tooltip>컨텍스트에 최신 활성 이벤트 및 알림 편지를 포함할지 여부와 최대 포함 개수를 설정합니다</RimTalk.Settings.IncludeEvents.Tooltip>
+    <RimTalk.Settings.ExternalEventModDetected>외부 이벤트 애드온 모드(RimTalk Event+)가 감지되었습니다. 프롬프트 중복을 방지하기 위해 내장 이벤트가 기본적으로 비활성화되었습니다. 내장 이벤트를 사용하려면 이 체크박스를 활성화하세요.</RimTalk.Settings.ExternalEventModDetected>
 
     <RimTalk.Settings.PawnInfo>폰 정보</RimTalk.Settings.PawnInfo>
     <RimTalk.Settings.IncludeRace>인종</RimTalk.Settings.IncludeRace>
@@ -356,6 +395,8 @@ Scriban 매직 (동적 콘텐츠)
     <RimTalk.Settings.IncludeCleanliness>청결도</RimTalk.Settings.IncludeCleanliness>
     <RimTalk.Settings.IncludeSurroundings>주변 아이템</RimTalk.Settings.IncludeSurroundings>
     <RimTalk.Settings.IncludeWealth>식민지 자산</RimTalk.Settings.IncludeWealth>
+    <RimTalk.Settings.IncludeTopicKeywords>새로운 대화 주제 생성</RimTalk.Settings.IncludeTopicKeywords>
+    <RimTalk.Settings.IncludeTopicKeywords.Tooltip>폰 주변에 아무런 새로운 정보나 이야기거리가 없을시 50% 확률로 새로운 대화 주제를 랜덤으로 생성합니다.</RimTalk.Settings.IncludeTopicKeywords.Tooltip>
 
     <!-- DebugWindow.cs -->
     <RimTalk.DebugWindow.ViewByTime>시간순</RimTalk.DebugWindow.ViewByTime>
@@ -364,7 +405,6 @@ Scriban 매직 (동적 콘텐츠)
     <RimTalk.DebugWindow.FilterPawn>이름</RimTalk.DebugWindow.FilterPawn>
     <RimTalk.DebugWindow.Search>검색</RimTalk.DebugWindow.Search>
     <RimTalk.DebugWindow.State>상태</RimTalk.DebugWindow.State>
-    <RimTalk.DebugWindow.Limit>제한</RimTalk.DebugWindow.Limit>
     <RimTalk.DebugWindow.StateAll>모든 상태</RimTalk.DebugWindow.StateAll>
     <RimTalk.DebugWindow.StatePending>대기중</RimTalk.DebugWindow.StatePending>
     <RimTalk.DebugWindow.StateIgnored>무시됨</RimTalk.DebugWindow.StateIgnored>
@@ -375,7 +415,6 @@ Scriban 매직 (동적 콘텐츠)
     <RimTalk.DebugWindow.Last>최근</RimTalk.DebugWindow.Last>
     <RimTalk.DebugWindow.AutoScroll>자동 스크롤</RimTalk.DebugWindow.AutoScroll>
     <RimTalk.DebugWindow.TooltipSelectForDetails>행을 선택하면 자세한 정보가 표시됩니다</RimTalk.DebugWindow.TooltipSelectForDetails>
-    <RimTalk.DebugWindow.Details>세부 정보</RimTalk.DebugWindow.Details>
     <RimTalk.DebugWindow.SelectRowHint>왼쪽에서 요청을 선택하여 프롬프트/응답/컨텍스트를 확인하세요.</RimTalk.DebugWindow.SelectRowHint>
     <RimTalk.DebugWindow.Resend>재전송</RimTalk.DebugWindow.Resend>
     <RimTalk.DebugWindow.ResendTooltip>컨텍스트와 프롬프트를 수정한 뒤 재전송하여 대화를 테스트합니다.</RimTalk.DebugWindow.ResendTooltip>
@@ -390,12 +429,11 @@ Scriban 매직 (동적 콘텐츠)
     <RimTalk.DebugWindow.Prompt>프롬프트 (Prompt)</RimTalk.DebugWindow.Prompt>
     <RimTalk.DebugWindow.Response>응답 (Response)</RimTalk.DebugWindow.Response>
     <RimTalk.DebugWindow.PromptMessages>요청 세부 정보</RimTalk.DebugWindow.PromptMessages>
-    <RimTalk.DebugWindow.Contexts>컨텍스트 (Contexts)</RimTalk.DebugWindow.Contexts>
     <RimTalk.DebugWindow.Generating>[생성 중...]</RimTalk.DebugWindow.Generating>
+    <RimTalk.DebugWindow.Canceled>[취소됨]</RimTalk.DebugWindow.Canceled>
     <RimTalk.DebugWindow.StatusDisabled>비활성화됨</RimTalk.DebugWindow.StatusDisabled>
     <RimTalk.DebugWindow.StatusProcessing>처리 중</RimTalk.DebugWindow.StatusProcessing>
     <RimTalk.DebugWindow.StatusIdle>대기 중</RimTalk.DebugWindow.StatusIdle>
-    <RimTalk.DebugWindow.GroupByPawn>정착민별로 그룹화</RimTalk.DebugWindow.GroupByPawn>
     <RimTalk.DebugWindow.ModSettings>모드 설정</RimTalk.DebugWindow.ModSettings>
     <RimTalk.DebugWindow.Export>내보내기</RimTalk.DebugWindow.Export>
     <RimTalk.DebugWindow.ResetLogs>로그 초기화</RimTalk.DebugWindow.ResetLogs>
@@ -429,26 +467,43 @@ Scriban 매직 (동적 콘텐츠)
     <RimTalk.DebugWindow.HistoryCleared>대화 히스토리가 삭제되었습니다.</RimTalk.DebugWindow.HistoryCleared>
     <RimTalk.DebugWindow.FormatEntry>항목</RimTalk.DebugWindow.FormatEntry>
     <RimTalk.DebugWindow.FormatRole>역할</RimTalk.DebugWindow.FormatRole>
-    <RimTalk.DebugWindow.SystemInstruction>시스템 지침 (System Instruction)</RimTalk.DebugWindow.SystemInstruction>
-    <RimTalk.DebugWindow.ChatHistory>채팅 히스토리 (Chat History)</RimTalk.DebugWindow.ChatHistory>
-    <RimTalk.DebugWindow.InputPrompt>입력 프롬프트 (Input Prompt)</RimTalk.DebugWindow.InputPrompt>
-    <RimTalk.DebugWindow.TooltipPromptResponse>프롬프트:\n{0}\n\n응답:\n{1}</RimTalk.DebugWindow.TooltipPromptResponse>
+    <RimTalk.DebugWindow.SystemInstruction>System Instruction</RimTalk.DebugWindow.SystemInstruction>
+    <RimTalk.DebugWindow.ChatHistory>Chat History</RimTalk.DebugWindow.ChatHistory>
+    <RimTalk.DebugWindow.InputPrompt>Dialogue Prompt</RimTalk.DebugWindow.InputPrompt>
 
     <!-- Overlay.cs -->
     <RimTalk.Overlay.Debug>디버그</RimTalk.Overlay.Debug>
     <RimTalk.Overlay.Option>오버레이 옵션</RimTalk.Overlay.Option>
     <RimTalk.Overlay.DrawAboveUI>UI 위에 표시</RimTalk.Overlay.DrawAboveUI>
+    <RimTalk.Overlay.ShowGroupColors>대화 그룹 색상 표시</RimTalk.Overlay.ShowGroupColors>
+    <RimTalk.Overlay.ShowTargetName>대화 대상 표시 [A-&gt;B]</RimTalk.Overlay.ShowTargetName>
+    <RimTalk.Overlay.AlignNameColumn>이름 컬럼 정렬</RimTalk.Overlay.AlignNameColumn>
     <RimTalk.Overlay.Opacity>투명도</RimTalk.Overlay.Opacity>
     <RimTalk.Overlay.FontSize>글꼴 크기</RimTalk.Overlay.FontSize>
+    <RimTalk.Overlay.TurnOff>오버레이 끄기</RimTalk.Overlay.TurnOff>
+    <RimTalk.Overlay.TurnOffTooltip>오버레이를 끕니다.\n설정에 따라 우측 하단 아이콘 또는 탭을 클릭하여 다시 켤 수 있습니다.</RimTalk.Overlay.TurnOffTooltip>
 
     <!-- FloatMenuMakerMapGetOptionsPatch.cs -->
     <RimTalk.FloatMenu.ChatWith>{0}와 대화하기</RimTalk.FloatMenu.ChatWith>
     <RimTalk.Gizmo.ChatWithTarget>{0}와 대화하기</RimTalk.Gizmo.ChatWithTarget>
     <RimTalk.Gizmo.ChatWithTargetDesc>{0}와(과) 대화를 시작합니다.</RimTalk.Gizmo.ChatWithTargetDesc>
+    <RimTalk.Gizmo.Announce>공지하기</RimTalk.Gizmo.Announce>
+    <RimTalk.Gizmo.AnnounceDesc>{0}(이)가 주변의 모든 폰에게 외치거나 공지하도록 합니다.</RimTalk.Gizmo.AnnounceDesc>
     <RimTalk.FloatMenu.WhatToSayToSelf>{0}에게 무엇을 말하고 싶으세요?</RimTalk.FloatMenu.WhatToSayToSelf>
     <RimTalk.FloatMenu.WhatToSayToOther>{0}가 {1}에게 무엇을 말하기를 원하세요?</RimTalk.FloatMenu.WhatToSayToOther>
+    <RimTalk.FloatMenu.WhatToAnnounceToSelf>{0} 및 주변 폰들에게 어떤 내용을 공지하시겠습니까?</RimTalk.FloatMenu.WhatToAnnounceToSelf>
+    <RimTalk.FloatMenu.WhatToAnnounceToOther>{0}(이)가 주변에 어떤 내용을 공지하도록 하시겠습니까?</RimTalk.FloatMenu.WhatToAnnounceToOther>
+    <RimTalk.FloatMenu.DirectModeTooltip>일반 대화 (Tab 키로 전환)</RimTalk.FloatMenu.DirectModeTooltip>
+    <RimTalk.FloatMenu.AnnounceModeTooltip>주변 폰들에게 공지 (Tab 키로 전환)</RimTalk.FloatMenu.AnnounceModeTooltip>
+    <RimTalk.FloatMenu.AttachPhotoTooltip>현재 화면 사진 첨부 토글 (Ctrl+1) (화면 캡처 시 일시적인 깜빡임이 발생할 수 있습니다)</RimTalk.FloatMenu.AttachPhotoTooltip>
     <RimTalk.FloatMenu.Send>전송</RimTalk.FloatMenu.Send>
     <RimTalk.FloatMenu.Cancel>취소</RimTalk.FloatMenu.Cancel>
+
+    <RimTalk.DebugWindow.AttachedImage>첨부된 이미지 (클릭하여 확대):</RimTalk.DebugWindow.AttachedImage>
+    <RimTalk.DebugWindow.AttachedImageBase64>첨부 이미지 (Base64)</RimTalk.DebugWindow.AttachedImageBase64>
+    <RimTalk.DebugWindow.ClickToExpandImage>클릭하여 이미지를 큰 창으로 봅니다.</RimTalk.DebugWindow.ClickToExpandImage>
+    <RimTalk.DebugWindow.CopyImage>이미지 복사 (클립보드)</RimTalk.DebugWindow.CopyImage>
+    <RimTalk.DebugWindow.ImageCopied>이미지가 클립보드에 복사되었습니다.</RimTalk.DebugWindow.ImageCopied>
 
     <!-- VariableDefinitions.cs - Variable Registry -->
     <RimTalk.ScribanVar.Category.PawnShorthands>폰 단축어</RimTalk.ScribanVar.Category.PawnShorthands>
@@ -456,4 +511,25 @@ Scriban 매직 (동적 콘텐츠)
     <RimTalk.ScribanVar.Category.Context>컨텍스트</RimTalk.ScribanVar.Category.Context>
     <RimTalk.ScribanVar.Category.GameStatic>게임 객체 (정적)</RimTalk.ScribanVar.Category.GameStatic>
     <RimTalk.ScribanVar.Category.System>시스템</RimTalk.ScribanVar.Category.System>
+
+    <RimTalk.Settings.Configure>설정</RimTalk.Settings.Configure>
+    <RimTalk.PlayerSettings.ModeDesc>• 비활성화: 플레이어는 대화에 참여하지 않지만, 폰끼리의 대화는 직접 입력하여 시작할 수 있습니다.
+• 수동 답변: 사용자가 직접 첫 대사를 입력하며, 플레이어 대사는 자동 생성되지 않습니다.
+• 자동 생성: 폰 전용: 플레이어가 말을 시작한 후, 이어지는 대화는 폰들끼리만 진행합니다.
+• 자동 생성: 폰+플레이어: AI가 폰과 플레이어의 대사를 모두 자동 생성합니다. (플레이어 페르소나 적용)</RimTalk.PlayerSettings.ModeDesc>
+    <RimTalk.PlayerSettings.DisabledNotice>커스텀 대화 시스템이 비활성화되어 있습니다. 폰 우클릭 메뉴 및 플레이어 대화 기능이 작동하지 않습니다.</RimTalk.PlayerSettings.DisabledNotice>
+    <RimTalk.PlayerSettings.NewPresetName>새 대화 프리셋</RimTalk.PlayerSettings.NewPresetName>
+    <RimTalk.PlayerSettings.PresetTitleHeader>제목 / 메뉴명</RimTalk.PlayerSettings.PresetTitleHeader>
+    <RimTalk.PlayerSettings.PresetTitlePlaceholder>대화 프리셋 제목...</RimTalk.PlayerSettings.PresetTitlePlaceholder>
+
+    <!-- VersionSwitcher.cs -->
+    <RimTalk.VersionSwitcher.RollbackLabel>구버전 롤백</RimTalk.VersionSwitcher.RollbackLabel>
+    <RimTalk.VersionSwitcher.SwitchToPrevious>이전 버전 복사 (로컬 모드)</RimTalk.VersionSwitcher.SwitchToPrevious>
+    <RimTalk.VersionSwitcher.SwitchToSpecificVer>{0} 복사 (로컬 모드)</RimTalk.VersionSwitcher.SwitchToSpecificVer>
+    <RimTalk.VersionSwitcher.NoPreviousDllFound>이전 버전 파일(LastVersion/)을 찾을 수 없습니다.</RimTalk.VersionSwitcher.NoPreviousDllFound>
+    <RimTalk.VersionSwitcher.ConfirmRollbackTitle>이전 버전({0})으로 롤백</RimTalk.VersionSwitcher.ConfirmRollbackTitle>
+    <RimTalk.VersionSwitcher.ConfirmRollbackPrompt>RimTalk ({0})을 로컬 'RimWorld/Mods/RimTalk' 폴더로 복사하시겠습니까?</RimTalk.VersionSwitcher.ConfirmRollbackPrompt>
+    <RimTalk.VersionSwitcher.ProceedRollback>복사</RimTalk.VersionSwitcher.ProceedRollback>
+    <RimTalk.VersionSwitcher.RestartRequiredTitle>복사 완료</RimTalk.VersionSwitcher.RestartRequiredTitle>
+    <RimTalk.VersionSwitcher.LocalModCreatedPrompt>'RimWorld/Mods/RimTalk'에 복사되었습니다.\n\n스팀 버전을 비활성화하고 로컬 모드를 활성화한 뒤 림월드를 재시작하세요.</RimTalk.VersionSwitcher.LocalModCreatedPrompt>
 </LanguageData>

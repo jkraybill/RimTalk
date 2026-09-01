@@ -72,8 +72,6 @@
     <!-- Settings.cs -->
     <RimTalk.Settings.BasicSettings>Основные настройки</RimTalk.Settings.BasicSettings>
     <RimTalk.Settings.PromptSetting>Настройка подсказки</RimTalk.Settings.PromptSetting>
-    <RimTalk.Settings.ImportPreset>Импорт</RimTalk.Settings.ImportPreset>
-    <RimTalk.Settings.ExportPreset>Экспорт</RimTalk.Settings.ExportPreset>
     <RimTalk.Settings.ShowVariables>Переменные</RimTalk.Settings.ShowVariables>
     <RimTalk.Settings.ResetConfirm>Вы уверены, что хотите сбросить все пресеты и справочные данные до значений по умолчанию? Это действие нельзя отменить.</RimTalk.Settings.ResetConfirm>
     
@@ -86,9 +84,6 @@
     <RimTalk.Settings.PromptPreset.Activate>Активировать</RimTalk.Settings.PromptPreset.Activate>
     <RimTalk.Settings.PromptPreset.Duplicate>Дублировать</RimTalk.Settings.PromptPreset.Duplicate>
     <RimTalk.Settings.PromptPreset.Delete>Удалить</RimTalk.Settings.PromptPreset.Delete>
-    <RimTalk.Settings.PromptPreset.SectionSystem>Система (System)</RimTalk.Settings.PromptPreset.SectionSystem>
-    <RimTalk.Settings.PromptPreset.SectionHistory>История (History)</RimTalk.Settings.PromptPreset.SectionHistory>
-    <RimTalk.Settings.PromptPreset.SectionPrompt>Промпт (Prompt)</RimTalk.Settings.PromptPreset.SectionPrompt>
     <RimTalk.Settings.PromptPreset.NewEntry>+ Новая запись</RimTalk.Settings.PromptPreset.NewEntry>
     <RimTalk.Settings.PromptPreset.NewEntryName>Новая запись</RimTalk.Settings.PromptPreset.NewEntryName>
     <RimTalk.Settings.PromptPreset.SelectEntryToEdit>Выберите запись для редактирования</RimTalk.Settings.PromptPreset.SelectEntryToEdit>
@@ -100,7 +95,6 @@
     <RimTalk.Settings.PromptPreset.PositionRelative>Относительно</RimTalk.Settings.PromptPreset.PositionRelative>
     <RimTalk.Settings.PromptPreset.PositionInChat>В чате (InChat)</RimTalk.Settings.PromptPreset.PositionInChat>
     <RimTalk.Settings.PromptPreset.Depth>Глубина:</RimTalk.Settings.PromptPreset.Depth>
-    <RimTalk.Settings.PromptPreset.Content>Содержание:</RimTalk.Settings.PromptPreset.Content>
     <RimTalk.Settings.PromptPreset.ModVariables>Переменные мода</RimTalk.Settings.PromptPreset.ModVariables>
     <RimTalk.Settings.PromptPreset.VariablePreviewHint>Показывает все доступные объекты, свойства и функции. Значения из игры отображаются при наличии.</RimTalk.Settings.PromptPreset.VariablePreviewHint>
     
@@ -118,7 +112,6 @@
     <RimTalk.Settings.PromptPreset.PreviewError>Ошибка при генерации предпросмотра: {0}</RimTalk.Settings.PromptPreset.PreviewError>
     
     <!-- Simple/Advanced Mode -->
-    <RimTalk.Settings.SimpleModeTip>Профили персонажей, история чата и контекст включаются автоматически.</RimTalk.Settings.SimpleModeTip>
     <RimTalk.Settings.AdvancedModeWarning>Режим «Расширенный» позволяет полностью контролировать записи подсказок, переменные и порядок сообщений. Ваши текущие инструкции будут сохранены.\nЭта функция все еще находится на стадии тестирования, поэтому возможны непредвиденные действия. Продолжить?</RimTalk.Settings.AdvancedModeWarning>
     <RimTalk.Settings.PromptHelp>Помощь</RimTalk.Settings.PromptHelp>
     <RimTalk.Settings.AdvancedHelpContent>Руководство по расширенным пресетам
@@ -180,9 +173,17 @@
     <RimTalk.Settings.EventFilter>Фильтр событий</RimTalk.Settings.EventFilter>
     <RimTalk.Settings.ApiKey>Ключ API облака</RimTalk.Settings.ApiKey>
     <RimTalk.Settings.GetFreeApiKey>Получить бесплатный ключ API</RimTalk.Settings.GetFreeApiKey>
-    <RimTalk.Settings.AICooldown>Время восстановления ИИ (секунды): {0}</RimTalk.Settings.AICooldown>
+    <RimTalk.Settings.AICooldown>Кулдаун ИИ (сек)</RimTalk.Settings.AICooldown>
+    <RimTalk.Settings.AICooldownTooltip>Базовое время ожидания (в секундах) перед попыткой создания нового диалога ИИ.</RimTalk.Settings.AICooldownTooltip>
+    <RimTalk.Settings.ReplyInterval>Интервал ответов (сек)</RimTalk.Settings.ReplyInterval>
+    <RimTalk.Settings.ReplyIntervalTooltip>Задержка (в секундах) между репликами в диалоге.</RimTalk.Settings.ReplyIntervalTooltip>
     <RimTalk.Settings.OverrideInteractions>Переопределять все взаимодействия диалогами ИИ</RimTalk.Settings.OverrideInteractions>
     <RimTalk.Settings.OverrideInteractionsTooltip>Включите, чтобы позволить ИИ переопределять и регенерировать диалоги для всех взаимодействий (включая ванильный RimWorld и другие моды). Примечание: диалоги ИИ имеют период восстановления, установленный выше. Чтобы генерировать диалоги чаще, уменьшите время восстановления.</RimTalk.Settings.OverrideInteractionsTooltip>
+    <RimTalk.Settings.SettingsButton>Настройки</RimTalk.Settings.SettingsButton>
+    <RimTalk.Settings.FastTrackInteractionsTitle>Приоритетные взаимодействия</RimTalk.Settings.FastTrackInteractionsTitle>
+    <RimTalk.Settings.FastTrackInteractionsDesc>Выберите взаимодействия, которые должны немедленно запускать диалог в обход обычной перезарядки. Невыбранные взаимодействия будут следовать стандартному интервалу.</RimTalk.Settings.FastTrackInteractionsDesc>
+    <RimTalk.Settings.SelectAll>Выбрать все</RimTalk.Settings.SelectAll>
+    <RimTalk.Settings.DeselectAll>Снять все</RimTalk.Settings.DeselectAll>
     <RimTalk.Settings.AllowSimultaneousConversations>Разрешить одновременные разговоры</RimTalk.Settings.AllowSimultaneousConversations>
     <RimTalk.Settings.AllowSimultaneousConversationsTooltip>Если включено, несколько групп поселенцев могут разговаривать одновременно. Отключите, если хотите видеть только один разговор за раз или если диалогов становится слишком много.</RimTalk.Settings.AllowSimultaneousConversationsTooltip>
     <RimTalk.Settings.DisplayTalkWhenDrafted>Отображать разговоры в режиме призыва</RimTalk.Settings.DisplayTalkWhenDrafted>
@@ -206,6 +207,8 @@
     <RimTalk.Settings.AllowBabiesToTalkTooltip>Включите, чтобы младенцы и маленькие дети могли участвовать в разговорах, сгенерированные ИИ.</RimTalk.Settings.AllowBabiesToTalkTooltip>
     <RimTalk.Settings.AllowNonHumanToTalk>Разрешить говорить не людям</RimTalk.Settings.AllowNonHumanToTalk>
     <RimTalk.Settings.AllowNonHumanToTalkTooltip>Позволяет животным, механоидам и пользовательским расам говорить после установки Катализатора голосовой связи, полученного у торговцев.</RimTalk.Settings.AllowNonHumanToTalkTooltip>
+    <RimTalk.Settings.AllowAnnouncement>Разрешить объявления</RimTalk.Settings.AllowAnnouncement>
+    <RimTalk.Settings.AllowAnnouncementTooltip>Позволяет поселенцам и персонажам делать объявления находящимся поблизости.</RimTalk.Settings.AllowAnnouncementTooltip>
     <RimTalk.Settings.ApplyMoodAndSocialEffects>Влияние на настроение и социальные связи</RimTalk.Settings.ApplyMoodAndSocialEffects>
     <RimTalk.Settings.ApplyMoodAndSocialEffectsTooltip>Диалоги могут влиять на настроение и отношения колонистов в зависимости от тона разговора.</RimTalk.Settings.ApplyMoodAndSocialEffectsTooltip>
 
@@ -214,9 +217,19 @@
     <RimTalk.Settings.PlayerDialogueMode.AIDrivenPawnOnly>Автоген.: только пешка</RimTalk.Settings.PlayerDialogueMode.AIDrivenPawnOnly>
     <RimTalk.Settings.PlayerToNpc>Игрок–НПС:</RimTalk.Settings.PlayerToNpc>
     <RimTalk.Settings.PlayerName>Имя игрока</RimTalk.Settings.PlayerName>
-    <RimTalk.Settings.PlayerNameTooltip>Имя, которым НПС называют игрока в диалогах.</RimTalk.Settings.PlayerNameTooltip>
-    <RimTalk.Settings.PlayerDialogueModeTooltip>Выберите способ участия игрока в диалогах.\n\nОтключено: Игрок не участвует в разговорах.\nРучные ответы: Вы вводите все ответы вручную; авто-генерации нет.\nАвтогенерируемые ответы: ИИ автоматически создаёт ответы игрока во время диалогов.</RimTalk.Settings.PlayerDialogueModeTooltip>
     <RimTalk.Settings.PlayerNameTooltip>Имя, отображаемое при участии игрока в диалогах, отражающее восприятие поселенцев.</RimTalk.Settings.PlayerNameTooltip>
+    <RimTalk.Settings.PlayerPersona>Персона игрока</RimTalk.Settings.PlayerPersona>
+    <RimTalk.Settings.PlayerPersonaTooltip>Опишите характер, тон и манеру речи игрока. Используется при генерации реплик игрока и в диалогах.</RimTalk.Settings.PlayerPersonaTooltip>
+    <RimTalk.Settings.Configure>Настройки</RimTalk.Settings.Configure>
+    <RimTalk.PlayerSettings.Title>Настройки пользовательского диалога</RimTalk.PlayerSettings.Title>
+    <RimTalk.PlayerSettings.Instruct>Настройте режим диалога, имя и персону игрока.</RimTalk.PlayerSettings.Instruct>
+    <RimTalk.PlayerSettings.ModeDesc>• Отключено: Игрок не участвует в диалогах, но вы можете вручную инициировать диалоги между пешками.
+• Ручные ответы: Вы вводите первую реплику вручную; реплики игрока не создаются автоматически.
+• Автоген.: только пешка: После обращения игрока пешки продолжают разговор между собой.
+• Автоген.: пешка + игрок: ИИ генерирует реплики и пешек, и игрока. (Применяется персона игрока)</RimTalk.PlayerSettings.ModeDesc>
+    <RimTalk.PlayerSettings.PersonaOnlyAIDriven>(Активно только в режиме «Автоген.: пешка + игрок»)</RimTalk.PlayerSettings.PersonaOnlyAIDriven>
+    <RimTalk.PlayerSettings.Save>Сохранить</RimTalk.PlayerSettings.Save>
+    <RimTalk.PlayerSettings.Saved>Настройки диалога игрока сохранены.</RimTalk.PlayerSettings.Saved>
 
     <RimTalk.Settings.PauseAtSpeed>Приостанавливать ИИ на высокой скорости</RimTalk.Settings.PauseAtSpeed>
     <RimTalk.Settings.DisableAiAtSpeedTooltip>Чтобы уменьшить количество вызовов API, ИИ будет приостановлен, когда скорость игры установлена на этот уровень или выше.</RimTalk.Settings.DisableAiAtSpeedTooltip>
@@ -249,7 +262,7 @@
 
     <!-- Settings_Api.cs -->
     <RimTalk.Settings.GoogleApiKeyLabel>Ключ API Google AI:</RimTalk.Settings.GoogleApiKeyLabel>
-    <RimTalk.Settings.GoogleApiKeyDesc>Использует бесплатную модель Gemma-4-26b-a4b. Для других моделей или провайдеров используйте расширенные настройки.</RimTalk.Settings.GoogleApiKeyDesc>
+    <RimTalk.Settings.GoogleApiKeyDesc>Использует бесплатную модель gemma-4-31b. Для других моделей или провайдеров используйте расширенные настройки.</RimTalk.Settings.GoogleApiKeyDesc>
     <RimTalk.Settings.GetFreeApiKeyButton>Получить бесплатный ключ API</RimTalk.Settings.GetFreeApiKeyButton>
     <RimTalk.Settings.SwitchToAdvancedSettings>Переключиться на расширенные настройки</RimTalk.Settings.SwitchToAdvancedSettings>
     <RimTalk.Settings.SwitchToSimpleSettings>Переключиться на простые настройки</RimTalk.Settings.SwitchToSimpleSettings>
@@ -262,7 +275,6 @@
     <RimTalk.Settings.ProviderHeader>Провайдер</RimTalk.Settings.ProviderHeader>
     <RimTalk.Settings.ApiKeyHeader>Ключ API</RimTalk.Settings.ApiKeyHeader>
     <RimTalk.Settings.ModelHeader>Модель</RimTalk.Settings.ModelHeader>
-    <RimTalk.Settings.CustomModelHeader>Пользовательская модель</RimTalk.Settings.CustomModelHeader>
     <RimTalk.Settings.EnabledHeader>Включено</RimTalk.Settings.EnabledHeader>
     <RimTalk.Settings.EnableDisableApiConfigTooltip>Включить или отключить эту конфигурацию API</RimTalk.Settings.EnableDisableApiConfigTooltip>
     <RimTalk.Settings.LocalProviderConfiguration>Конфигурация локального провайдера</RimTalk.Settings.LocalProviderConfiguration>
@@ -273,7 +285,6 @@
     <RimTalk.Settings.CustomizeRequestTooltip>Настроить JSON запроса (температура, уровень размышлений и др.)</RimTalk.Settings.CustomizeRequestTooltip>
     <RimTalk.Settings.CustomizeRequestTitle>Настройка запроса: {0} ({1})</RimTalk.Settings.CustomizeRequestTitle>
     <RimTalk.Settings.CustomizeRequestDesc>Настройте пользовательские параметры JSON запроса для этой LLM. Эти значения объединяются с полезной нагрузкой запроса API (например: temperature, reasoning_effort, max_tokens, параметры thinking и др.).</RimTalk.Settings.CustomizeRequestDesc>
-    <RimTalk.Settings.ResetToDefault>По умолчанию</RimTalk.Settings.ResetToDefault>
     <RimTalk.Settings.FormatJson>Форматировать JSON</RimTalk.Settings.FormatJson>
     <RimTalk.Settings.ClearOverride>Очистить</RimTalk.Settings.ClearOverride>
     <RimTalk.Settings.CustomJsonSave>Сохранить</RimTalk.Settings.CustomJsonSave>
@@ -330,6 +341,11 @@
     <RimTalk.Settings.ConversationHistoryCount.Tooltip>Каждая сессия содержит несколько реплик, что может значительно увеличить число токенов</RimTalk.Settings.ConversationHistoryCount.Tooltip>
     <RimTalk.Settings.MaxPawnContextCount>Максимальное количество пешек для включения</RimTalk.Settings.MaxPawnContextCount>
     <RimTalk.Settings.MaxPawnContextCount.Tooltip>Определяет максимальное количество пешек, которые могут участвовать в разговоре</RimTalk.Settings.MaxPawnContextCount.Tooltip>
+    <RimTalk.Settings.MaxEventsCount>Максимальное количество событий</RimTalk.Settings.MaxEventsCount>
+    <RimTalk.Settings.MaxEventsCount.Tooltip>Определяет максимальное количество активных событий и писем-уведомлений колонии в контексте</RimTalk.Settings.MaxEventsCount.Tooltip>
+    <RimTalk.Settings.IncludeEvents>Включить события поселения</RimTalk.Settings.IncludeEvents>
+    <RimTalk.Settings.IncludeEvents.Tooltip>Определяет, будут ли активные события и письма-уведомления включаться в контекст, и задает их максимальное количество</RimTalk.Settings.IncludeEvents.Tooltip>
+    <RimTalk.Settings.ExternalEventModDetected>Обнаружен внешний мод событий (RimTalk Event+). Встроенные события по умолчанию отключены для предотвращения дублирования контекста. Установите этот флажок, если хотите включить их.</RimTalk.Settings.ExternalEventModDetected>
 
     <RimTalk.Settings.PawnInfo>Информация о пешке</RimTalk.Settings.PawnInfo>
     <RimTalk.Settings.IncludeRace>Расу</RimTalk.Settings.IncludeRace>
@@ -355,6 +371,8 @@
     <RimTalk.Settings.IncludeCleanliness>Чистоту</RimTalk.Settings.IncludeCleanliness>
     <RimTalk.Settings.IncludeSurroundings>Близлежащие предметы</RimTalk.Settings.IncludeSurroundings>
     <RimTalk.Settings.IncludeWealth>Богатство колонии</RimTalk.Settings.IncludeWealth>
+    <RimTalk.Settings.IncludeTopicKeywords>Создавать новые темы для разговоров</RimTalk.Settings.IncludeTopicKeywords>
+    <RimTalk.Settings.IncludeTopicKeywords.Tooltip>Если у пешек нет конкретных событий или контекста для обсуждения, с вероятностью 50% создается новая случайная тема для разговора.</RimTalk.Settings.IncludeTopicKeywords.Tooltip>
 
     <!-- DebugWindow.cs -->
     <RimTalk.DebugWindow.ViewByTime>По времени</RimTalk.DebugWindow.ViewByTime>
@@ -363,7 +381,6 @@
     <RimTalk.DebugWindow.FilterPawn>Имя</RimTalk.DebugWindow.FilterPawn>
     <RimTalk.DebugWindow.Search>Поиск</RimTalk.DebugWindow.Search>
     <RimTalk.DebugWindow.State>Состояние</RimTalk.DebugWindow.State>
-    <RimTalk.DebugWindow.Limit>Лимит</RimTalk.DebugWindow.Limit>
     <RimTalk.DebugWindow.StateAll>Все</RimTalk.DebugWindow.StateAll>
     <RimTalk.DebugWindow.StatePending>Ожид.</RimTalk.DebugWindow.StatePending>
     <RimTalk.DebugWindow.StateIgnored>Игн.</RimTalk.DebugWindow.StateIgnored>
@@ -374,7 +391,6 @@
     <RimTalk.DebugWindow.Last>посл.</RimTalk.DebugWindow.Last>
     <RimTalk.DebugWindow.AutoScroll>Автопрокрутка</RimTalk.DebugWindow.AutoScroll>
     <RimTalk.DebugWindow.TooltipSelectForDetails>Выберите строку, чтобы просмотреть подробности</RimTalk.DebugWindow.TooltipSelectForDetails>
-    <RimTalk.DebugWindow.Details>Подробности</RimTalk.DebugWindow.Details>
     <RimTalk.DebugWindow.SelectRowHint>Выберите запрос слева, чтобы просмотреть промпт, ответ и контексты.</RimTalk.DebugWindow.SelectRowHint>
     <RimTalk.DebugWindow.Resend>Отправить снова</RimTalk.DebugWindow.Resend>
     <RimTalk.DebugWindow.ResendTooltip>Измените контекст и запрос, затем отправьте снова для тестирования диалога.</RimTalk.DebugWindow.ResendTooltip>
@@ -389,12 +405,11 @@
     <RimTalk.DebugWindow.Prompt>Промпт (Prompt)</RimTalk.DebugWindow.Prompt>
     <RimTalk.DebugWindow.Response>Ответ (Response)</RimTalk.DebugWindow.Response>
     <RimTalk.DebugWindow.PromptMessages>Подробности запроса</RimTalk.DebugWindow.PromptMessages>
-    <RimTalk.DebugWindow.Contexts>Контексты (Contexts)</RimTalk.DebugWindow.Contexts>
     <RimTalk.DebugWindow.Generating>[Генерация...]</RimTalk.DebugWindow.Generating>
+    <RimTalk.DebugWindow.Canceled>[Отменено]</RimTalk.DebugWindow.Canceled>
     <RimTalk.DebugWindow.StatusDisabled>Отключено</RimTalk.DebugWindow.StatusDisabled>
     <RimTalk.DebugWindow.StatusProcessing>Обработка</RimTalk.DebugWindow.StatusProcessing>
     <RimTalk.DebugWindow.StatusIdle>Ожидание</RimTalk.DebugWindow.StatusIdle>
-    <RimTalk.DebugWindow.GroupByPawn>Группировать по пешке</RimTalk.DebugWindow.GroupByPawn>
     <RimTalk.DebugWindow.ModSettings>Настройки</RimTalk.DebugWindow.ModSettings>
     <RimTalk.DebugWindow.Export>Экспорт</RimTalk.DebugWindow.Export>
     <RimTalk.DebugWindow.ResetLogs>Сброс лога</RimTalk.DebugWindow.ResetLogs>
@@ -431,21 +446,31 @@
     <RimTalk.DebugWindow.SystemInstruction>Системная инструкция (System Instruction)</RimTalk.DebugWindow.SystemInstruction>
     <RimTalk.DebugWindow.ChatHistory>История чата (Chat History)</RimTalk.DebugWindow.ChatHistory>
     <RimTalk.DebugWindow.InputPrompt>Подсказка ввода (Input Prompt)</RimTalk.DebugWindow.InputPrompt>
-    <RimTalk.DebugWindow.TooltipPromptResponse>Запрос:\n{0}\n\nОтвет:\n{1}</RimTalk.DebugWindow.TooltipPromptResponse>
     
     <!-- Overlay.cs -->
     <RimTalk.Overlay.Debug>Отладка</RimTalk.Overlay.Debug>
     <RimTalk.Overlay.Option>Опция наложения</RimTalk.Overlay.Option>
     <RimTalk.Overlay.DrawAboveUI>Отображать поверх UI</RimTalk.Overlay.DrawAboveUI>
+    <RimTalk.Overlay.ShowGroupColors>Цвета групп диалогов</RimTalk.Overlay.ShowGroupColors>
+    <RimTalk.Overlay.ShowTargetName>Показывать собеседника [A-&gt;B]</RimTalk.Overlay.ShowTargetName>
+    <RimTalk.Overlay.AlignNameColumn>Выравнивать колонку имен</RimTalk.Overlay.AlignNameColumn>
     <RimTalk.Overlay.Opacity>Прозрачность</RimTalk.Overlay.Opacity>
     <RimTalk.Overlay.FontSize>Размер шрифта</RimTalk.Overlay.FontSize>
+    <RimTalk.Overlay.TurnOff>Отключить оверлей</RimTalk.Overlay.TurnOff>
+    <RimTalk.Overlay.TurnOffTooltip>Отключить оверлей.\nВы можете переключать его, нажимая на значок в правом нижнем углу или на вкладку, в зависимости от настроек.</RimTalk.Overlay.TurnOffTooltip>
 
     <!-- FloatMenuMakerMapGetOptionsPatch.cs -->
     <RimTalk.FloatMenu.ChatWith>Общаться с {0}</RimTalk.FloatMenu.ChatWith>
     <RimTalk.Gizmo.ChatWithTarget>Общаться с {0}</RimTalk.Gizmo.ChatWithTarget>
     <RimTalk.Gizmo.ChatWithTargetDesc>Начать разговор с {0}.</RimTalk.Gizmo.ChatWithTargetDesc>
+    <RimTalk.Gizmo.Announce>Объявить</RimTalk.Gizmo.Announce>
+    <RimTalk.Gizmo.AnnounceDesc>Заставить {0} сделать объявление или громко обратиться ко всем поблизости.</RimTalk.Gizmo.AnnounceDesc>
     <RimTalk.FloatMenu.WhatToSayToSelf>Что вы хотите сказать {0}?</RimTalk.FloatMenu.WhatToSayToSelf>
     <RimTalk.FloatMenu.WhatToSayToOther>Что вы хотите, чтобы {0} сказал {1}?</RimTalk.FloatMenu.WhatToSayToOther>
+    <RimTalk.FloatMenu.WhatToAnnounceToSelf>Что вы хотите объявить {0} и окружающим?</RimTalk.FloatMenu.WhatToAnnounceToSelf>
+    <RimTalk.FloatMenu.WhatToAnnounceToOther>Что {0} должен объявить окружающим?</RimTalk.FloatMenu.WhatToAnnounceToOther>
+    <RimTalk.FloatMenu.DirectModeTooltip>Обычный диалог (Tab для переключения)</RimTalk.FloatMenu.DirectModeTooltip>
+    <RimTalk.FloatMenu.AnnounceModeTooltip>Объявление окружающим (Tab для переключения)</RimTalk.FloatMenu.AnnounceModeTooltip>
     <RimTalk.FloatMenu.Send>Отправить</RimTalk.FloatMenu.Send>
     <RimTalk.FloatMenu.Cancel>Отмена</RimTalk.FloatMenu.Cancel>
 
@@ -455,4 +480,54 @@
     <RimTalk.ScribanVar.Category.Context>Контекст</RimTalk.ScribanVar.Category.Context>
     <RimTalk.ScribanVar.Category.GameStatic>Игровые объекты (Статические)</RimTalk.ScribanVar.Category.GameStatic>
     <RimTalk.ScribanVar.Category.System>Система</RimTalk.ScribanVar.Category.System>
+
+    <RimTalk.TalkService.VisionUnsupportedFallback>Текущая модель ({0}) не поддерживает изображения. Диалог продолжен без изображения.</RimTalk.TalkService.VisionUnsupportedFallback>
+    <RimTalk.Settings.CustomDialogue>Пользовательские диалоги</RimTalk.Settings.CustomDialogue>
+    <RimTalk.PlayerSettings.SectionPlayer>Настройки диалогов игрока</RimTalk.PlayerSettings.SectionPlayer>
+    <RimTalk.PlayerSettings.SectionPresets>Управление пресетами диалогов</RimTalk.PlayerSettings.SectionPresets>
+    <RimTalk.PlayerSettings.AddPreset>Добавить</RimTalk.PlayerSettings.AddPreset>
+    <RimTalk.PlayerSettings.ResetPresetsConfirm>Вы уверены, что хотите сбросить все пресеты к рекомендованным по умолчанию?</RimTalk.PlayerSettings.ResetPresetsConfirm>
+    <RimTalk.PlayerSettings.PresetsDesc>Включённые пресеты отображаются в контекстном меню поселенца при правом клике.</RimTalk.PlayerSettings.PresetsDesc>
+    <RimTalk.PlayerSettings.Preset1.Title>База и окружение</RimTalk.PlayerSettings.Preset1.Title>
+    <RimTalk.PlayerSettings.Preset1.Prompt>Оглядываясь вокруг, как тебе наши постройки и жизнь в поселении в целом?</RimTalk.PlayerSettings.Preset1.Prompt>
+    <RimTalk.PlayerSettings.Preset2.Title>Настроение и самочувствие</RimTalk.PlayerSettings.Preset2.Title>
+    <RimTalk.PlayerSettings.Preset2.Prompt>Как ты себя чувствуешь в последнее время? Тебя что-то тревожит или беспокоит?</RimTalk.PlayerSettings.Preset2.Prompt>
+    <RimTalk.PlayerSettings.Preset3.Title>Оборона и тактика</RimTalk.PlayerSettings.Preset3.Title>
+    <RimTalk.PlayerSettings.Preset3.Prompt>Взгляни на нашу оборону и снаряжение. Видишь ли тактические уязвимости, которые стоит укрепить перед нападением?</RimTalk.PlayerSettings.Preset3.Prompt>
+    <RimTalk.PlayerSettings.Preset4.Title>Объявление о работе и безопасности</RimTalk.PlayerSettings.Preset4.Title>
+    <RimTalk.PlayerSettings.Preset4.Prompt>Внимание всем! Соблюдайте осторожность и сосредоточьтесь на своих текущих задачах!</RimTalk.PlayerSettings.Preset4.Prompt>
+    <RimTalk.PlayerSettings.Enabled>Включено</RimTalk.PlayerSettings.Enabled>
+    <RimTalk.PlayerSettings.PresetTitleTooltip>Заголовок, отображаемый в меню при правом клике на поселенца.</RimTalk.PlayerSettings.PresetTitleTooltip>
+    <RimTalk.PlayerSettings.Vision>📷 Зрение</RimTalk.PlayerSettings.Vision>
+    <RimTalk.PlayerSettings.VisionTooltip>При включении к запросу прикрепляется снимок экрана. (Во время захвата экрана может возникнуть кратковременное мерцание)</RimTalk.PlayerSettings.VisionTooltip>
+    <RimTalk.PlayerSettings.Announce>📢 Объявление</RimTalk.PlayerSettings.Announce>
+    <RimTalk.PlayerSettings.AnnounceTooltip>При включении диалог озвучивается как громкое объявление для всех поселенцев поблизости.</RimTalk.PlayerSettings.AnnounceTooltip>
+    <RimTalk.PlayerSettings.AllowCustomConversation>Разрешить пользовательские диалоги</RimTalk.PlayerSettings.AllowCustomConversation>
+    <RimTalk.PlayerSettings.AllowCustomConversationTooltip>Включает команды диалога, гизмо и пресеты при клике правой кнопкой мыши.</RimTalk.PlayerSettings.AllowCustomConversationTooltip>
+    <RimTalk.PlayerSettings.AllowDirectPlayerTalk>Разрешить прямой диалог Игрок ↔ Поселенец</RimTalk.PlayerSettings.AllowDirectPlayerTalk>
+    <RimTalk.PlayerSettings.AllowDirectPlayerTalkTooltip>Позволяет игроку напрямую общаться с поселенцами в роли «Player». Если отключено, доступны только диалоги между поселенцами.</RimTalk.PlayerSettings.AllowDirectPlayerTalkTooltip>
+    <RimTalk.PlayerSettings.AllowPlayerAiGen>Автогенерация реплик игрока ИИ (применяет персону)</RimTalk.PlayerSettings.AllowPlayerAiGen>
+    <RimTalk.PlayerSettings.AllowPlayerAiGenTooltip>При включении ИИ автоматически генерирует последующие ответы игрока согласно персоне. При отключении игрок говорит только введенные вручную фразы.</RimTalk.PlayerSettings.AllowPlayerAiGenTooltip>
+    <RimTalk.PlayerSettings.PromptLabel>Промпт диалога для отправки (Вопрос / Указание):</RimTalk.PlayerSettings.PromptLabel>
+    <RimTalk.FloatMenu.AttachPhotoTooltip>Прикрепить снимок экрана (Ctrl+1) (Во время захвата экрана может возникнуть кратковременное мерцание)</RimTalk.FloatMenu.AttachPhotoTooltip>
+    <RimTalk.DebugWindow.AttachedImage>Прикреплённое изображение (нажмите для увеличения):</RimTalk.DebugWindow.AttachedImage>
+    <RimTalk.DebugWindow.AttachedImageBase64>Прикреплённое изображение (Base64)</RimTalk.DebugWindow.AttachedImageBase64>
+    <RimTalk.DebugWindow.ClickToExpandImage>Нажмите, чтобы открыть изображение в большом окне.</RimTalk.DebugWindow.ClickToExpandImage>
+    <RimTalk.DebugWindow.CopyImage>Скопировать изображение (в буфер обмена)</RimTalk.DebugWindow.CopyImage>
+    <RimTalk.DebugWindow.ImageCopied>Изображение скопировано в буфер обмена.</RimTalk.DebugWindow.ImageCopied>
+    <RimTalk.PlayerSettings.DisabledNotice>Пользовательские диалоги отключены. Контекстное меню и диалоги игрока будут недоступны.</RimTalk.PlayerSettings.DisabledNotice>
+    <RimTalk.PlayerSettings.NewPresetName>Новый пресет</RimTalk.PlayerSettings.NewPresetName>
+    <RimTalk.PlayerSettings.PresetTitleHeader>Заголовок / Название в меню</RimTalk.PlayerSettings.PresetTitleHeader>
+    <RimTalk.PlayerSettings.PresetTitlePlaceholder>Название пресета...</RimTalk.PlayerSettings.PresetTitlePlaceholder>
+
+    <!-- VersionSwitcher.cs -->
+    <RimTalk.VersionSwitcher.RollbackLabel>Откат к предыдущей версии</RimTalk.VersionSwitcher.RollbackLabel>
+    <RimTalk.VersionSwitcher.SwitchToPrevious>Скопировать старую версию (Локальный мод)</RimTalk.VersionSwitcher.SwitchToPrevious>
+    <RimTalk.VersionSwitcher.SwitchToSpecificVer>Скопировать {0} (Локальный мод)</RimTalk.VersionSwitcher.SwitchToSpecificVer>
+    <RimTalk.VersionSwitcher.NoPreviousDllFound>Файлы предыдущей версии не найдены (LastVersion/).</RimTalk.VersionSwitcher.NoPreviousDllFound>
+    <RimTalk.VersionSwitcher.ConfirmRollbackTitle>Откат к версии {0}</RimTalk.VersionSwitcher.ConfirmRollbackTitle>
+    <RimTalk.VersionSwitcher.ConfirmRollbackPrompt>Скопировать RimTalk ({0}) в локальную папку 'RimWorld/Mods/RimTalk'?</RimTalk.VersionSwitcher.ConfirmRollbackPrompt>
+    <RimTalk.VersionSwitcher.ProceedRollback>Скопировать</RimTalk.VersionSwitcher.ProceedRollback>
+    <RimTalk.VersionSwitcher.RestartRequiredTitle>Скопировано</RimTalk.VersionSwitcher.RestartRequiredTitle>
+    <RimTalk.VersionSwitcher.LocalModCreatedPrompt>Скопировано в 'RimWorld/Mods/RimTalk'.\n\nОтключите версию Steam, включите локальный мод и перезапустите RimWorld.</RimTalk.VersionSwitcher.LocalModCreatedPrompt>
 </LanguageData>

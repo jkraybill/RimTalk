@@ -40,6 +40,17 @@ public class PawnState(Pawn pawn)
 
     public void AddTalkRequest(string prompt, Pawn recipient = null, TalkType talkType = TalkType.Other)
     {
+        AddTalkRequest(prompt, recipient, talkType, null);
+    }
+
+    public void AddTalkRequest(string prompt, Pawn recipient, TalkType talkType, string imageBase64)
+    {
+        // Enemies should never receive colony incident, quest, or thought prompts
+        if (Pawn.IsEnemy() && talkType is TalkType.Event or TalkType.QuestOffer or TalkType.QuestEnd or TalkType.Thought)
+        {
+            return;
+        }
+
         // 1. If Urgent, clear out less important active requests
         if (talkType == TalkType.Urgent)
         {
@@ -60,16 +71,29 @@ public class PawnState(Pawn pawn)
         }
 
         // 2. Create and Enqueue
-        var newRequest = new TalkRequest(prompt, Pawn, recipient, talkType) { Status = RequestStatus.Pending };
+        var newRequest = new TalkRequest(prompt, Pawn, recipient, talkType)
+        {
+            Status = RequestStatus.Pending,
+            IsMonologue = recipient == null,
+            ImageBase64 = imageBase64
+        };
 
         if (talkType.IsFromUser())
         {
             TalkRequests.AddFirst(newRequest);
             IgnoreAllTalkResponses();
             Cache.Get(recipient)?.IgnoreAllTalkResponses();
-            UserRequestPool.Add(Pawn);
+            UserRequestPool.Add(Pawn, priority: true);
         }
-        else if (talkType is TalkType.Event or TalkType.QuestOffer)
+        else if (talkType == TalkType.Interaction)
+        {
+            TalkRequests.AddFirst(newRequest);
+            IgnoreAllTalkResponses();
+            Cache.Get(recipient)?.IgnoreAllTalkResponses();
+            LastTalkTick = 0;
+            UserRequestPool.Add(Pawn, priority: false);
+        }
+        else if (talkType is TalkType.Sleep or TalkType.Event or TalkType.QuestOffer or TalkType.Other)
         {
             TalkRequests.AddFirst(newRequest);
         }
@@ -127,13 +151,13 @@ public class PawnState(Pawn pawn)
     {
         if (Pawn.IsPlayer()) return true;
         
-        if (WorldRendererUtility.CurrentWorldRenderMode == WorldRenderMode.Planet || Find.CurrentMap == null ||
-            Pawn.Map != Find.CurrentMap || !Pawn.Spawned)
+        if (Pawn.Map == null || !Pawn.Spawned)
             return false;
         
         RimTalkSettings settings = Settings.Get();
         if (!settings.DisplayTalkWhenDrafted && Pawn.Drafted) return false;
-        if (!settings.ContinueDialogueWhileSleeping && !Pawn.Awake()) return false;
+        bool allowSleeping = TalkResponses.Count > 0 && TalkResponses[0].TalkType == TalkType.Sleep;
+        if (!settings.ContinueDialogueWhileSleeping && !Pawn.Awake() && !allowSleeping) return false;
 
         return !Pawn.Dead && TalkInitiationWeight > 0;
     }
@@ -141,9 +165,10 @@ public class PawnState(Pawn pawn)
     public bool CanGenerateTalk()
     {
         if (Pawn.IsPlayer()) return true;
+        if (WorldRendererUtility.CurrentWorldRenderMode == WorldRenderMode.Planet || Find.CurrentMap == null || Pawn.Map != Find.CurrentMap) return false;
         DrainIncomingTalkResponses();
         return !IsGeneratingTalk && CanDisplayTalk() && Pawn.Awake() && TalkResponses.Empty()
-               && CommonUtil.HasPassed(LastTalkTick, RimTalkSettings.ReplyInterval);
+               && CommonUtil.HasPassed(LastTalkTick, Settings.Get().ReplyInterval);
     }
 
     public void IgnoreTalkResponse()

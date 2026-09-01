@@ -27,7 +27,10 @@ public class TalkRequest(string prompt, Pawn initiator, Pawn recipient = null, T
     public DateTime CreatedTime { get; set; } = DateTime.Now; 
     public int FinishedTick { get; set; } = -1; 
     public RequestStatus Status { get; set; } = RequestStatus.Pending;
+    public int ConversationId { get; set; } = -1;
     public bool IsMonologue;
+    public bool IsAnnouncement => TalkType == TalkType.Announcement;
+    public string ImageBase64 { get; set; }
     
     /// <summary>
     /// All pawns participating in the dialogue (filled in sync layer)
@@ -44,10 +47,34 @@ public class TalkRequest(string prompt, Pawn initiator, Pawn recipient = null, T
     /// </summary>
     public List<PromptMessageSegment> PromptMessageSegments { get; set; }
 
+    /// <summary>
+    /// Resolves a PawnState for this dialogue session from response name (handling aliases).
+    /// </summary>
+    public PawnState ResolvePawnState(string name)
+    {
+        if (string.IsNullOrEmpty(name)) return null;
+        name = name.Trim();
+        Pawn fallback = null;
+        for (int i = 0; Participants != null && i < Participants.Count; i++)
+        {
+            var p = Participants[i];
+            if (p == null) continue;
+            if (name.Equals(Service.PromptService.GetUniqueName(p, Participants), StringComparison.OrdinalIgnoreCase))
+                return Cache.Get(p);
+            if (fallback == null && name.Equals(p.LabelShort, StringComparison.OrdinalIgnoreCase))
+                fallback = p;
+        }
+        return fallback != null ? Cache.Get(fallback) : Cache.GetByName(name);
+    }
+
     public bool IsExpired()
     {
-        int duration = 20;
         if (TalkType.IsFromUser()) return false;
+        if (TalkType == TalkType.Sleep)
+        {
+            return GenTicks.TicksGame - CreatedTick > 5000;
+        }
+        int duration = 20;
         if (TalkType == TalkType.Urgent)
         {
             duration = 5;

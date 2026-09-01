@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using Bubbles.Core;
 using HarmonyLib;
@@ -50,11 +50,12 @@ public static class Bubbler_Add
             
         InteractionDef interactionDef = GetInteractionDef(entry);
         if (interactionDef == null) return true;
+        bool isFastTrack = settings.IsFastTrackInteraction(interactionDef.defName);
         bool isChitchat = interactionDef == InteractionDefOf.Chitchat ||
                           interactionDef == InteractionDefOf.DeepTalk;
 
         // if in danger then stop chitchat
-        if (isChitchat
+        if (!isFastTrack && isChitchat
             && (initiator.IsInDanger()
                 || initiator.GetHostilePawnNearBy() != null
                 || !PawnSelector.GetNearByTalkablePawns(initiator).Contains(recipient)))
@@ -65,7 +66,7 @@ public static class Bubbler_Add
         PawnState pawnState = Cache.Get(initiator);
 
         // chitchat is ignored if talkRequest exists
-        if (pawnState == null || (isChitchat && pawnState.TalkRequests.Count > 0))
+        if (pawnState == null || (!isFastTrack && isChitchat && pawnState.TalkRequests.Count > 0))
             return false;
 
         // rim-universe #44. `prompt` at this point is RimWorld's own sentence, and for
@@ -94,7 +95,7 @@ public static class Bubbler_Add
 
         // Otherwise, block normal bubble and generate talk
         prompt = $"{prompt} ({interactionDef.label})";
-        pawnState.AddTalkRequest(prompt, recipient, TalkType.Chitchat);
+        pawnState.AddTalkRequest(prompt, recipient, isFastTrack ? TalkType.Interaction : TalkType.Chitchat);
         return false;
     }
 
@@ -130,5 +131,18 @@ public static class Bubbler_Add
     {
         var field = AccessTools.Field(entry.GetType(), "intDef");
         return field?.GetValue(entry) as InteractionDef;
+    }
+}
+
+[HarmonyPatch(typeof(Bubbler), nameof(Bubbler.Draw))]
+public static class Bubbler_Draw
+{
+    public static bool Prefix()
+    {
+        if (UI.Overlay.SuppressForScreenshot)
+        {
+            return false;
+        }
+        return true;
     }
 }

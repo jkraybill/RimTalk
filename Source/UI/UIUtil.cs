@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using RimTalk.Data;
 using RimTalk.Util;
@@ -10,8 +11,29 @@ using Verse;
 using Logger = RimTalk.Util.Logger;
 
 namespace RimTalk.UI;
+
 public static class UIUtil
 {
+    private static readonly Color[] ConversationPalette =
+    [
+        new Color(0.35f, 0.75f, 0.95f), // Sky Blue
+        new Color(0.96f, 0.75f, 0.28f), // Soft Amber
+        new Color(0.78f, 0.52f, 0.92f), // Lavender Purple
+        new Color(0.32f, 0.85f, 0.58f), // Mint Emerald
+        new Color(0.96f, 0.48f, 0.65f), // Soft Rose Pink
+        new Color(0.88f, 0.92f, 0.98f)  // Soft Silver White
+    ];
+
+    /// <summary>
+    /// Returns a distinct accent color for a given conversation ID.
+    /// </summary>
+    public static Color GetConversationColor(int conversationId, bool fallbackMuted = false)
+    {
+        if (conversationId < 0)
+            return fallbackMuted ? new Color(0.4f, 0.4f, 0.45f, 0.4f) : Color.clear;
+        return ConversationPalette[conversationId % ConversationPalette.Length];
+    }
+
     /// <summary>
     /// Draws a pawn's name that is clickable to jump to their location.
     /// The name is color-coded based on the pawn's status (e.g., dead, colonist).
@@ -19,8 +41,11 @@ public static class UIUtil
     /// <param name="rect">The rectangle area to draw in.</param>
     /// <param name="pawnName">The name of the pawn to display.</param>
     /// <param name="pawn">An optional direct reference to the pawn.</param>
-    public static void DrawClickablePawnName(Rect rect, string pawnName, Pawn pawn = null)
+    /// <param name="includeBrackets">Whether to include square brackets around the name.</param>
+    public static void DrawClickablePawnName(Rect rect, string pawnName, Pawn pawn = null, bool includeBrackets = true)
     {
+        string label = includeBrackets ? $"[{pawnName}]" : pawnName;
+
         if (pawn != null)
         {
             var originalColor = GUI.color;
@@ -31,25 +56,18 @@ public static class UIUtil
                 pawn.Dead ? Color.gray :
                 PawnNameColorUtility.PawnNameColorOf(pawn);
 
-            Widgets.Label(rect, $"[{pawnName}]");
+            Widgets.Label(rect, label);
 
             if (Widgets.ButtonInvisible(rect))
             {
-                if (pawn.Dead && pawn.Corpse != null && pawn.Corpse.Spawned)
-                {
-                    CameraJumper.TryJump(pawn.Corpse);
-                }
-                else if (!pawn.Dead && pawn.Spawned)
-                {
-                    CameraJumper.TryJump(pawn);
-                }
+                CameraJumper.TryJumpAndSelect(pawn.Dead && pawn.Corpse != null ? pawn.Corpse : pawn);
             }
 
             GUI.color = originalColor;
         }
         else
         {
-            Widgets.Label(rect, $"[{pawnName}]");
+            Widgets.Label(rect, label);
         }
     }
     

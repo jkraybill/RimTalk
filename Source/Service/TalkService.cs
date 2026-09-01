@@ -43,16 +43,20 @@ public static class TalkService
             talkRequest.Recipient = null;
         }
 
-        List<Pawn> nearbyPawns = PawnSelector.GetAllNearByPawns(talkRequest.Initiator);
         // Recipient may have just been nulled above. IsPlayer() is an extension, so it
         // does not throw on null -- and when no player pawn exists it returns true for
-        // null, inserting a null that NREs downstream in GetPawnStatusFull.
-        if (talkRequest.Recipient != null && talkRequest.Recipient.IsPlayer())
-            nearbyPawns.Insert(0, talkRequest.Recipient);
-        var (status, isInDanger) = talkRequest.Initiator.GetPawnStatusFull(nearbyPawns);
+        // null, inserting a null that NREs downstream in GetPawnStatusFull. rim-universe fix.
+        bool isPlayerAnnouncement = talkRequest.IsAnnouncement && talkRequest.Recipient != null && talkRequest.Recipient.IsPlayer();
+        Pawn mainPawn = isPlayerAnnouncement ? talkRequest.Recipient : talkRequest.Initiator;
+
+        List<Pawn> nearbyPawns = PawnSelector.GetAllNearByPawns(talkRequest.Initiator, isAnnouncement: talkRequest.IsAnnouncement);
+        if (isPlayerAnnouncement) nearbyPawns.Insert(0, talkRequest.Initiator);
+        else if (talkRequest.Recipient != null && talkRequest.Recipient.IsPlayer()) nearbyPawns.Insert(0, talkRequest.Recipient);
+
+        var (status, isInDanger) = mainPawn.GetPawnStatusFull(nearbyPawns, talkRequest.IsAnnouncement);
         
         // Avoid spamming generations if the pawn's status hasn't changed recently.
-        if (!talkRequest.TalkType.IsFromUser() && status == pawn1.LastStatus && pawn1.RejectCount < 2)
+        if (!talkRequest.TalkType.IsFromUser() && talkRequest.TalkType != TalkType.Interaction && status == pawn1.LastStatus && pawn1.RejectCount < 2)
         {
             pawn1.RejectCount++;
             return false;
@@ -64,22 +68,30 @@ public static class TalkService
         pawn1.LastStatus = status;
 
         // Select the most relevant pawns for the conversation context.
-        List<Pawn> pawns = new List<Pawn> { talkRequest.Initiator, talkRequest.Recipient }
+        List<Pawn> pawns = new List<Pawn> { mainPawn, isPlayerAnnouncement ? null : talkRequest.Recipient }
             .Where(p => p != null)
             .Concat(nearbyPawns.Where(p =>
             {
                 var pawnState = Cache.Get(p);
-                pawnState.DrainIncomingTalkResponses();
-                return pawnState.CanDisplayTalk() && pawnState.TalkResponses.Empty();
+                pawnState?.DrainIncomingTalkResponses();
+                return pawnState != null && pawnState.CanDisplayTalk() &&
+                       (talkRequest.IsAnnouncement || pawnState.TalkResponses.Empty());
             }))
             .Distinct()
-            .Take(settings.Context.MaxPawnContextCount)
+            .Take(talkRequest.IsAnnouncement ? Math.Max(settings.Context.MaxPawnContextCount, 8) : settings.Context.MaxPawnContextCount)
             .ToList();
+
+        if (talkRequest.IsAnnouncement)
+            foreach (var p in pawns.Where(p => p != null && !p.IsPlayer()))
+                Cache.Get(p)?.IgnoreAllTalkResponses([TalkType.Urgent, TalkType.User, TalkType.Announcement]);
         
         if (pawns.Count == 1) talkRequest.IsMonologue = true;
 
         if (!settings.AllowMonologue && talkRequest.IsMonologue && !talkRequest.TalkType.IsFromUser())
             return false;
+
+        // Store dialogue participants for disambiguating duplicate pawn names during async streaming response processing
+        talkRequest.Participants = pawns;
 
         // Delegate prompt assembly to PromptManager (Handles Simple/Advanced modes and fallbacks)
         talkRequest.PromptMessages = PromptManager.Instance.BuildMessages(talkRequest, pawns, status);
@@ -116,7 +128,9 @@ public static class TalkService
                 {
                     Logger.Debug($"Streamed: {talkResponse}");
 
-                    PawnState pawnState = Cache.GetByName(talkResponse.Name);
+                    // Resolve target pawn from response name (handling aliases) and revert to native LabelShort for in-game talk bubbles
+                    PawnState pawnState = talkRequest.ResolvePawnState(talkResponse.Name);
+                    if (pawnState == null) return;
                     talkResponse.Name = pawnState.Pawn.LabelShort;
 
                     // Link replies to the previous message in the conversation.
@@ -136,7 +150,11 @@ public static class TalkService
             );
 
             // Once the stream is complete, save the full conversation to history.
-            AddResponsesToHistory(receivedResponses, talkRequest.Prompt);
+            AddResponsesToHistory(receivedResponses, talkRequest.Prompt, talkRequest);
+        }
+        catch (OperationCanceledException)
+        {
+            Logger.Debug("Dialogue generation canceled.");
         }
         catch (Exception ex)
         {
@@ -144,25 +162,27 @@ public static class TalkService
         }
         finally
         {
-            Cache.Get(initiator).IsGeneratingTalk = false;
+            var pState = Cache.Get(initiator);
+            if (pState != null) pState.IsGeneratingTalk = false;
         }
     }
 
     /// <summary>
     /// Serializes the generated responses and adds them to the message history for all involved pawns.
     /// </summary>
-    private static void AddResponsesToHistory(List<TalkResponse> responses, string prompt)
+    private static void AddResponsesToHistory(List<TalkResponse> responses, string prompt, TalkRequest talkRequest)
     {
         if (!responses.Any()) return;
         string serializedResponses = JsonUtil.SerializeToJson(responses);
-        var uniquePawns = responses
-            .Select(r => Cache.GetByName(r.Name)?.Pawn)
-            .Where(p => p != null)
-            .Distinct();
+        var uniquePawns = talkRequest.Participants ?? [talkRequest.Initiator];
 
-        foreach (var pawn in uniquePawns)
+        for (int i = 0; i < uniquePawns.Count; i++)
         {
-            TalkHistory.AddMessageHistory(pawn, prompt, serializedResponses);
+            var pawn = uniquePawns[i];
+            if (pawn != null)
+            {
+                TalkHistory.AddMessageHistory(pawn, prompt, serializedResponses);
+            }
         }
 
         // #41. Separate from the message history above: that is a conversation and is
@@ -226,11 +246,12 @@ public static class TalkService
                 continue;
             }
 
-            int replyInterval = RimTalkSettings.ReplyInterval;
-            if (pawn.IsInDanger())
+            int replyInterval = Settings.Get().ReplyInterval;
+            if (pawn.IsInDanger() || talk.TalkType == TalkType.Announcement)
             {
-                replyInterval = 2;
-                pawnState.IgnoreAllTalkResponses([TalkType.Urgent, TalkType.User]);
+                replyInterval = Math.Min(replyInterval, 2);
+                if (pawn.IsInDanger())
+                    pawnState.IgnoreAllTalkResponses([TalkType.Urgent, TalkType.User, TalkType.Announcement]);
             }
 
             // Enforce a delay for replies to make conversations feel more natural.

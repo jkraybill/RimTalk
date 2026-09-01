@@ -72,8 +72,6 @@
     <!-- Settings.cs -->
     <RimTalk.Settings.BasicSettings>基本設定</RimTalk.Settings.BasicSettings>
     <RimTalk.Settings.PromptSetting>プロンプト設定</RimTalk.Settings.PromptSetting>
-    <RimTalk.Settings.ImportPreset>インポート</RimTalk.Settings.ImportPreset>
-    <RimTalk.Settings.ExportPreset>エクスポート</RimTalk.Settings.ExportPreset>
     <RimTalk.Settings.ShowVariables>リファレンス</RimTalk.Settings.ShowVariables>
     <RimTalk.Settings.ResetConfirm>すべてのプロンプトプリセットとリファレンスデータをデフォルトにリセットしてもよろしいですか？この操作は取り消せません。</RimTalk.Settings.ResetConfirm>
     
@@ -86,9 +84,6 @@
     <RimTalk.Settings.PromptPreset.Activate>有効化</RimTalk.Settings.PromptPreset.Activate>
     <RimTalk.Settings.PromptPreset.Duplicate>複製</RimTalk.Settings.PromptPreset.Duplicate>
     <RimTalk.Settings.PromptPreset.Delete>削除</RimTalk.Settings.PromptPreset.Delete>
-    <RimTalk.Settings.PromptPreset.SectionSystem>システム (System)</RimTalk.Settings.PromptPreset.SectionSystem>
-    <RimTalk.Settings.PromptPreset.SectionHistory>履歴 (History)</RimTalk.Settings.PromptPreset.SectionHistory>
-    <RimTalk.Settings.PromptPreset.SectionPrompt>プロンプト (Prompt)</RimTalk.Settings.PromptPreset.SectionPrompt>
     <RimTalk.Settings.PromptPreset.NewEntry>+ 新規エントリ</RimTalk.Settings.PromptPreset.NewEntry>
     <RimTalk.Settings.PromptPreset.NewEntryName>新規エントリ</RimTalk.Settings.PromptPreset.NewEntryName>
     <RimTalk.Settings.PromptPreset.SelectEntryToEdit>編集するエントリを選択してください</RimTalk.Settings.PromptPreset.SelectEntryToEdit>
@@ -100,7 +95,6 @@
     <RimTalk.Settings.PromptPreset.PositionRelative>相対的</RimTalk.Settings.PromptPreset.PositionRelative>
     <RimTalk.Settings.PromptPreset.PositionInChat>チャット内</RimTalk.Settings.PromptPreset.PositionInChat>
     <RimTalk.Settings.PromptPreset.Depth>深度：</RimTalk.Settings.PromptPreset.Depth>
-    <RimTalk.Settings.PromptPreset.Content>内容：</RimTalk.Settings.PromptPreset.Content>
     <RimTalk.Settings.PromptPreset.ModVariables>Mod変数</RimTalk.Settings.PromptPreset.ModVariables>
     <RimTalk.Settings.PromptPreset.VariablePreviewHint>利用可能なすべてのオブジェクト、プロパティ、関数を表示します。利用可能な場合はゲーム内の値が表示されます。</RimTalk.Settings.PromptPreset.VariablePreviewHint>
     
@@ -119,7 +113,6 @@
     <RimTalk.Settings.PromptPreset.PreviewError>プレビューの生成中にエラーが発生しました：{0}</RimTalk.Settings.PromptPreset.PreviewError>
     
     <!-- Simple/Advanced Mode -->
-    <RimTalk.Settings.SimpleModeTip>キャラクターのプロフィール、チャット履歴、コンテキストが自動的に含まれます。</RimTalk.Settings.SimpleModeTip>
     <RimTalk.Settings.AdvancedModeWarning>高度モードでは、プロンプトの項目、変数、メッセージの順序を完全に制御できます。現在の指示は保持されます。\nこの機能はまだテスト中で、予期しない動作が発生する可能性があります。続行しますか？</RimTalk.Settings.AdvancedModeWarning>
     <RimTalk.Settings.PromptHelp>ヘルプ</RimTalk.Settings.PromptHelp>
     <RimTalk.Settings.AdvancedHelpContent>詳細プリセットガイド
@@ -181,9 +174,17 @@ Scribanマジック (動的コンテンツ)
     <RimTalk.Settings.EventFilter>イベントフィルター</RimTalk.Settings.EventFilter>
     <RimTalk.Settings.ApiKey>クラウドAPIキー</RimTalk.Settings.ApiKey>
     <RimTalk.Settings.GetFreeApiKey>無料APIキーを取得</RimTalk.Settings.GetFreeApiKey>
-    <RimTalk.Settings.AICooldown>AIクールダウン（秒）：{0}</RimTalk.Settings.AICooldown>
+    <RimTalk.Settings.AICooldown>AIクールダウン（秒）</RimTalk.Settings.AICooldown>
+    <RimTalk.Settings.AICooldownTooltip>新しいAI会話の生成を試みるまでの基本待機時間（秒）です。</RimTalk.Settings.AICooldownTooltip>
+    <RimTalk.Settings.ReplyInterval>返答間隔（秒）</RimTalk.Settings.ReplyInterval>
+    <RimTalk.Settings.ReplyIntervalTooltip>会話中の発言と次の返答の間の遅延時間（秒）です。</RimTalk.Settings.ReplyIntervalTooltip>
     <RimTalk.Settings.OverrideInteractions>すべてのインタラクションをAIの対話で上書きする</RimTalk.Settings.OverrideInteractions>
     <RimTalk.Settings.OverrideInteractionsTooltip>これを有効にすると、AIがすべてのインタラクション（バニラのRimWorldや他のMODを含む）の対話を上書きして再生成できるようになります。注意：AIの対話には上記で設定されたクールダウン期間があります。より頻繁に対話を生成するには、クールダウンを短くしてください。</RimTalk.Settings.OverrideInteractionsTooltip>
+    <RimTalk.Settings.SettingsButton>設定</RimTalk.Settings.SettingsButton>
+    <RimTalk.Settings.FastTrackInteractionsTitle>優先インタラクション</RimTalk.Settings.FastTrackInteractionsTitle>
+    <RimTalk.Settings.FastTrackInteractionsDesc>通常の会話クールダウンをスキップして即座に会話を生成するインタラクションを選択します。選択されていないインタラクションは通常のクールダウンに従います。</RimTalk.Settings.FastTrackInteractionsDesc>
+    <RimTalk.Settings.SelectAll>すべて選択</RimTalk.Settings.SelectAll>
+    <RimTalk.Settings.DeselectAll>すべて解除</RimTalk.Settings.DeselectAll>
     <RimTalk.Settings.AllowSimultaneousConversations>複数の同時会話を許可</RimTalk.Settings.AllowSimultaneousConversations>
     <RimTalk.Settings.AllowSimultaneousConversationsTooltip>有効にすると、複数の入植者グループが同時に会話できます。会話が多すぎる場合や、一度に一つの会話だけを見たい場合は無効にしてください。</RimTalk.Settings.AllowSimultaneousConversationsTooltip>
     <RimTalk.Settings.DisplayTalkWhenDrafted>徴兵中も会話を表示</RimTalk.Settings.DisplayTalkWhenDrafted>
@@ -207,6 +208,8 @@ Scribanマジック (動的コンテンツ)
     <RimTalk.Settings.AllowBabiesToTalkTooltip>これを有効にすると、乳児や幼児がAI生成の会話を行えるようになります。</RimTalk.Settings.AllowBabiesToTalkTooltip>
     <RimTalk.Settings.AllowNonHumanToTalk>非人間が話すことを許可</RimTalk.Settings.AllowNonHumanToTalk>
     <RimTalk.Settings.AllowNonHumanToTalkTooltip>動物、メカノイド、カスタム種族が、商人から聲音鏈接催化劑を入手した場合に話すことを許可します。</RimTalk.Settings.AllowNonHumanToTalkTooltip>
+    <RimTalk.Settings.AllowAnnouncement>アナウンス機能を許可</RimTalk.Settings.AllowAnnouncement>
+    <RimTalk.Settings.AllowAnnouncementTooltip>入植者やポーンが近くのポーンに向けてアナウンス（呼びかけ）できるようにします。</RimTalk.Settings.AllowAnnouncementTooltip>
     <RimTalk.Settings.ApplyMoodAndSocialEffects>ムードと社会的影響を適用</RimTalk.Settings.ApplyMoodAndSocialEffects>
     <RimTalk.Settings.ApplyMoodAndSocialEffectsTooltip>会話に応じて入植者のムードや関係性に影響を与えることがあります。</RimTalk.Settings.ApplyMoodAndSocialEffectsTooltip>
 
@@ -215,9 +218,19 @@ Scribanマジック (動的コンテンツ)
     <RimTalk.Settings.PlayerDialogueMode.AIDrivenPawnOnly>自動生成：ポーンのみ</RimTalk.Settings.PlayerDialogueMode.AIDrivenPawnOnly>
     <RimTalk.Settings.PlayerToNpc>プレイヤー 対 NPC：</RimTalk.Settings.PlayerToNpc>
     <RimTalk.Settings.PlayerName>プレイヤー名</RimTalk.Settings.PlayerName>
-    <RimTalk.Settings.PlayerNameTooltip>NPC が会話でプレイヤーを呼ぶ際の名前です。</RimTalk.Settings.PlayerNameTooltip>
-    <RimTalk.Settings.PlayerDialogueModeTooltip>プレイヤーが会話に参加する方法を選択します。\n\n無効：プレイヤーは会話に参加しません。\n手動返信：すべての返信を自分で入力します。自動生成はありません。\n自動生成返信：会話中、AI がプレイヤーの返信を自動的に生成します。</RimTalk.Settings.PlayerDialogueModeTooltip>
     <RimTalk.Settings.PlayerNameTooltip>会話に参加する際に表示される名前で、入植者があなたをどのように認識するかを表します。</RimTalk.Settings.PlayerNameTooltip>
+    <RimTalk.Settings.PlayerPersona>プレイヤーペルソナ</RimTalk.Settings.PlayerPersona>
+    <RimTalk.Settings.PlayerPersonaTooltip>プレイヤーの性格や口調、話し方を記述します。AIがプレイヤーのセリフを生成する際や対話時に反映されます。</RimTalk.Settings.PlayerPersonaTooltip>
+    <RimTalk.Settings.Configure>設定</RimTalk.Settings.Configure>
+    <RimTalk.PlayerSettings.Title>カスタム会話設定</RimTalk.PlayerSettings.Title>
+    <RimTalk.PlayerSettings.Instruct>プレイヤーの会話参加方式、名前、ペルソナを設定します。</RimTalk.PlayerSettings.Instruct>
+    <RimTalk.PlayerSettings.ModeDesc>• 無効：プレイヤーは不参加ですが、ポーン同士の会話を開始できます。
+• 手動返信：最初のセリフを直接入力します（プレイヤーの自動生成なし）。
+• 自動生成：ポーンのみ：話しかけた後の会話はポーン同士でのみ進行します。
+• 自動生成：ポーン＋プレイヤー：AIが両方のセリフを自動生成（ペルソナ適用）。</RimTalk.PlayerSettings.ModeDesc>
+    <RimTalk.PlayerSettings.PersonaOnlyAIDriven>（「自動生成：ポーン＋プレイヤー」モードでのみ有効）</RimTalk.PlayerSettings.PersonaOnlyAIDriven>
+    <RimTalk.PlayerSettings.Save>保存</RimTalk.PlayerSettings.Save>
+    <RimTalk.PlayerSettings.Saved>プレイヤー会話設定が保存されました。</RimTalk.PlayerSettings.Saved>
 
     <RimTalk.Settings.PauseAtSpeed>高速時にAIを一時停止</RimTalk.Settings.PauseAtSpeed>
     <RimTalk.Settings.DisableAiAtSpeedTooltip>API呼び出しを減らすため、ゲーム速度がこのレベル以上に設定されるとAIは一時停止します。</RimTalk.Settings.DisableAiAtSpeedTooltip>
@@ -250,7 +263,7 @@ Scribanマジック (動的コンテンツ)
 
     <!-- Settings_Api.cs -->
     <RimTalk.Settings.GoogleApiKeyLabel>Google AI APIキー：</RimTalk.Settings.GoogleApiKeyLabel>
-    <RimTalk.Settings.GoogleApiKeyDesc>無料のGemma-4-26b-a4bモデルを使用します。他のモデルやプロバイダーを使用する場合は、詳細設定を使用してください。</RimTalk.Settings.GoogleApiKeyDesc>
+    <RimTalk.Settings.GoogleApiKeyDesc>無料のgemma-4-31bモデルを使用します。他のモデルやプロバイダーを使用する場合は、詳細設定を使用してください。</RimTalk.Settings.GoogleApiKeyDesc>
     <RimTalk.Settings.GetFreeApiKeyButton>無料APIキーを取得</RimTalk.Settings.GetFreeApiKeyButton>
     <RimTalk.Settings.SwitchToAdvancedSettings>詳細設定に切り替え</RimTalk.Settings.SwitchToAdvancedSettings>
     <RimTalk.Settings.SwitchToSimpleSettings>簡易設定に切り替え</RimTalk.Settings.SwitchToSimpleSettings>
@@ -263,7 +276,6 @@ Scribanマジック (動的コンテンツ)
     <RimTalk.Settings.ProviderHeader>プロバイダー</RimTalk.Settings.ProviderHeader>
     <RimTalk.Settings.ApiKeyHeader>APIキー</RimTalk.Settings.ApiKeyHeader>
     <RimTalk.Settings.ModelHeader>モデル</RimTalk.Settings.ModelHeader>
-    <RimTalk.Settings.CustomModelHeader>カスタムモデル</RimTalk.Settings.CustomModelHeader>
     <RimTalk.Settings.EnabledHeader>有効</RimTalk.Settings.EnabledHeader>
     <RimTalk.Settings.EnableDisableApiConfigTooltip>このAPI設定を有効または無効にします</RimTalk.Settings.EnableDisableApiConfigTooltip>
     <RimTalk.Settings.LocalProviderConfiguration>ローカルプロバイダー設定</RimTalk.Settings.LocalProviderConfiguration>
@@ -274,7 +286,6 @@ Scribanマジック (動的コンテンツ)
     <RimTalk.Settings.CustomizeRequestTooltip>リクエストJSONのカスタマイズ（温度、思考レベルなど）</RimTalk.Settings.CustomizeRequestTooltip>
     <RimTalk.Settings.CustomizeRequestTitle>リクエストのカスタマイズ: {0} ({1})</RimTalk.Settings.CustomizeRequestTitle>
     <RimTalk.Settings.CustomizeRequestDesc>このLLM用のカスタムJSONリクエストパラメータを設定します。設定された値はAPI送信リクエストペイロードにマージされます（例: temperature、reasoning_effort、max_tokens、thinkingパラメータなど）。</RimTalk.Settings.CustomizeRequestDesc>
-    <RimTalk.Settings.ResetToDefault>デフォルトに戻す</RimTalk.Settings.ResetToDefault>
     <RimTalk.Settings.FormatJson>JSON整形</RimTalk.Settings.FormatJson>
     <RimTalk.Settings.ClearOverride>クリア</RimTalk.Settings.ClearOverride>
     <RimTalk.Settings.CustomJsonSave>保存</RimTalk.Settings.CustomJsonSave>
@@ -331,6 +342,11 @@ Scribanマジック (動的コンテンツ)
     <RimTalk.Settings.ConversationHistoryCount.Tooltip>各セッションには複数の対話ターンが含まれ、トークン数が大幅に増える可能性があります</RimTalk.Settings.ConversationHistoryCount.Tooltip>
     <RimTalk.Settings.MaxPawnContextCount>含める最大ポーン数</RimTalk.Settings.MaxPawnContextCount>
     <RimTalk.Settings.MaxPawnContextCount.Tooltip>会話に参加できるポーンの最大数を制御します</RimTalk.Settings.MaxPawnContextCount.Tooltip>
+    <RimTalk.Settings.MaxEventsCount>含める最大イベント数</RimTalk.Settings.MaxEventsCount>
+    <RimTalk.Settings.MaxEventsCount.Tooltip>コンテキストに含める最新のアクティブイベントおよび通知手紙の最大数を制御します</RimTalk.Settings.MaxEventsCount.Tooltip>
+    <RimTalk.Settings.IncludeEvents>コロニーイベントを有効化</RimTalk.Settings.IncludeEvents>
+    <RimTalk.Settings.IncludeEvents.Tooltip>コンテキストに最新のアクティブイベントおよび通知手紙を含めるかどうかを制御し、最大数を指定します</RimTalk.Settings.IncludeEvents.Tooltip>
+    <RimTalk.Settings.ExternalEventModDetected>外部イベント拡張MOD (RimTalk Event+) が検出されました。プロンプトの重複を防ぐため、組み込みイベントはデフォルトで無効になっています。両方を使用する場合はチェックを入れて有効にしてください。</RimTalk.Settings.ExternalEventModDetected>
 
     <RimTalk.Settings.PawnInfo>ポーン情報</RimTalk.Settings.PawnInfo>
     <RimTalk.Settings.IncludeRace>種族</RimTalk.Settings.IncludeRace>
@@ -356,6 +372,8 @@ Scribanマジック (動的コンテンツ)
     <RimTalk.Settings.IncludeCleanliness>清潔さ</RimTalk.Settings.IncludeCleanliness>
     <RimTalk.Settings.IncludeSurroundings>近くのアイテム</RimTalk.Settings.IncludeSurroundings>
     <RimTalk.Settings.IncludeWealth>コロニーの富</RimTalk.Settings.IncludeWealth>
+    <RimTalk.Settings.IncludeTopicKeywords>新しい会話トピックの生成</RimTalk.Settings.IncludeTopicKeywords>
+    <RimTalk.Settings.IncludeTopicKeywords.Tooltip>ポーンの周囲に特定の話題や状況がない場合、50%の確率で新しい会話トピックをランダムに生成します。</RimTalk.Settings.IncludeTopicKeywords.Tooltip>
 
     <!-- DebugWindow.cs -->
     <RimTalk.DebugWindow.ViewByTime>時間順</RimTalk.DebugWindow.ViewByTime>
@@ -364,7 +382,6 @@ Scribanマジック (動的コンテンツ)
     <RimTalk.DebugWindow.FilterPawn>名前</RimTalk.DebugWindow.FilterPawn>
     <RimTalk.DebugWindow.Search>検索</RimTalk.DebugWindow.Search>
     <RimTalk.DebugWindow.State>状態</RimTalk.DebugWindow.State>
-    <RimTalk.DebugWindow.Limit>上限</RimTalk.DebugWindow.Limit>
     <RimTalk.DebugWindow.StateAll>すべての状態</RimTalk.DebugWindow.StateAll>
     <RimTalk.DebugWindow.StatePending>保留中</RimTalk.DebugWindow.StatePending>
     <RimTalk.DebugWindow.StateIgnored>無視</RimTalk.DebugWindow.StateIgnored>
@@ -375,7 +392,6 @@ Scribanマジック (動的コンテンツ)
     <RimTalk.DebugWindow.Last>最新</RimTalk.DebugWindow.Last>
     <RimTalk.DebugWindow.AutoScroll>自動スクロール</RimTalk.DebugWindow.AutoScroll>
     <RimTalk.DebugWindow.TooltipSelectForDetails>行を選択すると詳細が表示されます</RimTalk.DebugWindow.TooltipSelectForDetails>
-    <RimTalk.DebugWindow.Details>詳細</RimTalk.DebugWindow.Details>
     <RimTalk.DebugWindow.SelectRowHint>左側のリストからリクエストを選択して、プロンプト／レスポンス／コンテキストを確認します。</RimTalk.DebugWindow.SelectRowHint>
     <RimTalk.DebugWindow.Resend>再送信</RimTalk.DebugWindow.Resend>
     <RimTalk.DebugWindow.ResendTooltip>コンテキストとプロンプトを編集し、再送信して会話をテストします。</RimTalk.DebugWindow.ResendTooltip>
@@ -390,12 +406,11 @@ Scribanマジック (動的コンテンツ)
     <RimTalk.DebugWindow.Prompt>プロンプト (Prompt)</RimTalk.DebugWindow.Prompt>
     <RimTalk.DebugWindow.Response>レスポンス (Response)</RimTalk.DebugWindow.Response>
     <RimTalk.DebugWindow.PromptMessages>リクエスト詳細</RimTalk.DebugWindow.PromptMessages>
-    <RimTalk.DebugWindow.Contexts>コンテキスト (Contexts)</RimTalk.DebugWindow.Contexts>
     <RimTalk.DebugWindow.Generating>[生成中...]</RimTalk.DebugWindow.Generating>
+    <RimTalk.DebugWindow.Canceled>[キャンセル]</RimTalk.DebugWindow.Canceled>
     <RimTalk.DebugWindow.StatusDisabled>無効</RimTalk.DebugWindow.StatusDisabled>
     <RimTalk.DebugWindow.StatusProcessing>処理中</RimTalk.DebugWindow.StatusProcessing>
     <RimTalk.DebugWindow.StatusIdle>待機中</RimTalk.DebugWindow.StatusIdle>
-    <RimTalk.DebugWindow.GroupByPawn>ポーンごとにグループ化</RimTalk.DebugWindow.GroupByPawn>
     <RimTalk.DebugWindow.ModSettings>MOD設定</RimTalk.DebugWindow.ModSettings>
     <RimTalk.DebugWindow.Export>エクスポート</RimTalk.DebugWindow.Export>
     <RimTalk.DebugWindow.ResetLogs>ログ初期化</RimTalk.DebugWindow.ResetLogs>
@@ -432,21 +447,31 @@ Scribanマジック (動的コンテンツ)
     <RimTalk.DebugWindow.SystemInstruction>システム指示 (System Instruction)</RimTalk.DebugWindow.SystemInstruction>
     <RimTalk.DebugWindow.ChatHistory>チャット履歴 (Chat History)</RimTalk.DebugWindow.ChatHistory>
     <RimTalk.DebugWindow.InputPrompt>入力プロンプト (Input Prompt)</RimTalk.DebugWindow.InputPrompt>
-    <RimTalk.DebugWindow.TooltipPromptResponse>プロンプト：\n{0}\n\n応答：\n{1}</RimTalk.DebugWindow.TooltipPromptResponse>
 
     <!-- Overlay.cs -->
     <RimTalk.Overlay.Debug>デバッグ</RimTalk.Overlay.Debug>
     <RimTalk.Overlay.Option>オーバーレイオプション</RimTalk.Overlay.Option>
     <RimTalk.Overlay.DrawAboveUI>UI の上に表示</RimTalk.Overlay.DrawAboveUI>
+    <RimTalk.Overlay.ShowGroupColors>会話グループの色を表示</RimTalk.Overlay.ShowGroupColors>
+    <RimTalk.Overlay.ShowTargetName>会話の対象を表示 [A-&gt;B]</RimTalk.Overlay.ShowTargetName>
+    <RimTalk.Overlay.AlignNameColumn>名前列を揃える</RimTalk.Overlay.AlignNameColumn>
     <RimTalk.Overlay.Opacity>不透明度</RimTalk.Overlay.Opacity>
     <RimTalk.Overlay.FontSize>フォントサイズ</RimTalk.Overlay.FontSize>
+    <RimTalk.Overlay.TurnOff>オーバーレイを非表示</RimTalk.Overlay.TurnOff>
+    <RimTalk.Overlay.TurnOffTooltip>オーバーレイを非表示にします。\n設定に応じて右下のアイコンまたはタブをクリックして切り替えることができます。</RimTalk.Overlay.TurnOffTooltip>
 
     <!-- FloatMenuMakerMapGetOptionsPatch.cs -->
     <RimTalk.FloatMenu.ChatWith> {0} とチャット</RimTalk.FloatMenu.ChatWith>
     <RimTalk.Gizmo.ChatWithTarget> {0} とチャット</RimTalk.Gizmo.ChatWithTarget>
     <RimTalk.Gizmo.ChatWithTargetDesc> {0} との会話を開始します。</RimTalk.Gizmo.ChatWithTargetDesc>
+    <RimTalk.Gizmo.Announce>アナウンス</RimTalk.Gizmo.Announce>
+    <RimTalk.Gizmo.AnnounceDesc>{0} が周囲のポーン全員に向けて大声でアナウンス（呼びかけ）します。</RimTalk.Gizmo.AnnounceDesc>
     <RimTalk.FloatMenu.WhatToSayToSelf> {0} に何を言いたいですか？</RimTalk.FloatMenu.WhatToSayToSelf>
     <RimTalk.FloatMenu.WhatToSayToOther> {0} に {1} に何を言わせたいですか？</RimTalk.FloatMenu.WhatToSayToOther>
+    <RimTalk.FloatMenu.WhatToAnnounceToSelf>{0} と周囲に何をアナウンスしますか？</RimTalk.FloatMenu.WhatToAnnounceToSelf>
+    <RimTalk.FloatMenu.WhatToAnnounceToOther>{0} に周囲へ何をアナウンスさせますか？</RimTalk.FloatMenu.WhatToAnnounceToOther>
+    <RimTalk.FloatMenu.DirectModeTooltip>通常の会話 (Tabキーで切り替え)</RimTalk.FloatMenu.DirectModeTooltip>
+    <RimTalk.FloatMenu.AnnounceModeTooltip>周囲のポーンへアナウンス (Tabキーで切り替え)</RimTalk.FloatMenu.AnnounceModeTooltip>
     <RimTalk.FloatMenu.Send>送信</RimTalk.FloatMenu.Send>
     <RimTalk.FloatMenu.Cancel>キャンセル</RimTalk.FloatMenu.Cancel>
 
@@ -456,4 +481,54 @@ Scribanマジック (動的コンテンツ)
     <RimTalk.ScribanVar.Category.Context>コンテキスト</RimTalk.ScribanVar.Category.Context>
     <RimTalk.ScribanVar.Category.GameStatic>ゲームオブジェクト (静的)</RimTalk.ScribanVar.Category.GameStatic>
     <RimTalk.ScribanVar.Category.System>システム</RimTalk.ScribanVar.Category.System>
+
+    <RimTalk.TalkService.VisionUnsupportedFallback>現在のモデル（{0}）は画像入力をサポートしていないため、画像なしで会話を続行しました。</RimTalk.TalkService.VisionUnsupportedFallback>
+    <RimTalk.Settings.CustomDialogue>カスタム対話</RimTalk.Settings.CustomDialogue>
+    <RimTalk.PlayerSettings.SectionPlayer>プレイヤー対話設定</RimTalk.PlayerSettings.SectionPlayer>
+    <RimTalk.PlayerSettings.SectionPresets>対話プリセット管理</RimTalk.PlayerSettings.SectionPresets>
+    <RimTalk.PlayerSettings.AddPreset>新規追加</RimTalk.PlayerSettings.AddPreset>
+    <RimTalk.PlayerSettings.ResetPresetsConfirm>すべてのプリセットをデフォルトの推奨設定に戻しますか？</RimTalk.PlayerSettings.ResetPresetsConfirm>
+    <RimTalk.PlayerSettings.PresetsDesc>有効なプリセットはポーンの右クリックメニューにクイック対話オプションとして直接表示されます。</RimTalk.PlayerSettings.PresetsDesc>
+    <RimTalk.PlayerSettings.Preset1.Title>拠点環境と生活</RimTalk.PlayerSettings.Preset1.Title>
+    <RimTalk.PlayerSettings.Preset1.Prompt>うちの拠点を見回して、設備や日々のコロニー生活についてどう思う？</RimTalk.PlayerSettings.Preset1.Prompt>
+    <RimTalk.PlayerSettings.Preset2.Title>気分と安否の確認</RimTalk.PlayerSettings.Preset2.Title>
+    <RimTalk.PlayerSettings.Preset2.Prompt>最近の体調や気分はどう？何か気になってることや悩みはある？</RimTalk.PlayerSettings.Preset2.Prompt>
+    <RimTalk.PlayerSettings.Preset3.Title>防衛線と戦術確認</RimTalk.PlayerSettings.Preset3.Title>
+    <RimTalk.PlayerSettings.Preset3.Prompt>うちの防衛線と装備を見てみてくれ。襲撃に備えて補強すべき戦術的な弱点はあるか？</RimTalk.PlayerSettings.Preset3.Prompt>
+    <RimTalk.PlayerSettings.Preset4.Title>作業と安全の周知</RimTalk.PlayerSettings.Preset4.Title>
+    <RimTalk.PlayerSettings.Preset4.Prompt>全員注目！安全には十分に注意して、各自の持ち場と作業に集中しよう！</RimTalk.PlayerSettings.Preset4.Prompt>
+    <RimTalk.PlayerSettings.Enabled>有効</RimTalk.PlayerSettings.Enabled>
+    <RimTalk.PlayerSettings.PresetTitleTooltip>ポーン右クリック時に表示されるメニュータイトルです。</RimTalk.PlayerSettings.PresetTitleTooltip>
+    <RimTalk.PlayerSettings.Vision>📷 ビジョン</RimTalk.PlayerSettings.Vision>
+    <RimTalk.PlayerSettings.VisionTooltip>チェックすると、対話リクエストに現在の画面スクリーンショットを添付します。（画面キャプチャ時に一瞬ちらつきが発生する場合があります）</RimTalk.PlayerSettings.VisionTooltip>
+    <RimTalk.PlayerSettings.Announce>📢 周知</RimTalk.PlayerSettings.Announce>
+    <RimTalk.PlayerSettings.AnnounceTooltip>チェックすると、周囲のすべてのポーンに呼びかける周知形式で対話します。</RimTalk.PlayerSettings.AnnounceTooltip>
+    <RimTalk.PlayerSettings.AllowCustomConversation>カスタム対話を有効化</RimTalk.PlayerSettings.AllowCustomConversation>
+    <RimTalk.PlayerSettings.AllowCustomConversationTooltip>ポーンへの対話指示、ギズモ、および右クリック対話プリセットメニューを有効にします。</RimTalk.PlayerSettings.AllowCustomConversationTooltip>
+    <RimTalk.PlayerSettings.AllowDirectPlayerTalk>プレイヤー ↔ ポーンの直接対話を許可</RimTalk.PlayerSettings.AllowDirectPlayerTalk>
+    <RimTalk.PlayerSettings.AllowDirectPlayerTalkTooltip>プレイヤーが「Player」としてポーンに直接話しかけたり返答を受けたりできます。オフにするとポーン同士の対話指示のみ可能になります。</RimTalk.PlayerSettings.AllowDirectPlayerTalkTooltip>
+    <RimTalk.PlayerSettings.AllowPlayerAiGen>プレイヤーのセリフもAIが自動生成（ペルソナ適用）</RimTalk.PlayerSettings.AllowPlayerAiGen>
+    <RimTalk.PlayerSettings.AllowPlayerAiGenTooltip>チェックすると、AIがプレイヤーペルソナに合わせて会話中のプレイヤーの後続セリフを自動生成します。オフの場合、手動入力したセリフのみ発言します。</RimTalk.PlayerSettings.AllowPlayerAiGenTooltip>
+    <RimTalk.PlayerSettings.PromptLabel>送信する対話プロンプト（質問 / 指示）：</RimTalk.PlayerSettings.PromptLabel>
+    <RimTalk.FloatMenu.AttachPhotoTooltip>画面写真の添付切り替え（Ctrl+1）（画面キャプチャ時に一瞬ちらつきが発生する場合があります）</RimTalk.FloatMenu.AttachPhotoTooltip>
+    <RimTalk.DebugWindow.AttachedImage>添付画像（クリックして拡大）：</RimTalk.DebugWindow.AttachedImage>
+    <RimTalk.DebugWindow.AttachedImageBase64>添付画像 (Base64)</RimTalk.DebugWindow.AttachedImageBase64>
+    <RimTalk.DebugWindow.ClickToExpandImage>クリックして画像を拡大ウィンドウで表示します。</RimTalk.DebugWindow.ClickToExpandImage>
+    <RimTalk.DebugWindow.CopyImage>画像をコピー（クリップボード）</RimTalk.DebugWindow.CopyImage>
+    <RimTalk.DebugWindow.ImageCopied>画像がクリップボードにコピーされました。</RimTalk.DebugWindow.ImageCopied>
+    <RimTalk.PlayerSettings.DisabledNotice>カスタム対話が無効になっています。ポーンの右クリックメニューおよびプレイヤー対話機能は動作しません。</RimTalk.PlayerSettings.DisabledNotice>
+    <RimTalk.PlayerSettings.NewPresetName>新しい対話プリセット</RimTalk.PlayerSettings.NewPresetName>
+    <RimTalk.PlayerSettings.PresetTitleHeader>タイトル / メニュー名</RimTalk.PlayerSettings.PresetTitleHeader>
+    <RimTalk.PlayerSettings.PresetTitlePlaceholder>対話プリセットのタイトル...</RimTalk.PlayerSettings.PresetTitlePlaceholder>
+
+    <!-- VersionSwitcher.cs -->
+    <RimTalk.VersionSwitcher.RollbackLabel>旧バージョンへのロールバック</RimTalk.VersionSwitcher.RollbackLabel>
+    <RimTalk.VersionSwitcher.SwitchToPrevious>旧バージョンをコピー（ローカルMod）</RimTalk.VersionSwitcher.SwitchToPrevious>
+    <RimTalk.VersionSwitcher.SwitchToSpecificVer>{0} をコピー（ローカルMod）</RimTalk.VersionSwitcher.SwitchToSpecificVer>
+    <RimTalk.VersionSwitcher.NoPreviousDllFound>Modフォルダ内に旧バージョンファイル（LastVersion/）が見つかりません。</RimTalk.VersionSwitcher.NoPreviousDllFound>
+    <RimTalk.VersionSwitcher.ConfirmRollbackTitle>バージョン（{0}）へロールバック</RimTalk.VersionSwitcher.ConfirmRollbackTitle>
+    <RimTalk.VersionSwitcher.ConfirmRollbackPrompt>RimTalk（{0}）をローカルの「RimWorld/Mods/RimTalk」フォルダにコピーしますか？</RimTalk.VersionSwitcher.ConfirmRollbackPrompt>
+    <RimTalk.VersionSwitcher.ProceedRollback>コピー</RimTalk.VersionSwitcher.ProceedRollback>
+    <RimTalk.VersionSwitcher.RestartRequiredTitle>コピー完了</RimTalk.VersionSwitcher.RestartRequiredTitle>
+    <RimTalk.VersionSwitcher.LocalModCreatedPrompt>「RimWorld/Mods/RimTalk」にコピーされました。\n\nSteam版を無効化し、ローカルModを有効化してRimWorldを再起動してください。</RimTalk.VersionSwitcher.LocalModCreatedPrompt>
 </LanguageData>

@@ -191,19 +191,35 @@ public static class ContextBuilder
         if (!contextSettings.IncludeSkills)
             return null;
 
-        // Only what could plausibly shape a sentence. The full twelve-item list is
-        // noise in a 1-2 sentence dialogue system, and three roundtable reviewers
-        // independently flagged it as "hallucination bait" -- the model grabs the
-        // highest numbers and forces them into irrelevant dialogue.
-        var skills = pawn.skills?.skills?
-            .Where(s => s.Level >= 8 || s.def == SkillDefOf.Social)
-            .OrderByDescending(s => s.Level)
-            .Take(4)
-            .Select(s => $"{s.def.label}: {s.Level}");
+        bool showPassion = infoLevel != PromptService.InfoLevel.Short;
+        var records = pawn.skills?.skills;
+        if (records == null || records.Count == 0)
+            return null;
 
-        if (skills?.Any() == true)
-            return $"Skills: {string.Join(", ", skills)}";
-        return null;
+        var activeSkills = records
+            .Where(s => !s.TotallyDisabled && (s.Level > 0 || s.passion != Passion.None))
+            .ToList();
+
+        var skillsToGroup = activeSkills.Count > 0 ? activeSkills : records;
+
+        // Group by proficiency tier so a small model reads "who's good at what" at a glance
+        // instead of parsing a dozen individual "skill: level" pairs.
+        var groups = skillsToGroup
+            .GroupBy(s => s.LevelDescriptor)
+            .OrderByDescending(g => g.Max(s => s.Level))
+            .Select(g =>
+            {
+                var names = g.Select(s =>
+                {
+                    // Delegates to vanilla's own SkillUI.GetLabel so a mod's custom passion tier (which can only
+                    // reach players by Harmony-patching that same method) is picked up instead of dropped as null.
+                    string passionLabel = showPassion && s.passion != Passion.None ? s.passion.GetLabel() : null;
+                    return string.IsNullOrEmpty(passionLabel) ? s.def.label : $"{s.def.label} ({passionLabel})";
+                });
+                return $"[{g.Key}] {string.Join(", ", names)}";
+            });
+
+        return $"Skills: {string.Join(" | ", groups)}";
     }
 
     public static string GetHealthContext(Pawn pawn, PromptService.InfoLevel infoLevel)
@@ -213,6 +229,7 @@ public static class ContextBuilder
             return null;
 
         var hediffs = (IEnumerable<Hediff>)VisibleHediffsMethod.Invoke(null, [pawn, false]);
+        if (hediffs == null) return null;
 
         // For Short level, only show top 3 most recent/severe hediffs
         if (infoLevel == PromptService.InfoLevel.Short)
@@ -224,12 +241,50 @@ public static class ContextBuilder
                 .Take(3);
         }
 
-        var healthInfo = string.Join(",", hediffs
-            .GroupBy(h => h.def)
-            .Select(g => $"{g.Key.label}({string.Join(",", g.Select(h => h.Part?.Label ?? ""))})"));
+        var items = new List<string>();
 
-        if (!string.IsNullOrEmpty(healthInfo))
-            return $"Health: {healthInfo}";
+        // Check active bleeding
+        if (pawn.health?.hediffSet != null && pawn.health.hediffSet.BleedRateTotal > 0.01f)
+        {
+            float rate = pawn.health.hediffSet.BleedRateTotal;
+            float currentBloodLoss = pawn.health.hediffSet.GetFirstHediffOfDef(HediffDefOf.BloodLoss)?.Severity ?? 0f;
+            float remainingToFatal = 1f - currentBloodLoss;
+            if (remainingToFatal > 0f)
+            {
+                float hoursToDeath = (remainingToFatal / rate) * 24f;
+                if (hoursToDeath < 24f)
+                {
+                    string hoursStr = hoursToDeath < 1f
+                        ? $"{(int)(hoursToDeath * 60f)} minutes"
+                        : $"{hoursToDeath:0.#} hours";
+                    items.Add($"Bleeding ({Describer.Bleeding(rate)}, death in {hoursStr})");
+                }
+                else
+                {
+                    items.Add($"Bleeding ({Describer.Bleeding(rate)})");
+                }
+            }
+        }
+
+        var hediffSummary = hediffs
+            .GroupBy(h => h.Label)
+            .Select(g =>
+            {
+                var parts = g
+                    .Select(h => h.Part?.Label)
+                    .Where(p => !string.IsNullOrEmpty(p))
+                    .GroupBy(p => p)
+                    .Select(pg => pg.Count() > 1 ? $"{pg.Key} x{pg.Count()}" : pg.Key)
+                    .ToList();
+
+                string partStr = parts.Count > 0 ? $" ({string.Join(", ", parts)})" : "";
+                return g.Count() > 1 ? $"{g.Key} x{g.Count()}{partStr}" : $"{g.Key}{partStr}";
+            });
+
+        items.AddRange(hediffSummary);
+
+        if (items.Count > 0)
+            return $"Health: {string.Join(", ", items)}";
         return null;
     }
 
@@ -246,7 +301,9 @@ public static class ContextBuilder
                 ? "Critical: Downed (in pain/distress)"
                 : pawn.InMentalState
                     ? $"Mood: {pawn.MentalState?.InspectLine} (in mental break)"
-                    : $"Mood: {m.MoodString} ({(int)(m.CurLevelPercentage * 100)}%)";
+                    : infoLevel == PromptService.InfoLevel.Full
+                        ? $"Mood: {m.MoodString} ({(int)(m.CurLevelPercentage * 100)}%)"
+                        : $"Mood: {m.MoodString}";
             return mood;
         }
 
@@ -294,7 +351,7 @@ public static class ContextBuilder
         if (!contextSettings.IncludePrisonerSlaveStatus || (!pawn.IsSlave && !pawn.IsPrisoner))
             return null;
 
-        return pawn.GetPrisonerSlaveStatus();
+        return pawn.GetPrisonerSlaveStatus(infoLevel);
     }
 
     public static string GetRelationsContext(Pawn pawn, PromptService.InfoLevel infoLevel)
@@ -314,14 +371,15 @@ public static class ContextBuilder
 
         var equipment = new List<string>();
         if (pawn.equipment?.Primary != null)
-            equipment.Add($"Weapon: {pawn.equipment.Primary.LabelCap}");
+            equipment.Add($"[Weapon] {DescribeThingLabel(pawn.equipment.Primary)}");
 
-        var apparelLabels = pawn.apparel?.WornApparel?.Select(a => a.LabelCap);
-        if (apparelLabels?.Any() == true)
-            equipment.Add($"Apparel: {string.Join(", ", apparelLabels)}");
+        var apparelLabels = pawn.apparel?.WornApparel?.Select(DescribeThingLabel);
+        var enumerable = apparelLabels as string[] ?? apparelLabels?.ToArray() ?? [];
+        if (enumerable.Any())
+            equipment.Add($"[Apparel] {string.Join(", ", enumerable)}");
 
         if (equipment.Any())
-            return $"Equipment: {string.Join(", ", equipment)}";
+            return $"Equipment: {string.Join(" | ", equipment)}";
         return null;
     }
 
@@ -349,6 +407,26 @@ public static class ContextBuilder
         public string PlayerLine;
     }
 
+    // GetCustomLabelNoCount(includeHp: false) is the virtual, comp-aware path that drops GenLabel.LabelExtras'
+    // raw "(NN%)" hit-point fraction while preserving comp label overrides (art titles, quality, etc.).
+    private static string DescribeThingLabel(Thing thing)
+    {
+        string label = thing.GetCustomLabelNoCount(includeHp: false).CapitalizeFirst(thing.def);
+
+        if (thing.def.useHitPoints && thing.def.stackLimit == 1 && thing.HitPoints < thing.MaxHitPoints)
+        {
+            float pct = (float)thing.HitPoints / thing.MaxHitPoints * 100f;
+            string condition = Describer.Condition(pct);
+
+            // Fold into an existing quality parenthetical instead of appending a second "(...)".
+            label = label.EndsWith(")")
+                ? $"{label[..^1]}, {condition})"
+                : $"{label} ({condition})";
+        }
+
+        return label;
+    }
+
     public static DialogueFrame BuildDialogueType(StringBuilder sb, TalkRequest talkRequest, List<Pawn> pawns, string shortName, Pawn mainPawn)
     {
         var frame = new DialogueFrame();
@@ -359,31 +437,60 @@ public static class ContextBuilder
         // through rather than deleted; see the combat branch below.
         string preoccupation = null;
 
-        if (talkRequest.TalkType.IsFromUser())
+        if (talkRequest.IsAnnouncement)
         {
-            topicSb.Append($"{pawns[1].LabelShort}({pawns[1].GetRole()}) said to {shortName}: '{talkRequest.Prompt}'. ");
+            var speaker = talkRequest.Recipient != null && talkRequest.Recipient.IsPlayer() 
+                ? talkRequest.Recipient 
+                : talkRequest.Initiator;
+            var speakerName = PromptService.GetUniqueName(speaker, pawns);
+            var listeners = pawns.Where(p => p != speaker && !p.IsPlayer()).ToList();
+            var listenerNames = string.Join(", ", listeners.Select(p => PromptService.GetUniqueName(p, pawns)));
+
+            topicSb.Append($"{speakerName} announced to everyone nearby: '{talkRequest.Prompt}'. ");
+            intentSb.Append(listeners.Count > 0
+                ? $"Generate brief reactions from listeners ({listenerNames}). Each person who heard should speak at least once. Do not repeat the initial announcement."
+                : "Generate brief reactions from nearby listeners. Do not repeat the initial announcement.");
+
+            sb.Append(topicSb).Append(intentSb);
+        }
+        else if (talkRequest.TalkType.IsFromUser())
+        {
+            var speaker = talkRequest.Recipient ?? (pawns.Count > 1 ? pawns[1] : null);
+            var speaker1Name = speaker != null ? PromptService.GetUniqueName(speaker, pawns) : "Someone";
+            var speakerRole = speaker != null ? $"({speaker.GetRole()})" : "";
+            topicSb.Append($"{speaker1Name}{speakerRole} said to {shortName}: '{talkRequest.Prompt}'. ");
 
             var mode = Settings.Get().PlayerDialogueMode;
-            bool multiTurn = mode == Settings.PlayerDialogueMode.AIDriven || (!pawns[1].IsPlayer() && mode != Settings.PlayerDialogueMode.Manual);
 
+            bool multiTurn = speaker != null && !speaker.IsPlayer();
             frame.Shape = multiTurn ? SceneShape.ReplyToPlayerMulti : SceneShape.ReplyToPlayer;
-            frame.OtherName = pawns[1].LabelShort;
+            if (pawns.Count > 1) frame.OtherName = pawns[1].LabelShort;
             frame.PlayerLine = talkRequest.Prompt;
 
-            intentSb.Append(multiTurn
-                ? $"Generate multi turn dialogues starting after this (do not repeat initial dialogue), beginning with {shortName}"
-                : $"Generate dialogue starting after this. Do not generate any further lines for {pawns[1].LabelShort}");
+            if (speaker != null && !speaker.IsPlayer())
+            {
+                // Pawn to Pawn
+                intentSb.Append($"Generate multi turn dialogues starting after this (do not repeat initial dialogue), beginning with {shortName}");
+            }
+            else
+            {
+                // Player to Pawn
+                if (mode == Settings.PlayerDialogueMode.AIDriven)
+                    intentSb.Append($"Generate multi turn dialogues starting after this (do not repeat initial dialogue), beginning with {shortName}");
+                else if (mode == Settings.PlayerDialogueMode.AIDrivenPawnOnly && pawns.Count > 2)
+                    intentSb.Append($"Generate multi turn dialogues starting after this (do not repeat initial dialogue), beginning with {shortName}. Do not generate any further lines for {speaker1Name}");
+                else
+                    intentSb.Append($"Generate dialogue starting after this. Do not generate any further lines for {speaker1Name}");
+            }
 
             sb.Append(topicSb).Append(intentSb);
         }
         else
         {
-            if (pawns.Count == 1)
-            {
-                frame.Shape = SceneShape.Monologue;
-                intentSb.Append($"{shortName} short monologue");
-            }
-            else if (mainPawn.IsInCombat() || mainPawn.GetMapRole() == MapRole.Invading)
+            bool inCombat = mainPawn.IsInCombat() || mainPawn.GetMapRole() == MapRole.Invading;
+            bool hasActiveHostiles = inCombat && mainPawn.HasActiveHostiles();
+
+            if (inCombat)
             {
                 // The topic used to be destroyed here (talkRequest.Prompt = null), which
                 // deleted whatever the conversation was about the instant anything
@@ -400,21 +507,48 @@ public static class ContextBuilder
                 talkRequest.TalkType = TalkType.Urgent;
                 var afraid = mainPawn.IsSlave || mainPawn.IsPrisoner;
                 frame.Shape = afraid ? SceneShape.UrgentAfraid : SceneShape.Urgent;
-                intentSb.Append(afraid
-                    ? $"{shortName} dialogue short (worry)"
-                    : $"{shortName} dialogue short, urgent tone ({mainPawn.GetMapRole().ToString().ToLower()}/command)");
+
+                if (mainPawn.CurJobDef == JobDefOf.Flee || mainPawn.CurJobDef == JobDefOf.FleeAndCower)
+                {
+                    intentSb.Append($"{shortName} dialogue short, panicked/retreating tone (fleeing)");
+                }
+                else if (!hasActiveHostiles)
+                {
+                    intentSb.Append($"{shortName} dialogue short, confident/victorious tone (destroying remnants/mopping up)");
+                }
+                else
+                {
+                    intentSb.Append(afraid
+                        ? $"{shortName} dialogue short (worry)"
+                        : $"{shortName} dialogue short, urgent tone ({mainPawn.GetMapRole().ToString().ToLower()}/command)");
+                }
+            }
+            else if (pawns.Count == 1)
+            {
+                frame.Shape = SceneShape.Monologue;
+                intentSb.Append(talkRequest.Prompt != null
+                    ? $"{shortName} start monologue"
+                    : $"{shortName} continue monologue");
             }
             else
             {
-                intentSb.Append($"{shortName} starts conversation, taking turns");
+                intentSb.Append(talkRequest.Prompt != null
+                    ? $"{shortName} start conversation, taking turns"
+                    : $"{shortName} continue, taking turns");
             }
 
             if (mainPawn.InMentalState)
-                topicSb.Append("be dramatic (mental break)");
+                topicSb.Append("be distressed (mental break)");
             else if (mainPawn.Downed && !mainPawn.IsBaby())
                 topicSb.Append("(downed in pain. Short, strained dialogue)");
             else if (talkRequest.Prompt != null)
                 topicSb.Append(talkRequest.Prompt);
+            else if (talkRequest.TalkType != TalkType.Urgent && Settings.Get().Context.IncludeTopicKeywords)
+            {
+                string topicKeywords = TopicService.TryGetTopic(mainPawn);
+                if (topicKeywords != null)
+                    topicSb.Append($"Topic keywords: {topicKeywords}.");
+            }
 
             // Stated as a secondary concern so the model keeps the urgency AND the
             // triviality, instead of averaging them into one flat register.
@@ -561,13 +695,12 @@ public static class ContextBuilder
 
         if (contextSettings.IncludeBeauty)
         {
-            var nearbyCells = ContextHelper.GetNearbyCells(mainPawn);
-            if (nearbyCells.Count > 0)
+            var beautyLabel = Describer.Beauty(mainPawn);
+            if (!string.IsNullOrEmpty(beautyLabel))
             {
-                var beautySum = nearbyCells.Sum(c => BeautyUtility.CellBeauty(c, mainPawn.Map));
                 var value = ContextHookRegistry.ApplyPawnHooks(
-                    ContextCategories.Pawn.Beauty, mainPawn, Describer.Beauty(beautySum / nearbyCells.Count));
-                sb.Append($"\nCellBeauty: {value}");
+                    ContextCategories.Pawn.Beauty, mainPawn, beautyLabel);
+                sb.Append($"\nSurroundings beauty: {value}");
             }
         }
 
@@ -591,6 +724,11 @@ public static class ContextBuilder
                 sb.Append(value);
             }
         }
+    }
+
+    public static string GetEventsContext(Map map, PromptService.InfoLevel infoLevel = PromptService.InfoLevel.Normal)
+    {
+        return EventService.GetEventsContext(map, infoLevel);
     }
 
     [Obsolete("Use CommonUtil.Sanitize instead. Kept for backward compatibility.")]

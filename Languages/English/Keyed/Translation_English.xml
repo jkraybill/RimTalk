@@ -11,6 +11,7 @@
     <RimTalk.TalkService.APIError>API error occurred</RimTalk.TalkService.APIError>
     <RimTalk.TalkService.TryingNextAPI>Trying next API ({0})</RimTalk.TalkService.TryingNextAPI>
     <RimTalk.TalkService.GenerationFailed>RimTalk generation failed</RimTalk.TalkService.GenerationFailed>
+    <RimTalk.TalkService.VisionUnsupportedFallback>Current model ({0}) does not support image input. Proceeded without image.</RimTalk.TalkService.VisionUnsupportedFallback>
 
     <!-- Persona -->
     <RimTalk.Persona.CheerfulHelper>Cheerful Helper - Warm, upbeat, and encouraging. Always trying to lift spirits.</RimTalk.Persona.CheerfulHelper>
@@ -72,8 +73,6 @@
     <!-- Settings.cs -->
     <RimTalk.Settings.BasicSettings>Basic Settings</RimTalk.Settings.BasicSettings>
     <RimTalk.Settings.PromptSetting>Prompt Setting</RimTalk.Settings.PromptSetting>
-    <RimTalk.Settings.ImportPreset>Import</RimTalk.Settings.ImportPreset>
-    <RimTalk.Settings.ExportPreset>Export</RimTalk.Settings.ExportPreset>
     <RimTalk.Settings.ShowVariables>Reference</RimTalk.Settings.ShowVariables>
     <RimTalk.Settings.ResetConfirm>Are you sure you want to reset all prompt presets and reference data to default? This cannot be undone.</RimTalk.Settings.ResetConfirm>
     
@@ -86,9 +85,6 @@
     <RimTalk.Settings.PromptPreset.Activate>Activate</RimTalk.Settings.PromptPreset.Activate>
     <RimTalk.Settings.PromptPreset.Duplicate>Duplicate</RimTalk.Settings.PromptPreset.Duplicate>
     <RimTalk.Settings.PromptPreset.Delete>Delete</RimTalk.Settings.PromptPreset.Delete>
-    <RimTalk.Settings.PromptPreset.SectionSystem>System</RimTalk.Settings.PromptPreset.SectionSystem>
-    <RimTalk.Settings.PromptPreset.SectionHistory>History</RimTalk.Settings.PromptPreset.SectionHistory>
-    <RimTalk.Settings.PromptPreset.SectionPrompt>Prompt</RimTalk.Settings.PromptPreset.SectionPrompt>
     <RimTalk.Settings.PromptPreset.NewEntry>+ New Entry</RimTalk.Settings.PromptPreset.NewEntry>
     <RimTalk.Settings.PromptPreset.NewEntryName>New Entry</RimTalk.Settings.PromptPreset.NewEntryName>
     <RimTalk.Settings.PromptPreset.SelectEntryToEdit>Select an entry to edit</RimTalk.Settings.PromptPreset.SelectEntryToEdit>
@@ -100,7 +96,6 @@
     <RimTalk.Settings.PromptPreset.PositionRelative>Relative</RimTalk.Settings.PromptPreset.PositionRelative>
     <RimTalk.Settings.PromptPreset.PositionInChat>InChat</RimTalk.Settings.PromptPreset.PositionInChat>
     <RimTalk.Settings.PromptPreset.Depth>Depth:</RimTalk.Settings.PromptPreset.Depth>
-    <RimTalk.Settings.PromptPreset.Content>Content:</RimTalk.Settings.PromptPreset.Content>
     <RimTalk.Settings.PromptPreset.ModVariables>Mod Variables</RimTalk.Settings.PromptPreset.ModVariables>
     <RimTalk.Settings.PromptPreset.VariablePreviewHint>Shows all available objects, properties, and functions. In-game values shown when available.</RimTalk.Settings.PromptPreset.VariablePreviewHint>
     
@@ -118,7 +113,6 @@
     <RimTalk.Settings.PromptPreset.PreviewError>Error generating preview: {0}</RimTalk.Settings.PromptPreset.PreviewError>
     
     <!-- Simple/Advanced Mode -->
-    <RimTalk.Settings.SimpleModeTip>Simple Mode edits only the Base Instruction. The rest are auto-added in order: {{json.format}}, {{context}}, {{chat.history}}, {{prompt}}.</RimTalk.Settings.SimpleModeTip>
     <RimTalk.Settings.AdvancedModeWarning>Advanced mode gives full control over prompt entries, variables, and message ordering. Your current instruction will be preserved.\nThis feature is still in testing, so you may experience unexpected behavior. Do you want to continue?</RimTalk.Settings.AdvancedModeWarning>
     <RimTalk.Settings.PromptHelp>Help</RimTalk.Settings.PromptHelp>
     <RimTalk.Settings.AdvancedHelpContent>Advanced Preset Guide
@@ -177,9 +171,17 @@ Crucial Tips:
     <RimTalk.Settings.EventFilter>Event Filter</RimTalk.Settings.EventFilter>
     <RimTalk.Settings.ApiKey>Cloud API Key</RimTalk.Settings.ApiKey>
     <RimTalk.Settings.GetFreeApiKey>Get a free API key</RimTalk.Settings.GetFreeApiKey>
-    <RimTalk.Settings.AICooldown>AI Cooldown (Seconds): {0}</RimTalk.Settings.AICooldown>
+    <RimTalk.Settings.AICooldown>AI Cooldown (Seconds)</RimTalk.Settings.AICooldown>
+    <RimTalk.Settings.AICooldownTooltip>The base cooldown time (in seconds) before attempting to generate a new AI dialogue.</RimTalk.Settings.AICooldownTooltip>
+    <RimTalk.Settings.ReplyInterval>Reply Interval (Seconds)</RimTalk.Settings.ReplyInterval>
+    <RimTalk.Settings.ReplyIntervalTooltip>The delay (in seconds) between consecutive replies within a conversation.</RimTalk.Settings.ReplyIntervalTooltip>
     <RimTalk.Settings.OverrideInteractions>Override All Interactions with AI Dialogue</RimTalk.Settings.OverrideInteractions>
     <RimTalk.Settings.OverrideInteractionsTooltip>Enable this to allow AI to override and regenerate dialogue for all interactions (including vanilla RimWorld and other mods). Note: AI dialogue has a cooldown period set above. To generate dialogue more frequently, lower the cooldown.</RimTalk.Settings.OverrideInteractionsTooltip>
+    <RimTalk.Settings.SettingsButton>Settings</RimTalk.Settings.SettingsButton>
+    <RimTalk.Settings.FastTrackInteractionsTitle>Fast-Track Interactions</RimTalk.Settings.FastTrackInteractionsTitle>
+    <RimTalk.Settings.FastTrackInteractionsDesc>Select which interactions should trigger dialogue immediately, bypassing the normal conversation cooldown. Unselected interactions will follow the standard cooldown interval.</RimTalk.Settings.FastTrackInteractionsDesc>
+    <RimTalk.Settings.SelectAll>Select All</RimTalk.Settings.SelectAll>
+    <RimTalk.Settings.DeselectAll>Deselect All</RimTalk.Settings.DeselectAll>
     <RimTalk.Settings.AllowSimultaneousConversations>Allow Simultaneous Conversations</RimTalk.Settings.AllowSimultaneousConversations>
     <RimTalk.Settings.AllowSimultaneousConversationsTooltip>When enabled, multiple groups of pawns can talk at the same time. Turn this off if you prefer to see only one conversation at a time or if too many are happening at once.</RimTalk.Settings.AllowSimultaneousConversationsTooltip>
     <RimTalk.Settings.DisplayTalkWhenDrafted>Display Talk When Drafted</RimTalk.Settings.DisplayTalkWhenDrafted>
@@ -203,6 +205,8 @@ Crucial Tips:
     <RimTalk.Settings.AllowBabiesToTalkTooltip>Enable this option to allow infants and toddlers to participate in AI-generated conversations.</RimTalk.Settings.AllowBabiesToTalkTooltip>
     <RimTalk.Settings.AllowNonHumanToTalk>Allow Non-Humans to Talk</RimTalk.Settings.AllowNonHumanToTalk>
     <RimTalk.Settings.AllowNonHumanToTalkTooltip>Enable non-human creatures (animals, mechanoids, or custom races) to talk if they have been given a Vocal Link Catalyst, which can be acquired from merchants.</RimTalk.Settings.AllowNonHumanToTalkTooltip>
+    <RimTalk.Settings.AllowAnnouncement>Allow Announcements</RimTalk.Settings.AllowAnnouncement>
+    <RimTalk.Settings.AllowAnnouncementTooltip>Allow colonists and pawns to make announcements to nearby pawns.</RimTalk.Settings.AllowAnnouncementTooltip>
     <RimTalk.Settings.ApplyMoodAndSocialEffects>Apply Mood and Social Effects</RimTalk.Settings.ApplyMoodAndSocialEffects>
     <RimTalk.Settings.ApplyMoodAndSocialEffectsTooltip>Dialogue can affect pawns’ mood and relationships based on conversation sentiment.</RimTalk.Settings.ApplyMoodAndSocialEffectsTooltip>
 
@@ -210,10 +214,47 @@ Crucial Tips:
     <RimTalk.Settings.PlayerDialogueMode.AIDriven>Auto-Gen Pawn + Player</RimTalk.Settings.PlayerDialogueMode.AIDriven>
     <RimTalk.Settings.PlayerDialogueMode.AIDrivenPawnOnly>Auto-Gen Pawn</RimTalk.Settings.PlayerDialogueMode.AIDrivenPawnOnly>
     <RimTalk.Settings.PlayerToNpc>Player-to-NPC:</RimTalk.Settings.PlayerToNpc>
-    <RimTalk.Settings.PlayerName>Player prompt</RimTalk.Settings.PlayerName>
-    <RimTalk.Settings.PlayerNameTooltip>What NPCs call the player in conversations.</RimTalk.Settings.PlayerNameTooltip>
-    <RimTalk.Settings.PlayerDialogueModeTooltip>Choose how the player can interact in conversations.\n\nDisabled: Player cannot participate in conversations.\nManual Replies: You type all player responses yourself; nothing is auto-generated.\nAuto-Gen Replies: The AI generates player responses automatically during conversations.</RimTalk.Settings.PlayerDialogueModeTooltip>
+    <RimTalk.Settings.PlayerName>Player Name</RimTalk.Settings.PlayerName>
     <RimTalk.Settings.PlayerNameTooltip>The name that will appear when you participate in conversations. This represents how pawns will perceive your presence.</RimTalk.Settings.PlayerNameTooltip>
+    <RimTalk.Settings.PlayerPersona>Player Persona</RimTalk.Settings.PlayerPersona>
+    <RimTalk.Settings.PlayerPersonaTooltip>Describe the player's personality, tone, and speaking style. Applied when AI generates lines for the player or talks with the player.</RimTalk.Settings.PlayerPersonaTooltip>
+    <RimTalk.Settings.CustomDialogue>Custom Dialogue</RimTalk.Settings.CustomDialogue>
+    <RimTalk.PlayerSettings.SectionPlayer>Player Dialogue Settings</RimTalk.PlayerSettings.SectionPlayer>
+    <RimTalk.PlayerSettings.SectionPresets>Dialogue Presets</RimTalk.PlayerSettings.SectionPresets>
+    <RimTalk.PlayerSettings.Title>Custom Dialogue &amp; Preset Settings</RimTalk.PlayerSettings.Title>
+    <RimTalk.PlayerSettings.AddPreset>Add New</RimTalk.PlayerSettings.AddPreset>
+    <RimTalk.PlayerSettings.ResetPresetsConfirm>Are you sure you want to reset all presets to the default recommendations?</RimTalk.PlayerSettings.ResetPresetsConfirm>
+    <RimTalk.PlayerSettings.PresetsDesc>Enabled presets appear directly in the pawn right-click menu as quick dialogue options.</RimTalk.PlayerSettings.PresetsDesc>
+    <RimTalk.PlayerSettings.Preset1.Title>Base &amp; Life</RimTalk.PlayerSettings.Preset1.Title>
+    <RimTalk.PlayerSettings.Preset1.Prompt>Looking around our base, how do you feel about our setup and daily life here?</RimTalk.PlayerSettings.Preset1.Prompt>
+    <RimTalk.PlayerSettings.Preset2.Title>Mood &amp; Well-being</RimTalk.PlayerSettings.Preset2.Title>
+    <RimTalk.PlayerSettings.Preset2.Prompt>How are you holding up lately? Anything on your mind or bothering you?</RimTalk.PlayerSettings.Preset2.Prompt>
+    <RimTalk.PlayerSettings.Preset3.Title>Defenses &amp; Tactics</RimTalk.PlayerSettings.Preset3.Title>
+    <RimTalk.PlayerSettings.Preset3.Prompt>Take a look at our defenses and gear. Spot any tactical weak points we should reinforce?</RimTalk.PlayerSettings.Preset3.Prompt>
+    <RimTalk.PlayerSettings.Preset4.Title>Work &amp; Safety Notice</RimTalk.PlayerSettings.Preset4.Title>
+    <RimTalk.PlayerSettings.Preset4.Prompt>Attention everyone! Stay alert, mind your safety, and let's focus on our duties!</RimTalk.PlayerSettings.Preset4.Prompt>
+    <RimTalk.PlayerSettings.Enabled>Enabled</RimTalk.PlayerSettings.Enabled>
+    <RimTalk.PlayerSettings.PresetTitleTooltip>The menu title displayed when right-clicking a pawn.</RimTalk.PlayerSettings.PresetTitleTooltip>
+    <RimTalk.PlayerSettings.Vision>📷 Vision</RimTalk.PlayerSettings.Vision>
+    <RimTalk.PlayerSettings.VisionTooltip>When enabled, captures and attaches a screenshot to the dialogue request. (May cause a brief flicker while capturing)</RimTalk.PlayerSettings.VisionTooltip>
+    <RimTalk.PlayerSettings.Announce>📢 Announce</RimTalk.PlayerSettings.Announce>
+    <RimTalk.PlayerSettings.AnnounceTooltip>When enabled, broadcasts the dialogue to all nearby pawns as an announcement.</RimTalk.PlayerSettings.AnnounceTooltip>
+    <RimTalk.PlayerSettings.AllowCustomConversation>Enable Custom Dialogue</RimTalk.PlayerSettings.AllowCustomConversation>
+    <RimTalk.PlayerSettings.AllowCustomConversationTooltip>Enable pawn dialogue commands, gizmos, and right-click dialogue presets.</RimTalk.PlayerSettings.AllowCustomConversationTooltip>
+    <RimTalk.PlayerSettings.AllowDirectPlayerTalk>Allow Direct Player ↔ Pawn Dialogue</RimTalk.PlayerSettings.AllowDirectPlayerTalk>
+    <RimTalk.PlayerSettings.AllowDirectPlayerTalkTooltip>Allow the player to talk directly with pawns or receive direct responses. If disabled, only pawn-to-pawn conversations can be directed.</RimTalk.PlayerSettings.AllowDirectPlayerTalkTooltip>
+    <RimTalk.PlayerSettings.AllowPlayerAiGen>AI-Generated Player Responses (Apply Persona)</RimTalk.PlayerSettings.AllowPlayerAiGen>
+    <RimTalk.PlayerSettings.AllowPlayerAiGenTooltip>When enabled, AI generates subsequent responses for the player matching the player's persona. When disabled, the player only speaks text manually entered by you.</RimTalk.PlayerSettings.AllowPlayerAiGenTooltip>
+    <RimTalk.PlayerSettings.PromptLabel>Prompt to send (Question / Instruction):</RimTalk.PlayerSettings.PromptLabel>
+    <RimTalk.Settings.Configure>Settings</RimTalk.Settings.Configure>
+    <RimTalk.PlayerSettings.Instruct>Configure player dialogue mode, name, and persona.</RimTalk.PlayerSettings.Instruct>
+    <RimTalk.PlayerSettings.ModeDesc>• Disabled: Player cannot participate in conversations, but you can still direct dialogues between pawns.
+• Manual Replies: You write the initial dialogue; player lines are not auto-generated.
+• Auto-Gen Pawn: After the player starts a dialogue, pawns continue talking amongst themselves.
+• Auto-Gen Pawn + Player: AI generates dialogues for both pawns and player. (Player Persona applied)</RimTalk.PlayerSettings.ModeDesc>
+    <RimTalk.PlayerSettings.PersonaOnlyAIDriven>(Active only in 'Auto-Gen Pawn + Player' mode)</RimTalk.PlayerSettings.PersonaOnlyAIDriven>
+    <RimTalk.PlayerSettings.Save>Save</RimTalk.PlayerSettings.Save>
+    <RimTalk.PlayerSettings.Saved>Player conversation settings saved.</RimTalk.PlayerSettings.Saved>
 
     <RimTalk.Settings.PauseAtSpeed>Pause AI on High Speed</RimTalk.Settings.PauseAtSpeed>
     <RimTalk.Settings.DisableAiAtSpeedTooltip>To reduce API calls, the AI will be paused when game speed is set to this level or higher.</RimTalk.Settings.DisableAiAtSpeedTooltip>
@@ -246,7 +287,7 @@ Crucial Tips:
 
     <!-- Settings_Api.cs -->
     <RimTalk.Settings.GoogleApiKeyLabel>Google AI API Key:</RimTalk.Settings.GoogleApiKeyLabel>
-    <RimTalk.Settings.GoogleApiKeyDesc>Uses the free Gemma-4-26b-a4b model. For other models or providers, use Advanced Settings.</RimTalk.Settings.GoogleApiKeyDesc>
+    <RimTalk.Settings.GoogleApiKeyDesc>Uses the free gemma-4-31b model. For other models or providers, use Advanced Settings.</RimTalk.Settings.GoogleApiKeyDesc>
     <RimTalk.Settings.GetFreeApiKeyButton>Get a Free API Key</RimTalk.Settings.GetFreeApiKeyButton>
     <RimTalk.Settings.SwitchToAdvancedSettings>Switch to Advanced Settings</RimTalk.Settings.SwitchToAdvancedSettings>
     <RimTalk.Settings.SwitchToSimpleSettings>Switch to Simple Settings</RimTalk.Settings.SwitchToSimpleSettings>
@@ -259,7 +300,6 @@ Crucial Tips:
     <RimTalk.Settings.ProviderHeader>Provider</RimTalk.Settings.ProviderHeader>
     <RimTalk.Settings.ApiKeyHeader>API Key</RimTalk.Settings.ApiKeyHeader>
     <RimTalk.Settings.ModelHeader>Model</RimTalk.Settings.ModelHeader>
-    <RimTalk.Settings.CustomModelHeader>Custom Model</RimTalk.Settings.CustomModelHeader>
     <RimTalk.Settings.EnabledHeader>Enabled</RimTalk.Settings.EnabledHeader>
     <RimTalk.Settings.EnableDisableApiConfigTooltip>Enable or disable this API configuration</RimTalk.Settings.EnableDisableApiConfigTooltip>
     <RimTalk.Settings.LocalProviderConfiguration>Local Provider Configuration</RimTalk.Settings.LocalProviderConfiguration>
@@ -270,7 +310,6 @@ Crucial Tips:
     <RimTalk.Settings.CustomizeRequestTooltip>Customize request JSON (temperature, reasoning effort, etc.)</RimTalk.Settings.CustomizeRequestTooltip>
     <RimTalk.Settings.CustomizeRequestTitle>Customize Request: {0} ({1})</RimTalk.Settings.CustomizeRequestTitle>
     <RimTalk.Settings.CustomizeRequestDesc>Configure custom JSON request parameters for this LLM. These values are merged into outgoing API request payloads (e.g., temperature, reasoning_effort, max_tokens, thinking parameters).</RimTalk.Settings.CustomizeRequestDesc>
-    <RimTalk.Settings.ResetToDefault>Reset to Default</RimTalk.Settings.ResetToDefault>
     <RimTalk.Settings.FormatJson>Format JSON</RimTalk.Settings.FormatJson>
     <RimTalk.Settings.ClearOverride>Clear</RimTalk.Settings.ClearOverride>
     <RimTalk.Settings.CustomJsonSave>Save</RimTalk.Settings.CustomJsonSave>
@@ -327,6 +366,11 @@ Crucial Tips:
     <RimTalk.Settings.ConversationHistoryCount.Tooltip>Each session contains multiple dialogue turns, which can significantly increase token count</RimTalk.Settings.ConversationHistoryCount.Tooltip>
     <RimTalk.Settings.MaxPawnContextCount>Maximum Number of Pawns to Include</RimTalk.Settings.MaxPawnContextCount>
     <RimTalk.Settings.MaxPawnContextCount.Tooltip>Controls the maximum number of pawns that can participate in a conversation</RimTalk.Settings.MaxPawnContextCount.Tooltip>
+    <RimTalk.Settings.MaxEventsCount>Maximum Colony Events to Include</RimTalk.Settings.MaxEventsCount>
+    <RimTalk.Settings.MaxEventsCount.Tooltip>Controls the maximum number of active colony events and letter notifications to include in context</RimTalk.Settings.MaxEventsCount.Tooltip>
+    <RimTalk.Settings.IncludeEvents>Enable Colony Events</RimTalk.Settings.IncludeEvents>
+    <RimTalk.Settings.IncludeEvents.Tooltip>Controls whether active colony events and letter notifications are included in context, and specifies the maximum count</RimTalk.Settings.IncludeEvents.Tooltip>
+    <RimTalk.Settings.ExternalEventModDetected>External event addon mod detected (RimTalk Event+). Built-in colony events are disabled by default to prevent duplicate prompt context. Check this box to enable if you want to use both.</RimTalk.Settings.ExternalEventModDetected>
     
     <RimTalk.Settings.PawnInfo>Pawn Info</RimTalk.Settings.PawnInfo>
     <RimTalk.Settings.IncludeRace>Race</RimTalk.Settings.IncludeRace>
@@ -352,6 +396,8 @@ Crucial Tips:
     <RimTalk.Settings.IncludeCleanliness>Cleanliness</RimTalk.Settings.IncludeCleanliness>
     <RimTalk.Settings.IncludeSurroundings>Nearby Items</RimTalk.Settings.IncludeSurroundings>
     <RimTalk.Settings.IncludeWealth>Colony Wealth</RimTalk.Settings.IncludeWealth>
+    <RimTalk.Settings.IncludeTopicKeywords>Generate New Conversation Topics</RimTalk.Settings.IncludeTopicKeywords>
+    <RimTalk.Settings.IncludeTopicKeywords.Tooltip>When pawns have no specific events or context to discuss, randomly generates a new conversation topic with a 50% chance.</RimTalk.Settings.IncludeTopicKeywords.Tooltip>
     
     <!-- DebugWindow.cs -->
     <RimTalk.DebugWindow.ViewByTime>By Time</RimTalk.DebugWindow.ViewByTime>
@@ -360,7 +406,6 @@ Crucial Tips:
     <RimTalk.DebugWindow.FilterPawn>Name</RimTalk.DebugWindow.FilterPawn>
     <RimTalk.DebugWindow.Search>Search</RimTalk.DebugWindow.Search>
     <RimTalk.DebugWindow.State>State</RimTalk.DebugWindow.State>
-    <RimTalk.DebugWindow.Limit>Limit</RimTalk.DebugWindow.Limit>
     <RimTalk.DebugWindow.StateAll>All States</RimTalk.DebugWindow.StateAll>
     <RimTalk.DebugWindow.StatePending>Pending</RimTalk.DebugWindow.StatePending>
     <RimTalk.DebugWindow.StateIgnored>Ignored</RimTalk.DebugWindow.StateIgnored>
@@ -371,7 +416,6 @@ Crucial Tips:
     <RimTalk.DebugWindow.Last>Last</RimTalk.DebugWindow.Last>
     <RimTalk.DebugWindow.AutoScroll>Auto Scroll</RimTalk.DebugWindow.AutoScroll>
     <RimTalk.DebugWindow.TooltipSelectForDetails>Select a row to view details</RimTalk.DebugWindow.TooltipSelectForDetails>
-    <RimTalk.DebugWindow.Details>Details</RimTalk.DebugWindow.Details>
     <RimTalk.DebugWindow.SelectRowHint>Select a request on the left to inspect Prompt/Response/Contexts.</RimTalk.DebugWindow.SelectRowHint>
     <RimTalk.DebugWindow.Resend>Resend</RimTalk.DebugWindow.Resend>
     <RimTalk.DebugWindow.ResendTooltip>Edit context and prompt, then resend to test dialogue.</RimTalk.DebugWindow.ResendTooltip>
@@ -386,12 +430,11 @@ Crucial Tips:
     <RimTalk.DebugWindow.Prompt>Prompt</RimTalk.DebugWindow.Prompt>
     <RimTalk.DebugWindow.Response>Response</RimTalk.DebugWindow.Response>
     <RimTalk.DebugWindow.PromptMessages>Request Details</RimTalk.DebugWindow.PromptMessages>
-    <RimTalk.DebugWindow.Contexts>Contexts</RimTalk.DebugWindow.Contexts>
     <RimTalk.DebugWindow.Generating>[Generating...]</RimTalk.DebugWindow.Generating>
+    <RimTalk.DebugWindow.Canceled>[Cancelled]</RimTalk.DebugWindow.Canceled>
     <RimTalk.DebugWindow.StatusDisabled>Disabled</RimTalk.DebugWindow.StatusDisabled>
     <RimTalk.DebugWindow.StatusProcessing>Processing</RimTalk.DebugWindow.StatusProcessing>
     <RimTalk.DebugWindow.StatusIdle>Idle</RimTalk.DebugWindow.StatusIdle>
-    <RimTalk.DebugWindow.GroupByPawn>Group by Pawn</RimTalk.DebugWindow.GroupByPawn>
     <RimTalk.DebugWindow.ModSettings>Settings</RimTalk.DebugWindow.ModSettings>
     <RimTalk.DebugWindow.Export>Export</RimTalk.DebugWindow.Export>
     <RimTalk.DebugWindow.ResetLogs>Reset Logs</RimTalk.DebugWindow.ResetLogs>
@@ -428,21 +471,32 @@ Crucial Tips:
     <RimTalk.DebugWindow.SystemInstruction>System Instruction</RimTalk.DebugWindow.SystemInstruction>
     <RimTalk.DebugWindow.ChatHistory>Chat History</RimTalk.DebugWindow.ChatHistory>
     <RimTalk.DebugWindow.InputPrompt>Input Prompt</RimTalk.DebugWindow.InputPrompt>
-    <RimTalk.DebugWindow.TooltipPromptResponse>Prompt:\n{0}\n\nResponse:\n{1}</RimTalk.DebugWindow.TooltipPromptResponse>
     
     <!-- Overlay.cs -->
     <RimTalk.Overlay.Debug>Debug</RimTalk.Overlay.Debug>
     <RimTalk.Overlay.Option>Overlay Option</RimTalk.Overlay.Option>
     <RimTalk.Overlay.DrawAboveUI>Draw Above UI</RimTalk.Overlay.DrawAboveUI>
+    <RimTalk.Overlay.ShowGroupColors>Show Group Colors</RimTalk.Overlay.ShowGroupColors>
+    <RimTalk.Overlay.ShowTargetName>Show Target Name [A-&gt;B]</RimTalk.Overlay.ShowTargetName>
+    <RimTalk.Overlay.AlignNameColumn>Align Name Column</RimTalk.Overlay.AlignNameColumn>
     <RimTalk.Overlay.Opacity>Opacity</RimTalk.Overlay.Opacity>
     <RimTalk.Overlay.FontSize>Font Size</RimTalk.Overlay.FontSize>
+    <RimTalk.Overlay.TurnOff>Turn Off Overlay</RimTalk.Overlay.TurnOff>
+    <RimTalk.Overlay.TurnOffTooltip>Turn off overlay.\nYou can toggle it by clicking the bottom right icon or tab depending on setting.</RimTalk.Overlay.TurnOffTooltip>
 
     <!-- FloatMenuMakerMapGetOptionsPatch.cs -->
     <RimTalk.FloatMenu.ChatWith>Chat with {0}</RimTalk.FloatMenu.ChatWith>
     <RimTalk.Gizmo.ChatWithTarget>Chat with {0}</RimTalk.Gizmo.ChatWithTarget>
     <RimTalk.Gizmo.ChatWithTargetDesc>Initiate a conversation with {0}.</RimTalk.Gizmo.ChatWithTargetDesc>
+    <RimTalk.Gizmo.Announce>Announce</RimTalk.Gizmo.Announce>
+    <RimTalk.Gizmo.AnnounceDesc>Have {0} shout or make an announcement to all pawns nearby.</RimTalk.Gizmo.AnnounceDesc>
     <RimTalk.FloatMenu.WhatToSayToSelf>What do you want to say to {0}?</RimTalk.FloatMenu.WhatToSayToSelf>
     <RimTalk.FloatMenu.WhatToSayToOther>What do you want {0} to say to {1}?</RimTalk.FloatMenu.WhatToSayToOther>
+    <RimTalk.FloatMenu.WhatToAnnounceToSelf>What do you want to announce to {0} and nearby?</RimTalk.FloatMenu.WhatToAnnounceToSelf>
+    <RimTalk.FloatMenu.WhatToAnnounceToOther>What do you want {0} to announce to nearby?</RimTalk.FloatMenu.WhatToAnnounceToOther>
+    <RimTalk.FloatMenu.DirectModeTooltip>Regular conversation (Tab to switch)</RimTalk.FloatMenu.DirectModeTooltip>
+    <RimTalk.FloatMenu.AnnounceModeTooltip>Broadcast announcement to nearby pawns (Tab to switch)</RimTalk.FloatMenu.AnnounceModeTooltip>
+    <RimTalk.FloatMenu.AttachPhotoTooltip>Toggle photo attachment (Ctrl+1) (May cause a brief flicker while capturing)</RimTalk.FloatMenu.AttachPhotoTooltip>
     <RimTalk.FloatMenu.Send>Send</RimTalk.FloatMenu.Send>
     <RimTalk.FloatMenu.Cancel>Cancel</RimTalk.FloatMenu.Cancel>
 
@@ -450,6 +504,26 @@ Crucial Tips:
     <RimTalk.ScribanVar.Category.PawnShorthands>Pawn Shorthands</RimTalk.ScribanVar.Category.PawnShorthands>
     <RimTalk.ScribanVar.Category.CoreObjects>Core Objects</RimTalk.ScribanVar.Category.CoreObjects>
     <RimTalk.ScribanVar.Category.Context>Context</RimTalk.ScribanVar.Category.Context>
-    <RimTalk.ScribanVar.Category.GameStatic>Game Objects (Static)</RimTalk.ScribanVar.Category.GameStatic>
     <RimTalk.ScribanVar.Category.System>System</RimTalk.ScribanVar.Category.System>
+    <RimTalk.ScribanVar.Category.GameStatic>Game Objects (Static)</RimTalk.ScribanVar.Category.GameStatic>
+    <RimTalk.DebugWindow.AttachedImage>Attached Image (Click to expand):</RimTalk.DebugWindow.AttachedImage>
+    <RimTalk.DebugWindow.AttachedImageBase64>Attached Image (Base64)</RimTalk.DebugWindow.AttachedImageBase64>
+    <RimTalk.DebugWindow.ClickToExpandImage>Click to expand image.</RimTalk.DebugWindow.ClickToExpandImage>
+    <RimTalk.DebugWindow.CopyImage>Copy Image (Clipboard)</RimTalk.DebugWindow.CopyImage>
+    <RimTalk.DebugWindow.ImageCopied>Image copied to clipboard.</RimTalk.DebugWindow.ImageCopied>
+    <RimTalk.PlayerSettings.DisabledNotice>Custom dialogue is disabled. Pawn right-click menu and player conversation features will not be active.</RimTalk.PlayerSettings.DisabledNotice>
+    <RimTalk.PlayerSettings.NewPresetName>New Preset</RimTalk.PlayerSettings.NewPresetName>
+    <RimTalk.PlayerSettings.PresetTitleHeader>Title / Menu Name</RimTalk.PlayerSettings.PresetTitleHeader>
+    <RimTalk.PlayerSettings.PresetTitlePlaceholder>Preset title...</RimTalk.PlayerSettings.PresetTitlePlaceholder>
+
+    <!-- VersionSwitcher.cs -->
+    <RimTalk.VersionSwitcher.RollbackLabel>Previous Version Rollback</RimTalk.VersionSwitcher.RollbackLabel>
+    <RimTalk.VersionSwitcher.SwitchToPrevious>Install Previous Version (Local Mod)</RimTalk.VersionSwitcher.SwitchToPrevious>
+    <RimTalk.VersionSwitcher.SwitchToSpecificVer>Install {0} (Local Mod)</RimTalk.VersionSwitcher.SwitchToSpecificVer>
+    <RimTalk.VersionSwitcher.NoPreviousDllFound>Previous version files were not found in mod directory (LastVersion/).</RimTalk.VersionSwitcher.NoPreviousDllFound>
+    <RimTalk.VersionSwitcher.ConfirmRollbackTitle>Rollback to {0}</RimTalk.VersionSwitcher.ConfirmRollbackTitle>
+    <RimTalk.VersionSwitcher.ConfirmRollbackPrompt>Copy RimTalk ({0}) to local 'RimWorld/Mods/RimTalk' folder?</RimTalk.VersionSwitcher.ConfirmRollbackPrompt>
+    <RimTalk.VersionSwitcher.ProceedRollback>Copy</RimTalk.VersionSwitcher.ProceedRollback>
+    <RimTalk.VersionSwitcher.RestartRequiredTitle>Copied</RimTalk.VersionSwitcher.RestartRequiredTitle>
+    <RimTalk.VersionSwitcher.LocalModCreatedPrompt>Copied to 'RimWorld/Mods/RimTalk'.\n\nDisable the Steam version, enable the local mod, and restart RimWorld.</RimTalk.VersionSwitcher.LocalModCreatedPrompt>
 </LanguageData>

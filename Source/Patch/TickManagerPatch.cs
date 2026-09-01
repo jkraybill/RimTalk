@@ -1,5 +1,6 @@
 using HarmonyLib;
 using RimTalk.Data;
+using RimTalk.Error;
 using RimTalk.Service;
 using RimTalk.Source.Data;
 using RimTalk.Util;
@@ -23,6 +24,8 @@ internal static class TickManagerPatch
     public static void Postfix()
     {
         Counter.Tick++;
+
+        AIErrorHandler.DrainPendingMessages();
 
         if (IsNow(DebugStatUpdateInterval))
         {
@@ -77,7 +80,7 @@ internal static class TickManagerPatch
 
         if (IsNow(1))
         {
-            // User-initiated talks are checked every second
+            // Fast-track requests: User-initiated talks (priority 1), Interactions (priority 2)
             while (UserRequestPool.GetNextUserRequest() is { } pawn)
             {
                 var pawnState = Cache.Get(pawn);
@@ -94,10 +97,15 @@ internal static class TickManagerPatch
                     continue;
                 }
 
-                if (!request.TalkType.IsFromUser()) break;
+                if (AIService.IsBusy())
+                {
+                    if (AIService.CanCancelFor(request))
+                        AIService.CancelCurrent();
+                    return;
+                }
 
-                if (TalkService.GenerateTalk(request))
-                    UserRequestPool.Remove(pawn);
+                TalkService.GenerateTalk(request);
+                UserRequestPool.Remove(pawn);
                 return;
             }
         }
@@ -186,5 +194,7 @@ internal static class TickManagerPatch
         _noApiKeyMessageShown = false;
         _initialCacheRefresh = false;
         _lastTalkEndTick = GenTicks.TicksGame;
+        TopicService.Reset();
+        SleepDialogueTracker.Reset();
     }
 }

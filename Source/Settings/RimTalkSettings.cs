@@ -18,8 +18,8 @@ public class RimTalkSettings : ModSettings
     public string SimpleApiKey = "";
     public bool IsUsingFallbackModel = false;
     public bool IsEnabled = true;
-    public int TalkInterval = 7;
-    public const int ReplyInterval = 4;
+    public int TalkInterval = 10;
+    public int ReplyInterval = 4;
     public bool ProcessNonRimTalkInteractions = true;
     public bool AllowSimultaneousConversations = false;
     public string SimpleModeInstruction = Constant.DefaultInstruction;
@@ -29,6 +29,7 @@ public class RimTalkSettings : ModSettings
     public PromptManager PromptSystem = new();
     public bool UseAdvancedPromptMode = false;  // Default to Simple Mode
     public Dictionary<string, bool> EnabledArchivableTypes = new();
+    public Dictionary<string, bool> FastTrackInteractions = new();
     public bool DisplayTalkWhenDrafted = true;
     public bool AllowMonologue = true;
     public bool AllowSlavesToTalk = true;
@@ -36,11 +37,15 @@ public class RimTalkSettings : ModSettings
     public bool AllowOtherFactionsToTalk = false;
     public bool AllowEnemiesToTalk = false;
     public bool AllowCustomConversation = true;
+    public List<CustomDialoguePreset> DialoguePresets = [];
     public Settings.PlayerDialogueMode PlayerDialogueMode = Settings.PlayerDialogueMode.Manual;
     public string PlayerName = "Player";
+    public string PlayerPersona = "";
     public bool ContinueDialogueWhileSleeping = false;
+    public bool EnableSleepDialogue = true;
     public bool AllowBabiesToTalk = true;
     public bool AllowNonHumanToTalk = true;
+    public bool AllowAnnouncement = true;
     public bool ApplyMoodAndSocialEffects = false;
     public int DisableAiAtSpeed = 0;
     public Settings.ButtonDisplayMode ButtonDisplay = Settings.ButtonDisplayMode.Toggle;
@@ -53,7 +58,10 @@ public class RimTalkSettings : ModSettings
     public bool DebugSortAscending = true;
 
     // Overlay settings
-    public bool OverlayEnabled = false;
+    public bool OverlayEnabled = true;
+    public bool OverlayShowGroupColors = true;
+    public bool OverlayAlignNameColumn = false;
+    public bool OverlayShowTargetName = false;
     public float OverlayOpacity = 0.5f;
     public float OverlayFontSize = 15f;
     public bool OverlayDrawAboveUI = true;
@@ -145,11 +153,7 @@ public class RimTalkSettings : ModSettings
         var activeConfig = GetActiveConfig();
         if (activeConfig == null) return Constant.DefaultCloudModel;
 
-        if (activeConfig.SelectedModel == "Custom")
-        {
-            return activeConfig.CustomModelName;
-        }
-        return activeConfig.SelectedModel;
+        return activeConfig.GetEffectiveModelName();
     }
 
     public override void ExposeData()
@@ -165,7 +169,8 @@ public class RimTalkSettings : ModSettings
         Scribe_Values.Look(ref UseSimpleConfig, "useSimpleConfig", true);
         Scribe_Values.Look(ref SimpleApiKey, "simpleApiKey", "");
         Scribe_Values.Look(ref IsEnabled, "isEnabled", true);
-        Scribe_Values.Look(ref TalkInterval, "talkInterval", 7);
+        Scribe_Values.Look(ref TalkInterval, "talkInterval", 10);
+        Scribe_Values.Look(ref ReplyInterval, "replyInterval", 4);
         Scribe_Values.Look(ref ProcessNonRimTalkInteractions, "processNonRimTalkInteractions", true);
         Scribe_Values.Look(ref AllowSimultaneousConversations, "allowSimultaneousConversations", false);
         Scribe_Values.Look(ref DisplayTalkWhenDrafted, "displayTalkWhenDrafted", true);
@@ -177,12 +182,17 @@ public class RimTalkSettings : ModSettings
         Scribe_Values.Look(ref AllowCustomConversation, "allowCustomConversation", true);
         Scribe_Values.Look(ref PlayerDialogueMode, "playerDialogueMode", Settings.PlayerDialogueMode.Manual);
         Scribe_Values.Look(ref PlayerName, "playerName", "Player");
+        Scribe_Values.Look(ref PlayerPersona, "playerPersona", "");
         
         Scribe_Values.Look(ref ContinueDialogueWhileSleeping, "continueDialogueWhileSleeping", false);
+        Scribe_Values.Look(ref EnableSleepDialogue, "enableSleepDialogue", true);
         Scribe_Values.Look(ref DisableAiAtSpeed, "DisableAiAtSpeed", 0);
         Scribe_Collections.Look(ref EnabledArchivableTypes, "enabledArchivableTypes", LookMode.Value, LookMode.Value);
+        Scribe_Collections.Look(ref FastTrackInteractions, "fastTrackInteractions", LookMode.Value, LookMode.Value);
+        FastTrackInteractions ??= new Dictionary<string, bool>();
         Scribe_Values.Look(ref AllowBabiesToTalk, "allowBabiesToTalk", true);
         Scribe_Values.Look(ref AllowNonHumanToTalk, "allowNonHumanToTalk", true);
+        Scribe_Values.Look(ref AllowAnnouncement, "allowAnnouncement", true);
         Scribe_Values.Look(ref ApplyMoodAndSocialEffects, "applyMoodAndSocialEffects", false);
         
         Scribe_Deep.Look(ref Context, "context");
@@ -198,7 +208,10 @@ public class RimTalkSettings : ModSettings
         Scribe_Values.Look(ref DebugSortAscending, "debugSortAscending", true);
         
         // Overlay settings
-        Scribe_Values.Look(ref OverlayEnabled, "overlayEnabled", false);
+        Scribe_Values.Look(ref OverlayEnabled, "overlayEnabled", true);
+        Scribe_Values.Look(ref OverlayShowGroupColors, "overlayShowGroupColors", true);
+        Scribe_Values.Look(ref OverlayAlignNameColumn, "overlayAlignNameColumn", false);
+        Scribe_Values.Look(ref OverlayShowTargetName, "overlayShowTargetName", false);
         Scribe_Values.Look(ref OverlayOpacity, "overlayOpacity", 0.5f);
         Scribe_Values.Look(ref OverlayFontSize, "overlayFontSize", 15f);
         Scribe_Values.Look(ref OverlayDrawAboveUI, "overlayDrawAboveUI", true);
@@ -231,6 +244,8 @@ public class RimTalkSettings : ModSettings
             OverlayRectNonDebug = new Rect(overlayNonDebugX, overlayNonDebugY, overlayNonDebugWidth, overlayNonDebugHeight);
         }
 
+        Scribe_Collections.Look(ref DialoguePresets, "dialoguePresets", LookMode.Deep);
+
         // Initialize collections if null
         if (CloudConfigs == null)
             CloudConfigs = new List<ApiConfig>();
@@ -238,6 +253,9 @@ public class RimTalkSettings : ModSettings
         if (LocalConfig == null)
             LocalConfig = new ApiConfig { Provider = AIProvider.Local };
                 
+        if (DialoguePresets == null || DialoguePresets.Count == 0)
+            DialoguePresets = CustomDialoguePreset.CreateDefaultPresets();
+
         if (EnabledArchivableTypes == null)
             EnabledArchivableTypes = new Dictionary<string, bool>();
 
@@ -353,5 +371,10 @@ public class RimTalkSettings : ModSettings
         };
         preset.Entries.Insert(0, entry);
         return entry;
+    }
+
+    public bool IsFastTrackInteraction(string defName)
+    {
+        return defName != null && FastTrackInteractions.TryGetValue(defName, out bool enabled) && enabled;
     }
 }

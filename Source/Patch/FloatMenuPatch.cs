@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using HarmonyLib;
+using RimTalk.Service;
 using RimTalk.UI;
 using RimTalk.Util;
 using RimWorld;
@@ -17,7 +18,8 @@ namespace RimTalk.Patch;
 #endif
 public static class FloatMenuPatch
 {
-    private const int ClickRadiusCells = 1;
+    private const float MaxClickDistance = 0.65f;
+    private const float MaxClickDistanceSquared = MaxClickDistance * MaxClickDistance;
 
 #if V1_5
     [HarmonyPostfix]
@@ -46,7 +48,7 @@ public static class FloatMenuPatch
         if (result == null) return;
         if (!Settings.Get().AllowCustomConversation) return;
 
-        if (selectedPawn == null || selectedPawn.Drafted) return;
+        if (selectedPawn == null) return;
         if (!selectedPawn.Spawned || selectedPawn.Dead) return;
 
         Map map = selectedPawn.Map;
@@ -54,9 +56,9 @@ public static class FloatMenuPatch
 
         HashSet<Pawn> processedPawns = [];
 
-        for (int dx = -ClickRadiusCells; dx <= ClickRadiusCells; dx++)
+        for (int dx = -1; dx <= 1; dx++)
         {
-            for (int dz = -ClickRadiusCells; dz <= ClickRadiusCells; dz++)
+            for (int dz = -1; dz <= 1; dz++)
             {
                 IntVec3 curCell = clickCell + new IntVec3(dx, 0, dz);
 
@@ -69,6 +71,14 @@ public static class FloatMenuPatch
                     if (thingList[i] is Pawn hitPawn)
                     {
                         if (!processedPawns.Add(hitPawn)) continue;
+
+                        // If the pawn is on an adjacent cell, verify it is within click distance
+                        if (dx != 0 || dz != 0)
+                        {
+                            Vector3 diff = clickPos - hitPawn.DrawPos;
+                            float distSq = diff.x * diff.x + diff.z * diff.z;
+                            if (distSq > MaxClickDistanceSquared) continue;
+                        }
 
                         if (TryResolveForHitPawn(selectedPawn, hitPawn, out var initiator, out var target))
                         {
@@ -100,12 +110,15 @@ public static class FloatMenuPatch
             if (Settings.Get().PlayerDialogueMode == Settings.PlayerDialogueMode.Disabled)
                 return false;
 
+            if (!selectedPawn.IsTalkEligible())
+                return false;
+
             var playerPawn = Cache.GetPlayer();
             if (playerPawn == null)
                 return false;
 
-            initiator = playerPawn;  
-            target = selectedPawn;    
+            initiator = playerPawn;
+            target = selectedPawn;
             return true;
         }
 
@@ -136,11 +149,9 @@ public static class FloatMenuPatch
         if (!(target.RaceProps?.Humanlike ?? false) && !target.HasVocalLink())
             return false;
 
-        if (initiator == Cache.GetPlayer())
-            return true;
-
         // Could add path to reach
-        if (!initiator.CanReach(target, PathEndMode.Touch, Danger.None))
+        Danger maxDanger = initiator.Drafted ? Danger.Deadly : Danger.Some;
+        if (!initiator.CanReach(target, PathEndMode.Touch, maxDanger))
             return false;
 
         return true;
@@ -163,5 +174,41 @@ public static class FloatMenuPatch
             null,
             target
         ));
+
+        var presets = Settings.Get()?.DialoguePresets;
+        if (presets != null && presets.Count > 0)
+        {
+            for (int i = 0; i < presets.Count; i++)
+            {
+                var preset = presets[i];
+                if (preset == null || !preset.IsEnabled || string.IsNullOrWhiteSpace(preset.Title)) continue;
+
+                string optionLabel = $"[{target.LabelShortCap}] {preset.Title}";
+                var capturedPreset = preset;
+
+                result.Add(new FloatMenuOption(
+                    optionLabel,
+                    delegate
+                    {
+                        if (capturedPreset.IncludeVision)
+                        {
+                            VisionUtil.CaptureScreenAsync(img =>
+                            {
+                                CustomDialogueService.DispatchDialogue(initiator, target, capturedPreset.Prompt,
+                                    capturedPreset.IsAnnouncement, img);
+                            });
+                        }
+                        else
+                        {
+                            CustomDialogueService.DispatchDialogue(initiator, target, capturedPreset.Prompt,
+                                capturedPreset.IsAnnouncement, null);
+                        }
+                    },
+                    MenuOptionPriority.Default,
+                    null,
+                    target
+                ));
+            }
+        }
     }
 }

@@ -2,10 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using RimTalk.Client;
+using RimTalk.Client.OpenAI;
 using RimTalk.Data;
 using RimTalk.Error;
 using RimTalk.Source.Data;
 using RimTalk.Util;
+using Verse;
 
 namespace RimTalk.Service;
 
@@ -21,23 +23,55 @@ public static class AIService
     private static volatile bool _busy;
     private static DateTime? _busySince;
     private static bool _firstInstruction = true;
+    private static System.Threading.CancellationTokenSource _currentCts;
+    private static TalkRequest _currentRequest;
+    public static TalkRequest CurrentRequest => _currentRequest;
 
     /// <summary>
     /// Streaming chat that invokes callback as each player's dialogue is parsed
     /// </summary>
     public static async Task ChatStreaming(TalkRequest request, Action<TalkResponse> onPlayerResponseReceived)
     {
+        _currentRequest = request;
         var prefixMessages = request.PromptMessages ?? [];
         var apiLog = ApiHistory.AddRequest(request, Channel.Stream);
         var lastApiLog = apiLog;
 
         var payload = await ExecuteWithRetry(apiLog, async client =>
         {
+            if (!string.IsNullOrEmpty(request.ImageBase64) && client is OpenAIClient openAIClient)
+            {
+                return await openAIClient.GetStreamingChatCompletionAsync<TalkResponse>(prefixMessages, [],
+                    request.ImageBase64,
+                    response =>
+                    {
+                        var pawnState = request.ResolvePawnState(response.Name);
+                        if (pawnState == null) return;
+
+                        response.TalkType = request.TalkType;
+
+                        // Calculate timing relative to the correct previous log
+                        int elapsedMs = (int)(DateTime.Now - lastApiLog.Timestamp).TotalMilliseconds;
+                        if (lastApiLog == apiLog) elapsedMs -= lastApiLog.ElapsedMs;
+
+                        var newLog = ApiHistory.AddResponse(apiLog.Id, response.Text, response.Name,
+                            response.InteractionRaw, elapsedMs: elapsedMs);
+
+                        response.Id = newLog.Id;
+                        lastApiLog = newLog;
+
+                        onPlayerResponseReceived?.Invoke(response);
+                    },
+                    prep => ApiHistory.UpdatePayload(apiLog.Id, prep));
+            }
+
             // All prompt messages are already in prefixMessages, pass empty list for messages
             return await client.GetStreamingChatCompletionAsync<TalkResponse>(prefixMessages, [],
                 response =>
                 {
-                    if (Cache.GetByName(response.Name) == null) return; 
+                    if (IsCancellationRequested()) return;
+                    var pawnState = request.ResolvePawnState(response.Name);
+                    if (pawnState == null) return; 
                     
                     response.TalkType = request.TalkType;
 
@@ -46,7 +80,8 @@ public static class AIService
                     if (lastApiLog == apiLog) elapsedMs -= lastApiLog.ElapsedMs;
 
                     var newLog = ApiHistory.AddResponse(apiLog.Id, response.Text, response.Name,
-                        response.InteractionRaw, elapsedMs: elapsedMs);
+                        response.InteractionRaw, payload: null, elapsedMs: elapsedMs,
+                        targetName: response.TargetName);
                     
                     response.Id = newLog.Id;
                     lastApiLog = newLog;
@@ -63,6 +98,7 @@ public static class AIService
     // One time query - used for generating persona, etc
     public static async Task<T> Query<T>(TalkRequest request) where T : class, IJsonData
     {
+        _currentRequest = request;
         var messages = new List<(Role role, string message)> { (Role.User, request.Prompt) };
         var prefixMessages = new List<(Role role, string message)> { (Role.System, request.Context) };
         var apiLog = ApiHistory.AddRequest(request, Channel.Query);
@@ -93,6 +129,7 @@ public static class AIService
     {
         _busy = true;
         _busySince = DateTime.Now;
+        _currentCts = new System.Threading.CancellationTokenSource();
         try
         {
             Exception capturedEx = null;
@@ -123,10 +160,19 @@ public static class AIService
 
             return payload;
         }
+        catch (OperationCanceledException)
+        {
+            apiLog.Response = "RimTalk.DebugWindow.Canceled".Translate();
+            apiLog.SpokenTick = -1;
+            return new Payload("Canceled", "Canceled", "", null, 0, "Canceled");
+        }
         finally
         {
             _busy = false;
             _busySince = null;
+            _currentRequest = null;
+            _currentCts?.Dispose();
+            _currentCts = null;
         }
     }
 
@@ -150,6 +196,33 @@ public static class AIService
         ApiHistory.UpdatePayload(apiLog.Id, payload);
     }
 
+    public static bool IsCancellationRequested() => _currentCts != null && _currentCts.IsCancellationRequested;
+
+    public static bool CanCancelCurrent() => _busy && _currentRequest != null && !_currentRequest.TalkType.IsFromUser();
+
+    public static bool CanCancelFor(TalkRequest incomingRequest)
+    {
+        if (!_busy || _currentRequest == null || incomingRequest == null) return false;
+
+        // User talks and announcements always preempt any ongoing generation
+        if (incomingRequest.TalkType.IsFromUser())
+            return true;
+
+        // Interactions and Urgent can cancel low-priority background talks (Other, Sleep, Thought, etc.)
+        if (incomingRequest.TalkType is TalkType.Interaction or TalkType.Urgent)
+            return !_currentRequest.TalkType.IsFastTrack();
+
+        return false;
+    }
+
+    public static void CancelCurrent()
+    {
+        if (_currentCts != null && !_currentCts.IsCancellationRequested)
+        {
+            _currentCts.Cancel();
+        }
+    }
+
     public static bool IsFirstInstruction() => _firstInstruction;
     public static bool IsBusy()
     {
@@ -164,8 +237,11 @@ public static class AIService
     }
     public static void Clear()
     {
+        CancelCurrent();
         _busy = false;
         _busySince = null;
         _firstInstruction = true;
+        _currentCts = null;
+        _currentRequest = null;
     }
 }
