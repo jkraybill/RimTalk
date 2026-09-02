@@ -13,56 +13,30 @@ public static class Constant
     public static string Lang => LanguageDatabase.activeLanguage?.info?.friendlyNameNative ?? "English";
     public static HediffDef VocalLinkDef => DefDatabase<HediffDef>.GetNamedSilentFail("VocalLinkImplant");
 
-    /// <summary>
-    /// Rewritten S166 after measuring the old one in the prompt lab.
-    ///
-    /// The previous instruction was ~90 words of role sketches and a JSONL contract.
-    /// It said "Conversation = 4-8 short turns" and produced ONE turn in 3 of 4 raid
-    /// samples and 4 of 4 quiet-morning samples -- it did not obey its own rule. It
-    /// also gave voices to Prisoner, Slave, Visitor and Enemy and none to Colonist,
-    /// the commonest speaker by an enormous margin.
-    ///
-    /// This one says what the job is, what the world is, how people sound, what they
-    /// may never do, and shows two examples. Examples teach register; adjectives do
-    /// not.
-    /// </summary>
     public static string DefaultInstruction =>
         $"""
-         You write dialogue for colonists in RimWorld, a survival sim on a hostile
-         frontier planet. Each line appears as a speech bubble above someone's head
-         while the player watches their colony.
+         Role-play RimWorld character per profile
 
-         These are ordinary people in a place that is trying to kill them. They are
-         not heroes and they do not know they are in a story.
+         Rules:
+         Speak like real people (casual, grounded, and concise; avoid poetic filler, dramatic narration, or generic AI slop)
+         Preserve original names (no translation)
+         Keep dialogue short ({Lang} only, 1-2 sentences)
 
-         How they speak:
-         Plainly, in {Lang}, about what is actually in front of them. Short. They
-         understate. They swear when they mean it. Nobody narrates their own feelings
-         and nobody reaches for a metaphor they would not use out loud.
+         Roles:
+         Prisoner: wary, hesitant; mention confinement; plead or bargain
+         Slave: fearful, obedient; reference forced labor and exhaustion; call colonists "master"
+         Visitor: polite, curious, deferential; treat other visitors in the same group as companions
+         Enemy: hostile, aggressive; terse commands/threats
 
-         What they never do:
-         Explain how they came to be on this planet. None of them knows, and none of
-         them ever will. They may guess from their own past. They may never state it
-         as fact.
-
-         Two examples of the register:
-
-           Rice again. Always rice.
-           I'd kill something just to taste it.
-
-           They're coming up the east side, and I'm still not done with you about
-           the rice.
-
-         Write only what is said. No stage directions, no asterisks, no narration.
+         Monologue = 1 turn. Conversation = 4-8 short turns
          """;
 
     /// <summary>
-    /// Moved LAST in the preset, closest to generation, and hardened.
-    ///
-    /// The prose instruction above is conversational, and a conversational system
-    /// prompt loosens formatting generally: one lab run parsed 89% of its JSONL
-    /// against 100% for the terse original. RimTalk silently DROPS a line it cannot
-    /// parse, so a formatting slip is a lost turn nobody sees.
+    /// Placed LAST in the default preset, closest to generation, and stated as a
+    /// hard rule. A conversational system prompt loosens formatting in general —
+    /// one measured run parsed 89% of its JSON Lines against 100% for a terse
+    /// prompt — and RimTalk silently drops any line it cannot parse, so a
+    /// formatting slip is a lost turn nobody sees.
     /// </summary>
     public const string JsonInstruction = """
                                            FORMAT — this overrides everything above.
@@ -105,11 +79,7 @@ public static class Constant
                     ?? preset.Entries.FirstOrDefault(e =>
                         e.Role == PromptRole.System && e.Position == PromptPosition.Relative);
 
-        // A preset carries whatever the default was on the day it was created. Once the
-        // default changes, that copy is not a customisation — it is a fossil, and
-        // preferring it means the rewrite never reaches anyone who played before it.
-        // The decision lives in InstructionHeritage so it can be executed in the tests.
-        return InstructionHeritage.Resolve(entry?.Content, DefaultInstruction);
+        return string.IsNullOrWhiteSpace(entry?.Content) ? DefaultInstruction : entry.Content;
     }
     
     // JSON instruction for use by PromptManager
