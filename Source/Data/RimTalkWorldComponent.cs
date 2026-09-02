@@ -14,11 +14,14 @@ public class RimTalkWorldComponent(World world) : WorldComponent(world)
     public Dictionary<string, string> RimTalkInteractionTexts = new();
     private Queue<string> _keyInsertionOrder = new();
 
+    /// <summary>Dialogue history, flattened. Filled on save, drained on load.</summary>
+    public List<ChatTurn> ChatTurns = new();
+
     public override void ExposeData()
     {
         base.ExposeData();
 
-        try 
+        try
         {
             Scribe_Collections.Look(ref RimTalkInteractionTexts, "rimtalkInteractionTexts", LookMode.Value, LookMode.Value);
         }
@@ -37,9 +40,23 @@ public class RimTalkWorldComponent(World world) : WorldComponent(world)
 
         Scribe_Collections.Look(ref keyOrderList, "rimtalkKeyOrder");
 
+        if (Scribe.mode == LoadSaveMode.Saving) ChatTurns = TalkHistory.Snapshot();
+        try
+        {
+            Scribe_Collections.Look(ref ChatTurns, "rimtalkChatTurns", LookMode.Deep);
+        }
+        catch (System.Exception ex)
+        {
+            Logger.Error($"Failed to save/load chat history. Resetting to prevent save corruption. Error: {ex.Message}");
+            ChatTurns = new List<ChatTurn>();
+        }
+        ChatTurns ??= new List<ChatTurn>();
+
         if (Scribe.mode != LoadSaveMode.PostLoadInit) return;
         RimTalkInteractionTexts ??= new Dictionary<string, string>();
-            
+        ChatTurns ??= new List<ChatTurn>();
+        TalkHistory.Restore(ChatTurns);
+
         _keyInsertionOrder = keyOrderList != null ? new Queue<string>(keyOrderList) : new Queue<string>();
     }
 

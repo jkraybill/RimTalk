@@ -12,13 +12,13 @@ public static class TalkHistory
     private static readonly ConcurrentDictionary<int, List<(Role role, string message)>> MessageHistory = new();
     private static readonly ConcurrentDictionary<Guid, int> SpokenTickCache = new() { [Guid.Empty] = 0 };
     private static readonly ConcurrentBag<Guid> IgnoredCache = [];
-    
+
     // Add a new talk with the current game tick
     public static void AddSpoken(Guid id)
     {
         SpokenTickCache.TryAdd(id, GenTicks.TicksGame);
     }
-    
+
     public static void AddIgnored(Guid id)
     {
         IgnoredCache.Add(id);
@@ -28,7 +28,7 @@ public static class TalkHistory
     {
         return SpokenTickCache.TryGetValue(id, out var tick) ? tick : -1;
     }
-    
+
     public static bool IsTalkIgnored(Guid id)
     {
         return IgnoredCache.Contains(id);
@@ -50,7 +50,7 @@ public static class TalkHistory
     {
         if (!MessageHistory.TryGetValue(pawn.thingIDNumber, out var history))
             return [];
-            
+
         lock (history)
         {
             var result = new List<(Role role, string message)>();
@@ -61,10 +61,10 @@ public static class TalkHistory
                 {
                     if (msg.role == Role.AI)
                         content = BuildAssistantHistoryText(content);
-                    
+
                     content = CleanHistoryText(content);
                 }
-                
+
                 if (!string.IsNullOrWhiteSpace(content))
                     result.Add((msg.role, content));
             }
@@ -136,9 +136,49 @@ public static class TalkHistory
         return string.Join("\n", lines);
     }
 
+    /// <summary>
+    /// Wipes everything. Called when a game is loaded, before <see cref="Restore"/>
+    /// puts the saved history back, and by the debug window on demand.
+    /// </summary>
     public static void Clear()
     {
         MessageHistory.Clear();
         // clearing spokenCache may block child talks waiting to display
+    }
+
+    /// <summary>
+    /// Everything, flattened for the save. Bounded: a decades-long colony must not grow
+    /// a save file without limit.
+    /// </summary>
+    public const int MaxSavedTurns = 400;
+
+    public static List<ChatTurn> Snapshot()
+    {
+        var all = new List<ChatTurn>();
+        foreach (var pair in MessageHistory)
+        {
+            var messages = pair.Value;
+            if (messages == null) continue;
+            lock (messages)
+                foreach (var (role, message) in messages)
+                    if (!string.IsNullOrWhiteSpace(message))
+                        all.Add(new ChatTurn { PawnId = pair.Key, Role = role, Text = message });
+        }
+
+        // A flat cap keeps the newest, which is what a prompt uses.
+        if (all.Count > MaxSavedTurns) all.RemoveRange(0, all.Count - MaxSavedTurns);
+        return all;
+    }
+
+    public static void Restore(List<ChatTurn> turns)
+    {
+        MessageHistory.Clear();
+        if (turns == null) return;
+
+        foreach (var turn in turns)
+        {
+            if (turn == null || string.IsNullOrWhiteSpace(turn.Text)) continue;
+            MessageHistory.GetOrAdd(turn.PawnId, _ => []).Add((turn.Role, turn.Text));
+        }
     }
 }
