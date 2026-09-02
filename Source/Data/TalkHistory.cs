@@ -11,14 +11,37 @@ public static class TalkHistory
 {
     private static readonly ConcurrentDictionary<int, List<(Role role, string message)>> MessageHistory = new();
     private static readonly ConcurrentDictionary<Guid, int> SpokenTickCache = new() { [Guid.Empty] = 0 };
+
+    /// <summary>
+    /// Who said each generated line.
+    ///
+    /// Needed because a reply's RECIPIENT is the speaker of the line it answers, and
+    /// that was the only fact missing when CreateInteraction had to decide who a line
+    /// was addressed to. It had been falling back to the speaker themselves, which
+    /// logs every ordinary two-person exchange as a monologue.
+    ///
+    /// Names rather than Pawns: this is written from the streaming callback, off the
+    /// main thread, and holding pawn references there is how the rest of this file
+    /// learned not to.
+    /// </summary>
+    private static readonly ConcurrentDictionary<Guid, string> SpeakerCache = new();
+
+    public static void RecordSpeaker(Guid id, string name)
+    {
+        if (id == Guid.Empty || string.IsNullOrWhiteSpace(name)) return;
+        SpeakerCache[id] = name;
+    }
+
+    public static string GetSpeaker(Guid id) =>
+        id != Guid.Empty && SpeakerCache.TryGetValue(id, out var name) ? name : null;
     private static readonly ConcurrentBag<Guid> IgnoredCache = [];
-    
+
     // Add a new talk with the current game tick
     public static void AddSpoken(Guid id)
     {
         SpokenTickCache.TryAdd(id, GenTicks.TicksGame);
     }
-    
+
     public static void AddIgnored(Guid id)
     {
         IgnoredCache.Add(id);
@@ -28,7 +51,7 @@ public static class TalkHistory
     {
         return SpokenTickCache.TryGetValue(id, out var tick) ? tick : -1;
     }
-    
+
     public static bool IsTalkIgnored(Guid id)
     {
         return IgnoredCache.Contains(id);
@@ -50,7 +73,7 @@ public static class TalkHistory
     {
         if (!MessageHistory.TryGetValue(pawn.thingIDNumber, out var history))
             return [];
-            
+
         lock (history)
         {
             var result = new List<(Role role, string message)>();
@@ -61,10 +84,10 @@ public static class TalkHistory
                 {
                     if (msg.role == Role.AI)
                         content = BuildAssistantHistoryText(content);
-                    
+
                     content = CleanHistoryText(content);
                 }
-                
+
                 if (!string.IsNullOrWhiteSpace(content))
                     result.Add((msg.role, content));
             }
@@ -138,6 +161,7 @@ public static class TalkHistory
 
     public static void Clear()
     {
+        SpeakerCache.Clear();
         MessageHistory.Clear();
         // clearing spokenCache may block child talks waiting to display
     }
