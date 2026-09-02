@@ -6,8 +6,12 @@ namespace RimTalk.Data
     {
         public bool EnableContextOptimization = false;
         public int MaxPawnContextCount = 3;
-        public int ConversationHistoryCount = 2;
-        
+        // Two is defensible as a token economy and indefensible as a default for a
+        // mod whose selling point is characters. Four exchanges is still cheap, and
+        // TalkHistory caps by token estimate rather than by count, so a long reply no
+        // longer costs the same as a short one.
+        public int ConversationHistoryCount = 4;
+
         // Pawn Info
         public bool IncludeRace = true;
         public bool IncludeNotableGenes = true;
@@ -41,7 +45,7 @@ namespace RimTalk.Data
         {
             Scribe_Values.Look(ref EnableContextOptimization, "EnableContextOptimization", false);
             Scribe_Values.Look(ref MaxPawnContextCount, "MaxPawnContextCount", 3);
-            Scribe_Values.Look(ref ConversationHistoryCount, "ConversationHistoryCount", 2);
+            Scribe_Values.Look(ref ConversationHistoryCount, "ConversationHistoryCount", 4);
             Scribe_Values.Look(ref IncludeEvents, "IncludeEvents", Service.EventService.DefaultIncludeEvents);
             Scribe_Values.Look(ref MaxEventsCount, "MaxEventsCount", 5);
             Scribe_Values.Look(ref IncludeTopicKeywords, "IncludeTopicKeywords", true);

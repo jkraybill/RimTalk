@@ -12,13 +12,13 @@ public static class TalkHistory
     private static readonly ConcurrentDictionary<int, List<(Role role, string message)>> MessageHistory = new();
     private static readonly ConcurrentDictionary<Guid, int> SpokenTickCache = new() { [Guid.Empty] = 0 };
     private static readonly ConcurrentBag<Guid> IgnoredCache = [];
-    
+
     // Add a new talk with the current game tick
     public static void AddSpoken(Guid id)
     {
         SpokenTickCache.TryAdd(id, GenTicks.TicksGame);
     }
-    
+
     public static void AddIgnored(Guid id)
     {
         IgnoredCache.Add(id);
@@ -28,7 +28,7 @@ public static class TalkHistory
     {
         return SpokenTickCache.TryGetValue(id, out var tick) ? tick : -1;
     }
-    
+
     public static bool IsTalkIgnored(Guid id)
     {
         return IgnoredCache.Contains(id);
@@ -46,14 +46,23 @@ public static class TalkHistory
         }
     }
 
+    /// <summary>
+    /// What to send, already fitted to the token budget.
+    ///
+    /// The cap used to be a message COUNT applied on write, so a long generated reply
+    /// cost the same as a short one and whatever fell off the end was gone. Now the
+    /// store keeps everything and the budget is applied on read, with the overflow
+    /// collapsed rather than deleted.
+    /// </summary>
     public static List<(Role role, string message)> GetMessageHistory(Pawn pawn, bool simplified = false)
     {
-        if (!MessageHistory.TryGetValue(pawn.thingIDNumber, out var history))
+        if (pawn == null || !MessageHistory.TryGetValue(pawn.thingIDNumber, out var history))
             return [];
-            
+
+        List<(Role, string)> cleaned;
         lock (history)
         {
-            var result = new List<(Role role, string message)>();
+            cleaned = new List<(Role, string)>();
             foreach (var msg in history)
             {
                 var content = msg.message;
@@ -61,16 +70,28 @@ public static class TalkHistory
                 {
                     if (msg.role == Role.AI)
                         content = BuildAssistantHistoryText(content);
-                    
+
                     content = CleanHistoryText(content);
                 }
-                
+
                 if (!string.IsNullOrWhiteSpace(content))
-                    result.Add((msg.role, content));
+                    cleaned.Add((msg.role, content));
             }
-            return result;
         }
+
+        var fitted = TalkMemory.Fit(cleaned, TokenBudget());
+        return fitted.AsMessages().Select(m => (m.Item1, m.Item2)).ToList();
     }
+
+    /// <summary>
+    /// Derived from the exchange count the player set, so one slider still means what
+    /// it says — but spent in tokens, which is the thing that actually costs money.
+    /// An exchange is an envelope plus a reply: call it 250 tokens.
+    /// </summary>
+    public const int TokensPerExchange = 250;
+
+    static int TokenBudget() =>
+        Math.Max(1, Settings.Get().Context.ConversationHistoryCount) * TokensPerExchange;
 
     private static void EnsureMessageLimit(List<(Role role, string message)> messages)
     {
@@ -84,9 +105,14 @@ public static class TalkHistory
             }
         }
 
-        // Then, enforce the maximum message limit by removing the oldest messages
-        int maxMessages = Settings.Get().Context.ConversationHistoryCount;
-        while (messages.Count > maxMessages * 2)
+        // The store keeps everything the nightly collapse has not yet compressed; the
+        // budget is applied on read by TalkMemory. This is only a runaway guard, and it
+        // is deliberately far above any window a player would set. The old line here
+        // was `messages.Count > ConversationHistoryCount * 2`, which at the default of
+        // 2 meant the model saw two prior turns and everything else was destroyed on
+        // write.
+        const int hardCeiling = 200;
+        while (messages.Count > hardCeiling)
         {
             messages.RemoveAt(0);
         }
@@ -140,5 +166,25 @@ public static class TalkHistory
     {
         MessageHistory.Clear();
         // clearing spokenCache may block child talks waiting to display
+    }
+
+    /// <summary>
+    /// The nightly pass. This used to be Clear() — "clear LLM history daily to
+    /// prevent repetitive/degraded dialogue" — which is a real problem solved by
+    /// amnesia. Collapse instead: the envelopes go, the speech stays as one line, and
+    /// a pawn can still refer to yesterday.
+    /// </summary>
+    public static void CollapseAll()
+    {
+        foreach (var id in MessageHistory.Keys.ToList())
+        {
+            if (!MessageHistory.TryGetValue(id, out var messages)) continue;
+            lock (messages)
+            {
+                var digest = TalkMemory.Digest(messages);
+                messages.Clear();
+                if (digest != null) messages.Add((Role.AI, digest));
+            }
+        }
     }
 }

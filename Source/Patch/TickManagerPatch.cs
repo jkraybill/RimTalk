@@ -42,14 +42,17 @@ internal static class TickManagerPatch
             Cache.Refresh();
             _initialCacheRefresh = true;
         }
-        
+
         if (IsNow(1))
         {
-            // Clear LLM history daily to prevent repetitive/degraded dialogue
+            // Collapse LLM history nightly rather than wiping it. Repetitive dialogue
+            // is a real problem and amnesia is a real fix, but it costs everything a
+            // pawn has ever said. The digest keeps the speech and drops the scenery,
+            // which is most of the tokens and none of the memory.
             int currentHour = CommonUtil.GetInGameHour(Find.TickManager.TicksAbs, Find.WorldGrid.LongLatOf(Find.CurrentMap.Tile));
             if (currentHour == 0 && !_chatHistoryCleared)
             {
-                TalkHistory.Clear();
+                TalkHistory.CollapseAll();
                 _chatHistoryCleared = true;
             }
             else if (currentHour != 0)
@@ -83,7 +86,7 @@ internal static class TickManagerPatch
                     continue;
                 }
                 var request = pawnState.GetNextTalkRequest();
-                
+
                 if (request == null)
                 {
                     UserRequestPool.Remove(pawn);
@@ -135,7 +138,7 @@ internal static class TickManagerPatch
                     TalkService.GenerateTalk(talkRequest);
                 }
             }
-            
+
             _lastTalkEndTick = GenTicks.TicksGame;
         }
     }
