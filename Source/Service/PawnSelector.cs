@@ -23,8 +23,8 @@ public class PawnSelector
     private static List<Pawn> GetNearbyPawnsInternal(Pawn pawn1, Pawn pawn2 = null,
         DetectionType detectionType = DetectionType.Hearing, bool onlyTalkable = false, int maxResults = 10, bool isAnnouncement = false)
     {
-        float baseRange = detectionType == DetectionType.Hearing 
-            ? (isAnnouncement ? AnnouncementHearingRange : HearingRange) 
+        float baseRange = detectionType == DetectionType.Hearing
+            ? (isAnnouncement ? AnnouncementHearingRange : HearingRange)
             : ViewingRange;
         PawnCapacityDef capacityDef = detectionType == DetectionType.Hearing
             ? PawnCapacityDefOf.Hearing
@@ -69,50 +69,80 @@ public class PawnSelector
         return GetNearbyPawnsInternal(pawn1, pawn2, DetectionType.Hearing, onlyTalkable: false, isAnnouncement: isAnnouncement);
     }
 
+    /// <summary>
+    /// Who speaks next.
+    ///
+    /// This used to rank user requests and nothing else, so a pawn
+    /// who had just made a remark to somebody had exactly the same claim on the next
+    /// generation as one asleep across the map — a weighted coin flip. Chitchat
+    /// requests expire in 20 seconds, so most of them died unserved and the line that
+    /// did appear was a pool event narrated by whoever the flip picked. That is why
+    /// the generated line arrived before the interaction that caused it and was about
+    /// neither.
+    ///
+    /// The ranking itself lives in <see cref="TalkPriority"/>, which is pure and
+    /// tested; this reads the game and hands it the facts.
+    /// </summary>
     public static Pawn SelectNextAvailablePawn()
     {
-        Pawn pawnWithOldestUserRequest = null;
-        Pawn pawnWithSpecialRequest = null;
-        int oldestTick = int.MaxValue;
+        var byId = new Dictionary<int, Pawn>();
+        var candidates = new List<TalkCandidate>();
         var talkReadyPawns = new List<Pawn>();
 
-        // Find the pawn with the highest priority task:
-        // 1. The oldest user-initiated talk request (absolute priority).
-        // 2. Pawns with pending special talk requests (second priority).
-        // 3. Pawns that can talk normally (for fallback).
         foreach (var pawn in Cache.Keys)
         {
             var pawnState = Cache.Get(pawn);
             if (pawnState == null) continue;
 
-            bool canTalk = pawnState.CanGenerateTalk();
-            if (canTalk)
-            {
-                talkReadyPawns.Add(pawn);
-            }
+            var canTalk = pawnState.CanGenerateTalk();
+            if (canTalk) talkReadyPawns.Add(pawn);
 
-            for (var node = pawnState.TalkRequests.First; node != null; node = node.Next)
-            {
-                var req = node.Value;
-                if (req.TalkType.IsFromUser())
-                {
-                    if (req.CreatedTick < oldestTick)
-                    {
-                        oldestTick = req.CreatedTick;
-                        pawnWithOldestUserRequest = pawn;
-                    }
-                }
-                else if (canTalk && pawnWithSpecialRequest == null &&
-                         req.TalkType is TalkType.Interaction or TalkType.Other or TalkType.Urgent or TalkType.Event or TalkType.QuestOffer or TalkType.Sleep)
-                {
-                    pawnWithSpecialRequest = pawn;
-                }
-            }
+            byId[pawn.thingIDNumber] = pawn;
+            candidates.Add(Describe(pawn, pawnState, canTalk));
         }
 
-        // Return the highest priority pawn found, or null if none are available.
-        return pawnWithOldestUserRequest ?? 
-               pawnWithSpecialRequest ?? 
-               (talkReadyPawns.Count > 0 ? Cache.GetRandomWeightedPawn(talkReadyPawns) : null);
+        var preferred = TalkPriority.Preferred(candidates);
+        if (preferred != null && byId.TryGetValue(preferred.PawnId, out var chosen))
+            return chosen;
+
+        // Nobody has anything to answer. An ordinary, unprompted moment.
+        return talkReadyPawns.Any() ? Cache.GetRandomWeightedPawn(talkReadyPawns) : null;
+    }
+
+    static TalkCandidate Describe(Pawn pawn, PawnState state, bool canTalk)
+    {
+        var c = new TalkCandidate
+        {
+            PawnId = pawn.thingIDNumber,
+            CanTalk = canTalk,
+            OldestUserTick = int.MaxValue,
+            OldestUrgentTick = int.MaxValue,
+            OldestPendingTick = int.MaxValue,
+        };
+
+        foreach (var req in state.TalkRequests)
+        {
+            // A request that has already lapsed is not something to answer; leaving it
+            // in the ranking would pin the selector to a pawn whose reason to speak is
+            // gone. GetNextTalkRequest sweeps them on read.
+            if (req == null || req.IsExpired()) continue;
+
+            if (req.TalkType.IsFromUser())
+            {
+                c.HasUserRequest = true;
+                c.OldestUserTick = Math.Min(c.OldestUserTick, req.CreatedTick);
+            }
+            else if (req.TalkType == TalkType.Urgent)
+            {
+                c.HasUrgentRequest = true;
+                c.OldestUrgentTick = Math.Min(c.OldestUrgentTick, req.CreatedTick);
+            }
+            else
+            {
+                c.HasPendingRequest = true;
+                c.OldestPendingTick = Math.Min(c.OldestPendingTick, req.CreatedTick);
+            }
+        }
+        return c;
     }
 }

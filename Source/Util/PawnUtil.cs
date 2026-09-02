@@ -249,11 +249,18 @@ public static class PawnUtil
             {
                 string activity = GetPawnActivity(p, relevantPawns, useOptimization);
                 string talkRequestStr = "";
+                // PEEK, do not consume. This used to call MarkRequestSpoken, which
+                // removes the request from the queue -- so a nearby pawn's pending
+                // topic was spent decorating SOMEBODY ELSE'S status line and then
+                // deleted. Gilliam chats about hickory trees, Crosby generates first,
+                // and the hickory trees are silently destroyed while Crosby talks
+                // about the weather.
+                //
+                // Requests expire on their own via IsExpired(), so nothing leaks.
                 var talkRequest = pawnState.GetNextTalkRequest();
                 if (talkRequest != null && !p.HostileTo(mainPawn) &&
                     SleepDialogueTracker.TryRefreshRequest(talkRequest))
                 {
-                    pawnState.MarkRequestSpoken(talkRequest);
                     talkRequestStr = $" - {talkRequest.Prompt}";
                 }
                 entry = $"{label} {activity.StripTags()}{extraStatus}{talkRequestStr}";
@@ -635,7 +642,7 @@ public static class PawnUtil
             && !Near(pawn.CurJob.targetA)
             && !Near(pawn.CurJob.targetB)
             && !Near(pawn.CurJob.targetC)
-            && !MovementJobPatterns.Any(p => pawn.CurJob.def.defName.IndexOf(p, StringComparison.OrdinalIgnoreCase) >= 0)) 
+            && !MovementJobPatterns.Any(p => pawn.CurJob.def.defName.IndexOf(p, StringComparison.OrdinalIgnoreCase) >= 0))
         {
             // One flowing phrase, not a disconnected "(traveling to)" tag stapled onto a gerund.
             activity = $"traveling to {activity}";

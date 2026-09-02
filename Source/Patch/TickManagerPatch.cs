@@ -42,7 +42,7 @@ internal static class TickManagerPatch
             Cache.Refresh();
             _initialCacheRefresh = true;
         }
-        
+
         if (IsNow(1))
         {
             // Clear LLM history daily to prevent repetitive/degraded dialogue
@@ -83,7 +83,7 @@ internal static class TickManagerPatch
                     continue;
                 }
                 var request = pawnState.GetNextTalkRequest();
-                
+
                 if (request == null)
                 {
                     UserRequestPool.Remove(pawn);
@@ -117,27 +117,50 @@ internal static class TickManagerPatch
 
             if (selectedPawn != null)
             {
-                // 1. ALWAYS try to get from the general pool first.
-                var talkGenerated = TryGenerateTalkFromPool(selectedPawn);
+                // Own queue before the pool. The pool holds map-wide events whose
+                // Initiator is overwritten with whoever was selected, so a pool line is
+                // something this pawn merely witnessed. Answering a witnessed event
+                // before the remark you just made yourself is what put the courtship in
+                // the log after the line about the sick knot.
+                var pawnState = Cache.Get(selectedPawn);
+                var ownRequest = pawnState?.GetNextTalkRequest();
 
-                // 2. If the pawn has a specific talk request, try generating it
+                var talkGenerated = ownRequest != null && TalkService.GenerateTalk(ownRequest);
+
+                if (!talkGenerated)
+                    talkGenerated = TryGenerateTalkFromPool(selectedPawn);
+
+                // 3. Fallback: generate based on current context if nothing else worked.
+                //
+                // This used to pass a null prompt, so the model had nothing but the
+                // profile and the environment envelope -- which is why untopiced
+                // dialogue is all weather, meals and bedrolls. Seeded from what the pawn
+                // is actually doing: thin, but real.
                 if (!talkGenerated)
                 {
-                    var pawnState = Cache.Get(selectedPawn);
-                    if (pawnState?.GetNextTalkRequest() != null)
-                        talkGenerated = TalkService.GenerateTalk(pawnState.GetNextTalkRequest());
-                }
-
-                // 3. Fallback: generate based on current context if nothing else worked
-                if (!talkGenerated)
-                {
-                    TalkRequest talkRequest = new TalkRequest(null, selectedPawn);
+                    TalkRequest talkRequest = new TalkRequest(FallbackTopic(selectedPawn), selectedPawn);
                     TalkService.GenerateTalk(talkRequest);
                 }
             }
-            
+
             _lastTalkEndTick = GenTicks.TicksGame;
         }
+    }
+
+    /// <summary>
+    /// Something for an otherwise topicless conversation to be about. Deliberately
+    /// modest: the pawn's current activity is concrete, already computed, and is not
+    /// already in the profile block the way mood and thoughts are.
+    /// </summary>
+    private static string FallbackTopic(Pawn pawn)
+    {
+        var activity = pawn?.GetActivity();
+        // A whole clause, not a fragment. The first version emitted "while hauling
+        // steel" as a standalone topic line -- a dangling subordinate clause with
+        // nothing to attach to, which the model then invented a referent for.
+        return string.IsNullOrWhiteSpace(activity)
+            ? null
+            : $"{pawn.LabelShort} is {activity.StripTags().ToLower()}";
     }
 
     private static bool TryGenerateTalkFromPool(Pawn pawn)
