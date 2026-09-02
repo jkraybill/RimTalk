@@ -27,11 +27,15 @@ public class PawnState(Pawn pawn)
         set => _isGeneratingTalk = value;
     }
     public readonly LinkedList<TalkRequest> TalkRequests = [];
-    
+
     public HashSet<Hediff> Hediffs { get; set; } = pawn.GetHediffs();
 
     public string Personality => PersonaService.GetPersonality(Pawn);
-    public double TalkInitiationWeight => PersonaService.GetTalkInitiationWeight(Pawn);
+    /// <summary>
+    /// The effective weight, not the stored baseline. Everything that selects a pawn
+    /// to speak reads this.
+    /// </summary>
+    public double TalkInitiationWeight => PersonaService.GetEffectiveTalkWeight(Pawn);
 
     public void AddTalkRequest(string prompt, Pawn recipient = null, TalkType talkType = TalkType.Other)
     {
@@ -60,7 +64,7 @@ public class PawnState(Pawn pawn)
             {
                 var nextNode = currentNode.Next;
                 var request = currentNode.Value;
-                
+
                 // If we overwrite a request, send it to global history as expired/overwritten
                 if (!request.TalkType.IsFromUser())
                 {
@@ -101,10 +105,10 @@ public class PawnState(Pawn pawn)
         }
         else
         {
-            TalkRequests.AddLast(newRequest);   
+            TalkRequests.AddLast(newRequest);
         }
     }
-    
+
     public TalkRequest GetNextTalkRequest()
     {
         var node = TalkRequests.First;
@@ -112,10 +116,10 @@ public class PawnState(Pawn pawn)
         {
             var request = node.Value;
             var next = node.Next;
-        
+
             if (!request.IsExpired())
                 return request;
-            
+
             TalkRequestPool.AddToHistory(request, RequestStatus.Expired);
             TalkRequests.Remove(node);
             node = next;
@@ -152,10 +156,10 @@ public class PawnState(Pawn pawn)
     public bool CanDisplayTalk()
     {
         if (Pawn.IsPlayer()) return true;
-        
+
         if (Pawn.Map == null || !Pawn.Spawned)
             return false;
-        
+
         RimTalkSettings settings = Settings.Get();
         if (!settings.DisplayTalkWhenDrafted && Pawn.Drafted) return false;
         bool allowSleeping = TalkResponses.Count > 0 && TalkResponses[0].TalkType == TalkType.Sleep;
