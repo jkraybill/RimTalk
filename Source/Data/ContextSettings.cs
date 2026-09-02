@@ -7,7 +7,19 @@ namespace RimTalk.Data
         public bool EnableContextOptimization = false;
         public int MaxPawnContextCount = 3;
         public int ConversationHistoryCount = 2;
-        
+
+        /// <summary>
+        /// How many participants get a full profile. This used to be hardcoded to
+        /// one — index 0 — so in a two-hander one speaker had no skills, no equipment
+        /// and three traits, decided by list position and re-decided every time the
+        /// pair spoke.
+        ///
+        /// Two, so both sides of an ordinary conversation are rounded. Bystanders
+        /// stay Short. The cost is bounded and predictable: one extra Normal block is
+        /// roughly a skills line, an equipment line and a few more traits.
+        /// </summary>
+        public int FullProfileParticipants = 2;
+
         // Pawn Info
         public bool IncludeRace = true;
         public bool IncludeNotableGenes = true;
@@ -42,6 +54,7 @@ namespace RimTalk.Data
             Scribe_Values.Look(ref EnableContextOptimization, "EnableContextOptimization", false);
             Scribe_Values.Look(ref MaxPawnContextCount, "MaxPawnContextCount", 3);
             Scribe_Values.Look(ref ConversationHistoryCount, "ConversationHistoryCount", 2);
+            Scribe_Values.Look(ref FullProfileParticipants, "FullProfileParticipants", 2);
             Scribe_Values.Look(ref IncludeEvents, "IncludeEvents", Service.EventService.DefaultIncludeEvents);
             Scribe_Values.Look(ref MaxEventsCount, "MaxEventsCount", 5);
             Scribe_Values.Look(ref IncludeTopicKeywords, "IncludeTopicKeywords", true);

@@ -56,7 +56,18 @@ public static class PromptService
     public static string BuildContext(List<Pawn> pawns, bool isAnnouncement = false)
     {
         var context = new StringBuilder();
-    
+
+        // Depth used to be decided by POSITION IN A LIST: index 0 got
+        // Normal and everyone else got Short, which omits skills and equipment
+        // entirely and cuts traits to three. In a two-hander that hands the model a
+        // rounded character and a sketch and asks for a conversation between them —
+        // and the assignment flips next time the same pair speaks, so a colonist is
+        // deep on Tuesday and thin on Wednesday. That undermines the one thing the
+        // mod exists for.
+        //
+        // Budget by conversation instead: the speakers who carry it get Normal, the
+        // bystanders get Short.
+        var full = Settings.Get().Context.FullProfileParticipants;
         for (int i = 0; i < pawns.Count; i++)
         {
             var pawn = pawns[i];
@@ -92,10 +103,10 @@ public static class PromptService
                 continue;
             }
 
-            InfoLevel infoLevel = Settings.Get().Context.EnableContextOptimization 
-                                  || i != 0 ? InfoLevel.Short : InfoLevel.Normal;
+            InfoLevel infoLevel = Settings.Get().Context.EnableContextOptimization
+                                  || i >= full ? InfoLevel.Short : InfoLevel.Normal;
             var pawnContext = CreatePawnContext(pawn, infoLevel);
-            
+
             // Preserve Harmony patches on CreatePawnContext while safely replacing leading LabelShort with unique alias
             if (hasUniqueAlias && !string.IsNullOrEmpty(pawn.LabelShort) && pawnContext.StartsWith(pawn.LabelShort))
                 pawnContext = displayName + pawnContext.Substring(pawn.LabelShort.Length);
@@ -103,6 +114,7 @@ public static class PromptService
             pawnContext = CommonUtil.StripFormattingTags(pawnContext);
 
             Cache.Get(pawn).Context = pawnContext;
+
             context.AppendLine($"[P{i + 1}]").AppendLine(pawnContext);
         }
 
@@ -202,10 +214,10 @@ public static class PromptService
 
         // Each section applies hooks via AppendWithHook
         AppendWithHook(sb, pawn, ContextCategories.Pawn.Race, ContextBuilder.GetRaceContext(pawn, infoLevel));
-        
+
         if (infoLevel != InfoLevel.Short && !pawn.IsVisitor() && !pawn.IsEnemy())
             AppendWithHook(sb, pawn, ContextCategories.Pawn.Genes, ContextBuilder.GetNotableGenesContext(pawn, infoLevel));
-        
+
         AppendWithHook(sb, pawn, ContextCategories.Pawn.Ideology, ContextBuilder.GetIdeologyContext(pawn, infoLevel));
 
         // Stop here for invaders and visitors
@@ -214,7 +226,7 @@ public static class PromptService
 
         AppendWithHook(sb, pawn, ContextCategories.Pawn.Backstory, ContextBuilder.GetBackstoryContext(pawn, infoLevel));
         AppendWithHook(sb, pawn, ContextCategories.Pawn.Traits, ContextBuilder.GetTraitsContext(pawn, infoLevel));
-        
+
         if (infoLevel != InfoLevel.Short)
             AppendWithHook(sb, pawn, ContextCategories.Pawn.Skills, ContextBuilder.GetSkillsContext(pawn, infoLevel));
 
@@ -241,7 +253,7 @@ public static class PromptService
         AppendWithHook(sb, pawn, ContextCategories.Pawn.Mood, ContextBuilder.GetMoodContext(pawn, infoLevel));
         AppendWithHook(sb, pawn, ContextCategories.Pawn.Thoughts, ContextBuilder.GetThoughtsContext(pawn, infoLevel));
         AppendWithHook(sb, pawn, ContextCategories.Pawn.CaptiveStatus, ContextBuilder.GetPrisonerSlaveContext(pawn, infoLevel));
-        
+
         // Visitor activity
         if (pawn.IsVisitor())
         {
@@ -254,7 +266,7 @@ public static class PromptService
         }
 
         AppendWithHook(sb, pawn, ContextCategories.Pawn.Social, ContextBuilder.GetRelationsContext(pawn, infoLevel));
-        
+
         if (infoLevel != InfoLevel.Short)
             AppendWithHook(sb, pawn, ContextCategories.Pawn.Equipment, ContextBuilder.GetEquipmentContext(pawn, infoLevel));
 
@@ -267,10 +279,12 @@ public static class PromptService
         if (pawns == null || pawns.Count == 0) return;
         var sb = new StringBuilder();
         var mainPawn = pawns[0];
+        if (mainPawn == null) return;
         var shortName = GetUniqueName(mainPawn, pawns);
 
         // Dialogue type
         ContextBuilder.BuildDialogueType(sb, talkRequest, pawns, shortName, mainPawn);
+
         sb.Append($"\n{status}");
 
         if (AIService.IsFirstInstruction())
@@ -278,7 +292,7 @@ public static class PromptService
 
         talkRequest.Prompt = sb.ToString();
     }
-    
+
     /// <summary>
     /// Appends text to StringBuilder if not empty, with optional hook application.
     /// </summary>
@@ -287,7 +301,7 @@ public static class PromptService
         if (!string.IsNullOrEmpty(text))
             sb.AppendLine(text);
     }
-    
+
     /// <summary>
     /// Appends pawn context text with hook and injection application.
     /// </summary>
@@ -298,41 +312,41 @@ public static class PromptService
             foreach (var (_, pos, _, provider) in ContextHookRegistry.GetInjectedSectionsAt(category))
                 if (pos == ContextHookRegistry.InjectPosition.Before && provider is Func<Pawn, string> p)
                     AppendIfNotEmpty(sb, p(pawn));
-        
+
         // Apply hooks (always call to allow Override hooks on empty categories)
         var hooked = ContextHookRegistry.ApplyPawnHooks(category, pawn, text ?? "");
         AppendIfNotEmpty(sb, hooked);
-        
+
         // Render After injections
         if (ContextHookRegistry.HasAnyInjections)
             foreach (var (_, pos, _, provider) in ContextHookRegistry.GetInjectedSectionsAt(category))
                 if (pos == ContextHookRegistry.InjectPosition.After && provider is Func<Pawn, string> p)
                     AppendIfNotEmpty(sb, p(pawn));
     }
-    
+
     /// <summary>
     /// Appends environment context text with hook and injection application.
     /// </summary>
     private static string ApplyEnvironmentWithHook(Map map, ContextCategory category, string text)
     {
         var sb = new StringBuilder();
-        
+
         // Render Before injections
         if (ContextHookRegistry.HasAnyInjections)
             foreach (var (_, pos, _, provider) in ContextHookRegistry.GetInjectedSectionsAt(category))
                 if (pos == ContextHookRegistry.InjectPosition.Before && provider is Func<Map, string> p)
                     AppendIfNotEmpty(sb, p(map));
-        
+
         // Apply hooks
         var hooked = ContextHookRegistry.ApplyEnvironmentHooks(category, map, text ?? "");
         AppendIfNotEmpty(sb, hooked);
-        
+
         // Render After injections
         if (ContextHookRegistry.HasAnyInjections)
             foreach (var (_, pos, _, provider) in ContextHookRegistry.GetInjectedSectionsAt(category))
                 if (pos == ContextHookRegistry.InjectPosition.After && provider is Func<Map, string> p)
                     AppendIfNotEmpty(sb, p(map));
-        
+
         return sb.ToString().TrimEnd();
     }
 }
