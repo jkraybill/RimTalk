@@ -274,7 +274,8 @@ public static class PawnUtil
                 //
                 // Requests expire on their own via IsExpired(), so nothing leaks.
                 var talkRequest = pawnState.GetNextTalkRequest();
-                if (talkRequest != null && !p.HostileTo(mainPawn))
+                if (talkRequest != null && !p.HostileTo(mainPawn) &&
+                    SleepDialogueTracker.TryRefreshRequest(talkRequest))
                 {
                     talkRequestStr = $" - {talkRequest.Prompt}";
                 }
