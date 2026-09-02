@@ -90,6 +90,44 @@ public class PromptManager : IExposable
         return false;
     }
 
+    /// <summary>
+    /// A preset a mod provides: the default template with the mod's own base
+    /// instruction, under a deterministic id so registering it again on the next
+    /// launch finds the one already there — edits the player made to it included.
+    /// Never activated here; the player picks it under Prompt Presets.
+    /// </summary>
+    public PromptPreset RegisterModPreset(string modId, string name, string baseInstruction, string description)
+    {
+        if (Presets.Count == 0) EnsureInitialized();
+
+        var id = PromptEntry.GenerateDeterministicId(modId, "preset_" + name);
+        var existing = Presets.FirstOrDefault(p => p.Id == id);
+        if (existing != null) return existing;
+
+        var preset = CreateDefaultPreset();
+        preset.Id = id;
+        preset.Name = GetUniqueName(name);
+        preset.Description = string.IsNullOrWhiteSpace(description) ? $"Provided by {modId}" : description;
+        preset.SourceModId = modId;
+        preset.IsActive = false;
+
+        var baseEntry = preset.Entries.FirstOrDefault(e =>
+            string.Equals(e.Name, "Base Instruction", StringComparison.OrdinalIgnoreCase));
+        if (baseEntry != null && !string.IsNullOrWhiteSpace(baseInstruction))
+            baseEntry.Content = baseInstruction;
+
+        Presets.Add(preset);
+        return preset;
+    }
+
+    /// <summary>Removes every preset a mod registered. Returns how many.</summary>
+    public int RemoveModPresets(string modId)
+    {
+        var doomed = Presets.Where(p => p.SourceModId == modId).Select(p => p.Id).ToList();
+        foreach (var id in doomed) RemovePreset(id);
+        return doomed.Count;
+    }
+
     /// <summary>Duplicates a preset</summary>
     public PromptPreset DuplicatePreset(string presetId)
     {

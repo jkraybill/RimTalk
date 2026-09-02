@@ -373,6 +373,46 @@ public static class RimTalkPromptAPI
         return PromptManager.Instance.Presets;
     }
 
+    /// <summary>
+    /// Registers a prompt preset provided by a mod: RimTalk's default template with
+    /// the mod's own base instruction. The player chooses it under Prompt Presets;
+    /// nothing here activates it. Idempotent per (modId, name): calling it every
+    /// launch is the intended use, and a preset the player has since edited is left
+    /// exactly as they left it.
+    /// </summary>
+    /// <param name="modId">The mod's package ID</param>
+    /// <param name="name">Preset name shown to the player</param>
+    /// <param name="baseInstruction">Content for the Base Instruction entry</param>
+    /// <param name="description">Optional description shown to the player</param>
+    /// <returns>The preset's id, or null on invalid input</returns>
+    /// <example>
+    /// RimTalkPromptAPI.RegisterPreset("MyMod.PackageId", "MyMod voice", myInstruction,
+    ///     "Colonists as MyMod writes them");
+    /// </example>
+    public static string RegisterPreset(string modId, string name, string baseInstruction, string description = null)
+    {
+        if (string.IsNullOrEmpty(modId) || string.IsNullOrEmpty(name) || string.IsNullOrWhiteSpace(baseInstruction))
+        {
+            Logger.Warning("RimTalkPromptAPI.RegisterPreset: Invalid parameters");
+            return null;
+        }
+
+        var preset = PromptManager.Instance.RegisterModPreset(SanitizeModId(modId), name, baseInstruction, description);
+        Logger.Debug($"Mod '{modId}' registered preset: {preset.Name}");
+        return preset.Id;
+    }
+
+    /// <summary>
+    /// Removes every preset the mod registered.
+    /// </summary>
+    /// <param name="modId">The mod's package ID</param>
+    /// <returns>Number of presets removed</returns>
+    public static int RemovePresetsByModId(string modId)
+    {
+        if (string.IsNullOrEmpty(modId)) return 0;
+        return PromptManager.Instance.RemoveModPresets(SanitizeModId(modId));
+    }
+
     // ===== Unified Hook API =====
     // All hook methods now use the unified ContextHookRegistry
     

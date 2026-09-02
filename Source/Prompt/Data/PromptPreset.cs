@@ -24,6 +24,12 @@ public class PromptPreset : IExposable
     
     /// <summary>Whether this is the currently active preset</summary>
     public bool IsActive;
+
+    /// <summary>
+    /// The mod that registered this preset through RimTalkPromptAPI.RegisterPreset,
+    /// sanitized the way entry ids are. Null for presets the player made.
+    /// </summary>
+    public string SourceModId;
     
     /// <summary>
     /// Set of deleted mod entry IDs. Entries with these IDs will not be re-added by mods.
@@ -206,6 +212,7 @@ public class PromptPreset : IExposable
         Scribe_Values.Look(ref Description, "description", "");
         Scribe_Collections.Look(ref Entries, "entries", LookMode.Deep);
         Scribe_Values.Look(ref IsActive, "isActive", false);
+        Scribe_Values.Look(ref SourceModId, "sourceModId");
         
         // Serialize blacklist as List<string> for compatibility
         List<string> deletedList = DeletedModEntryIds?.ToList() ?? new List<string>();
@@ -228,6 +235,7 @@ public class PromptPreset : IExposable
             Name = Name,
             Description = Description,
             IsActive = false,
+            SourceModId = SourceModId,
             Entries = []
         };
 
