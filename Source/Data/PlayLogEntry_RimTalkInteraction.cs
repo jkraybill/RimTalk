@@ -1,7 +1,5 @@
 using System.Collections.Generic;
-using RimTalk.Data;
 using RimWorld;
-using UnityEngine;
 using Verse;
 using RimTalk.Service;
 
@@ -37,12 +35,4 @@ public class PlayLogEntry_RimTalkInteraction : PlayLogEntry_Interaction
     {
         return _cachedString;
     }
-
-    // No IconFromPOV/IconColorFromPOV override here on purpose. rim-universe #43 tier
-    // one put the tint on this class and it was invisible within minutes: SaveGamePatch
-    // rewrites every entry of this type in the live log into a plain
-    // PlayLogEntry_Interaction on each save, autosaves included, so the override stopped
-    // applying to rows that still looked like ours. Both hooks now live in
-    // SocialLogIconPatch, which patches PlayLogEntry_Interaction and therefore covers
-    // this class and its converted twin through one code path.
 }

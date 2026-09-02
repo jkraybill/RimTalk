@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using RimTalk.Service;
 using RimTalk.Util;
 using RimWorld;
 using Verse;
@@ -71,21 +70,6 @@ public static class Cache
 
         // Ensure player state/name is valid.
         InitializePlayerPawn();
-
-        // rim-universe #51. Personality expansion runs first: it produces topics,
-        // speech style, and preferences that feed everything downstream.
-        Service.PersonalityExpansionService.TryGenerate();
-
-        // rim-universe #37. Here rather than in a spawn patch: this already runs on the
-        // main thread every few seconds and already walks every eligible pawn, and one
-        // candidate per refresh is a hard ceiling on the cost.
-        Narrative.ArrivalService.TryGenerate();
-
-        // #28, after it. Both are gated on the same single in-flight request, so the
-        // order here IS the priority: a pawn with no voice yet outranks a pawn with no
-        // goal yet, and a goal set before the arrival log exists would be written by a
-        // profile that has not been seeded.
-        Goals.GoalService.TryGenerate();
 
         // Remove "Ghost Keys" (old names).
         foreach (var entry in NameCache.ToArray())

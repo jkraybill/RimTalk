@@ -20,16 +20,12 @@ public class RimTalkWorldComponent(World world) : WorldComponent(world)
     /// without limit. Lives here because this component is already scribed and
     /// already save-tested.
     /// </summary>
-    public List<Narrative.NarrativeEvent> NarrativeEvents = new();
-
     /// <summary>
     /// The last few lines each pawn said, keyed by thingIDNumber, newline-joined.
     /// rim-universe #41. Newline-joined rather than a nested list because Scribe has
     /// no LookMode for Dictionary&lt;int, List&lt;string&gt;&gt; and a value type here
     /// costs nothing; RecentLines strips newlines on the way in.
     /// </summary>
-    public Dictionary<int, string> RecentSpokenLines = new();
-
     /// <summary>
     /// Conversation history, flattened. rim-universe #9. The live store stays a
     /// ConcurrentDictionary in TalkHistory because it is written from the thread that
@@ -42,38 +38,26 @@ public class RimTalkWorldComponent(World world) : WorldComponent(world)
     /// What each person wrote the day they came to here. rim-universe #37. Deep, not
     /// Reference: these are meant to outlive the people in them.
     /// </summary>
-    public List<Narrative.ArrivalEntry> ArrivalEntries = new();
-
     /// <summary>Back-pocket conversation topics, one set per pawn. rim-universe #44.</summary>
-    public List<Narrative.TopicEntry> TopicEntries = new();
-
     /// <summary>
     /// What the colony has been doing, already worded. rim-universe #30's delta, and
     /// the generalised harvest #21 and #22 both need. Bounded by Chronicle.MaxEntries.
     /// Separate from NarrativeEvents so a good hunting week cannot evict a death.
     /// </summary>
-    public List<Narrative.ChronicleEntry> ChronicleEntries = new();
-
     /// <summary>
     /// Conversation history keyed by pair. rim-universe #30. Same split as ChatTurns:
     /// the live store is a ConcurrentDictionary in PairStore because it is written
     /// from the thread that finishes a streaming call, and this is only the medium.
     /// </summary>
-    public List<Narrative.PairRecord> PairRecords = new();
-
     /// <summary>
     /// What each colonist wants to see happen here next, and what they have already
     /// got. rim-universe #28. Resolved entries stay: they are what the cooldown reads
     /// and the only record that anything was ever achieved.
     /// </summary>
-    public List<Goals.GoalEntry> GoalEntries = new();
-
     /// <summary>
     /// Expanded personalities derived from backstory. rim-universe #51. Generated once
     /// when a pawn enters the colony's orbit; feeds profiles, goals, gossip, topics.
     /// </summary>
-    public List<PawnPersonality> PersonalityEntries = new();
-
     public override void ExposeData()
     {
         base.ExposeData();
@@ -98,88 +82,10 @@ public class RimTalkWorldComponent(World world) : WorldComponent(world)
         Scribe_Collections.Look(ref keyOrderList, "rimtalkKeyOrder");
 
         // Deep, not Reference: these deliberately outlive the pawns they describe.
-        try
-        {
-            Scribe_Collections.Look(ref NarrativeEvents, "rimtalkNarrativeEvents", LookMode.Deep);
-        }
-        catch (System.Exception ex)
-        {
-            Logger.Error($"Failed to save/load narrative events. Resetting to prevent save corruption. Error: {ex.Message}");
-            NarrativeEvents = new List<Narrative.NarrativeEvent>();
-        }
-        NarrativeEvents ??= new List<Narrative.NarrativeEvent>();
-
         // Filled from the live store on the way out. Doing it here rather than keeping
         // the component as the working structure keeps Scribe off the hot path, which
         // is written from a background thread.
         if (Scribe.mode == LoadSaveMode.Saving) ChatTurns = TalkHistory.Snapshot();
-        if (Scribe.mode == LoadSaveMode.Saving) PairRecords = Narrative.PairStore.Snapshot();
-
-        try
-        {
-            Scribe_Collections.Look(ref ChronicleEntries, "rimtalkChronicleEntries", LookMode.Deep);
-        }
-        catch (System.Exception ex)
-        {
-            Logger.Error($"Failed to save/load the colony chronicle. Resetting to prevent save corruption. Error: {ex.Message}");
-            ChronicleEntries = new List<Narrative.ChronicleEntry>();
-        }
-        ChronicleEntries ??= new List<Narrative.ChronicleEntry>();
-
-        try
-        {
-            Scribe_Collections.Look(ref PairRecords, "rimtalkPairRecords", LookMode.Deep);
-        }
-        catch (System.Exception ex)
-        {
-            Logger.Error($"Failed to save/load pair memory. Resetting to prevent save corruption. Error: {ex.Message}");
-            PairRecords = new List<Narrative.PairRecord>();
-        }
-        PairRecords ??= new List<Narrative.PairRecord>();
-
-        try
-        {
-            Scribe_Collections.Look(ref GoalEntries, "rimtalkGoalEntries", LookMode.Deep);
-        }
-        catch (System.Exception ex)
-        {
-            Logger.Error($"Failed to save/load goals. Resetting to prevent save corruption. Error: {ex.Message}");
-            GoalEntries = new List<Goals.GoalEntry>();
-        }
-        GoalEntries ??= new List<Goals.GoalEntry>();
-
-        try
-        {
-            Scribe_Collections.Look(ref PersonalityEntries, "rimtalkPersonalityEntries", LookMode.Deep);
-        }
-        catch (System.Exception ex)
-        {
-            Logger.Error($"Failed to save/load personalities. Resetting to prevent save corruption. Error: {ex.Message}");
-            PersonalityEntries = new List<PawnPersonality>();
-        }
-        PersonalityEntries ??= new List<PawnPersonality>();
-
-        try
-        {
-            Scribe_Collections.Look(ref TopicEntries, "rimtalkTopicEntries", LookMode.Deep);
-        }
-        catch (System.Exception ex)
-        {
-            Logger.Error($"Failed to save/load conversation topics. Resetting to prevent save corruption. Error: {ex.Message}");
-            TopicEntries = new List<Narrative.TopicEntry>();
-        }
-        TopicEntries ??= new List<Narrative.TopicEntry>();
-
-        try
-        {
-            Scribe_Collections.Look(ref ArrivalEntries, "rimtalkArrivalEntries", LookMode.Deep);
-        }
-        catch (System.Exception ex)
-        {
-            Logger.Error($"Failed to save/load arrival log. Resetting to prevent save corruption. Error: {ex.Message}");
-            ArrivalEntries = new List<Narrative.ArrivalEntry>();
-        }
-        ArrivalEntries ??= new List<Narrative.ArrivalEntry>();
 
         try
         {
@@ -192,34 +98,13 @@ public class RimTalkWorldComponent(World world) : WorldComponent(world)
         }
         ChatTurns ??= new List<ChatTurn>();
 
-        try
-        {
-            Scribe_Collections.Look(ref RecentSpokenLines, "rimtalkRecentSpokenLines",
-                                    LookMode.Value, LookMode.Value);
-        }
-        catch (System.Exception ex)
-        {
-            Logger.Error($"Failed to save/load recent spoken lines. Resetting to prevent save corruption. Error: {ex.Message}");
-            RecentSpokenLines = new Dictionary<int, string>();
-        }
-        RecentSpokenLines ??= new Dictionary<int, string>();
-
         if (Scribe.mode != LoadSaveMode.PostLoadInit) return;
         RimTalkInteractionTexts ??= new Dictionary<string, string>();
-        NarrativeEvents ??= new List<Narrative.NarrativeEvent>();
-        RecentSpokenLines ??= new Dictionary<int, string>();
         ChatTurns ??= new List<ChatTurn>();
-        ArrivalEntries ??= new List<Narrative.ArrivalEntry>();
-        TopicEntries ??= new List<Narrative.TopicEntry>();
-        ChronicleEntries ??= new List<Narrative.ChronicleEntry>();
-        PairRecords ??= new List<Narrative.PairRecord>();
-        GoalEntries ??= new List<Goals.GoalEntry>();
-        PersonalityEntries ??= new List<PawnPersonality>();
 
         // After RimTalk.cs's TalkHistory.Clear(), which runs on every load. #9: that
         // call is why no colony ever remembered a conversation across a save.
         TalkHistory.Restore(ChatTurns);
-        Narrative.PairStore.Restore(PairRecords);
             
         _keyInsertionOrder = keyOrderList != null ? new Queue<string>(keyOrderList) : new Queue<string>();
     }

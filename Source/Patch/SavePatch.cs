@@ -44,10 +44,6 @@ public static class SaveGamePatch
 
                 entries[i] = newEntry;
             }
-
-            // S169. Autosaves included, so the machine-readable snapshot keeps itself
-            // current with no effort from the player. Write() never throws.
-            Narrative.Snapshot.Write();
         }
         catch (Exception ex)
         {

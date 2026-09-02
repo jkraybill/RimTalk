@@ -115,11 +115,7 @@ public static class PromptService
 
             Cache.Get(pawn).Context = pawnContext;
 
-            // [P1] [P2] [P3] is a field-dump index, and in prose mode it was three
-            // labelled rows sitting on top of three paragraphs of prose. The profiles
-            // open with the pawn's own name, so nothing needs disambiguating.
-            if (!Settings.Get().Context.ProsePrompt) context.AppendLine($"[P{i + 1}]");
-            context.AppendLine(pawnContext).AppendLine();
+            context.AppendLine($"[P{i + 1}]").AppendLine(pawnContext);
         }
 
         if (pawns.Count > 0 && pawns[0] != null)
@@ -237,21 +233,9 @@ public static class PromptService
         return sb.ToString();
     }
 
-    /// <summary>
-    /// Creates the full pawn context. Pass <paramref name="excludeSkillWant"/> = true
-    /// when generating a typed goal (#28): the skill-based want is bait the model will
-    /// copy verbatim, producing a statement that does not match its kind. #49.
-    /// </summary>
-    public static string CreatePawnContext(Pawn pawn, InfoLevel infoLevel = InfoLevel.Normal,
-                                           bool excludeSkillWant = false)
+    /// <summary>Creates the full pawn context.</summary>
+    public static string CreatePawnContext(Pawn pawn, InfoLevel infoLevel = InfoLevel.Normal)
     {
-        // Prose, not a form. Measured in the prompt lab: the same data written as
-        // sentences produced 6-7 conversational turns where the field dump produced
-        // one, and turned a weather report into "Potatoes should hold."
-        // rim-universe, S166.
-        if (Settings.Get().Context.ProsePrompt)
-            return Prose.ProseProfile.Build(pawn, infoLevel, excludeSkillWant);
-
         var sb = new StringBuilder();
         sb.Append(CreatePawnBackstory(pawn, infoLevel));
 
@@ -281,13 +265,6 @@ public static class PromptService
             }
         }
 
-        // What this pawn actually carries from the colony's history. Harvested from
-        // game state, persisted across saves, and ranked so witnessed events beat
-        // hearsay. rim-universe #21 / roundtable S166.
-        var remembered = Narrative.NarrativeStore.For(pawn).ToList();
-        if (remembered.Count > 0)
-            sb.AppendLine("Remembers: " + string.Join("; ", remembered.Select(e => e.AsRemembered(pawn))));
-
         AppendWithHook(sb, pawn, ContextCategories.Pawn.Social, ContextBuilder.GetRelationsContext(pawn, infoLevel));
         
         if (infoLevel != InfoLevel.Short)
@@ -306,16 +283,7 @@ public static class PromptService
         var shortName = GetUniqueName(mainPawn, pawns);
 
         // Dialogue type
-        var frame = ContextBuilder.BuildDialogueType(sb, talkRequest, pawns, shortName, mainPawn);
-        var contextSettings = Settings.Get().Context;
-
-        if (contextSettings.ProsePrompt)
-        {
-            // The scene as a scene. Nine labelled rows read as a status page and get
-            // answered with a weather report.
-            talkRequest.Prompt = Prose.ProseScene.Build(talkRequest, pawns, frame);
-            return;
-        }
+        ContextBuilder.BuildDialogueType(sb, talkRequest, pawns, shortName, mainPawn);
 
         sb.Append($"\n{status}");
 

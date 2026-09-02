@@ -16,10 +16,8 @@ namespace RimTalk.Service;
 // In most cases, you should NOT modify this file.
 public static class AIService
 {
-    // volatile: written in an async finally on a threadpool thread, read on the main
-    // thread every tick. Without it the main thread can keep seeing a cached `true`
-    // and every colonist stops speaking, permanently, with nothing in the log.
-    // rim-universe #17.
+    // volatile: written in an async finally on a threadpool thread, read on the main thread every
+    // tick. Without it the main thread can cache a stale `true` and dialogue stops silently for good.
     private static volatile bool _busy;
     private static DateTime? _busySince;
     private static bool _firstInstruction = true;
@@ -229,8 +227,8 @@ public static class AIService
         if (!BusyGate.IsStuck(_busy, _busySince, DateTime.Now)) return _busy;
 
         Logger.Warning($"The AI slot has been held for over {BusyGate.StuckAfterSeconds}s. " +
-                       "Releasing it — no request can legitimately take that long, and while it " +
-                       "is held nobody in the colony can speak. rim-universe #17.");
+                       "Releasing it - no request can legitimately take that long, and while it " +
+                       "is held nobody in the colony can speak.");
         _busy = false;
         _busySince = null;
         return false;

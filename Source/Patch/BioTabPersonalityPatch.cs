@@ -4,8 +4,6 @@ using System.Reflection;
 using System.Reflection.Emit;
 using HarmonyLib;
 using RimTalk.Data;
-using RimTalk.Goals;
-using RimTalk.Prose;
 using RimTalk.UI;
 using RimTalk.Util;
 using RimWorld;
@@ -63,59 +61,6 @@ public static class BioTabPersonalityPatch
         });
     }
 
-    private static void AddGoalElement(Pawn pawn)
-    {
-        if (!pawn.IsColonist) return;
-
-        var goal = GoalStore.Active(pawn);
-        if (goal == null) return;
-
-        var tmpStackElements =
-            (List<GenUI.AnonymousStackElement>)AccessTools.Field(typeof(CharacterCardUtility), "tmpStackElements")
-                .GetValue(null);
-        if (tmpStackElements == null) return;
-
-        string goalLabelText = "Goal";
-        float textWidth = Text.CalcSize(goalLabelText).x;
-        float totalLabelWidth = textWidth + 10f;
-
-        tmpStackElements.Add(new GenUI.AnonymousStackElement
-        {
-            width = totalLabelWidth,
-            drawer = rect =>
-            {
-                Widgets.DrawOptionBackground(rect, false);
-                Widgets.DrawHighlightIfMouseover(rect);
-
-                var elapsed = GoalMath.ElapsedDays(GenTicks.TicksGame - goal.SetTick);
-                var remaining = GoalMath.RemainingDays(goal.ExpiryTick - GenTicks.TicksGame);
-                var criteria = DescribeCriteriaWithProgress(pawn, goal.Kind, goal.Target);
-                string tooltipText =
-                    $"{"Current Goal".Colorize(ColoredText.TipSectionTitleColor)}\n\n" +
-                    $"\"{goal.Statement}\"\n\n" +
-                    $"{"Success:".Colorize(ColoredText.SubtleGrayColor)} {criteria}\n\n" +
-                    $"Set {elapsed} ago\n" +
-                    $"{remaining} remaining";
-                TooltipHandler.TipRegion(rect, tooltipText);
-
-                Text.Anchor = TextAnchor.MiddleCenter;
-                Widgets.Label(rect, goalLabelText);
-                Text.Anchor = TextAnchor.UpperLeft;
-            }
-        });
-    }
-
-    /// <summary>
-    /// Describe what will satisfy this goal, with current progress.
-    ///
-    /// The wording, the rounding and the decision about which kinds carry a number
-    /// all live in GoalMath, where they are tested for real. This is the map read
-    /// and nothing else — the twin that used to live here rounded to nearest on
-    /// both halves and could print "3/3" on an unmet goal.
-    /// </summary>
-    private static string DescribeCriteriaWithProgress(Pawn pawn, GoalKind kind, float target) =>
-        GoalMath.Criteria(kind, target, ProseScene.GatherColony(pawn?.Map));
-
     [HarmonyPatch(typeof(CharacterCardUtility), "DoTopStack")]
     public static class DoTopStack_Patch
     {
@@ -141,9 +86,6 @@ public static class BioTabPersonalityPatch
                     yield return new CodeInstruction(OpCodes.Ldarg_0); // Load 'pawn'
                     yield return new CodeInstruction(OpCodes.Call,
                         AccessTools.Method(typeof(BioTabPersonalityPatch), nameof(AddPersonaElement)));
-                    yield return new CodeInstruction(OpCodes.Ldarg_0); // Load 'pawn' again
-                    yield return new CodeInstruction(OpCodes.Call,
-                        AccessTools.Method(typeof(BioTabPersonalityPatch), nameof(AddGoalElement)));
                 }
             }
         }

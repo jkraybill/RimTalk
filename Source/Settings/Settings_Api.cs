@@ -453,11 +453,8 @@ public partial class Settings
 
             if (models != null && models.Any())
             {
-                // Sorted here rather than in FetchModelsAsync so the cached path gets it
-                // too — OpenRouter alone returns 414 models in the order its API feels
-                // like, and an unsorted 414-entry FloatMenu is not a list, it is a haystack.
-                // ThenBy on the ordinal comparer keeps entries that differ only in case
-                // from swapping places between openings.
+                // Sorted here (not in FetchModelsAsync) so the cached path benefits too.
+                // OpenRouter alone returns 400+ models in whatever order its API feels like.
                 var sorted = models
                     .OrderBy(model => model, StringComparer.OrdinalIgnoreCase)
                     .ThenBy(model => model, StringComparer.Ordinal);

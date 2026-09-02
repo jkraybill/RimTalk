@@ -189,34 +189,6 @@ public static class TalkService
                 TalkHistory.AddMessageHistory(pawn, prompt, serializedResponses);
             }
         }
-
-        // #41. Separate from the message history above: that is a conversation and is
-        // meant to be forgotten, this outlives it and is what stops the same colonist
-        // opening with the same line for a whole quadrum.
-        foreach (var r in responses)
-        {
-            var pawn = Cache.GetByName(r?.Name)?.Pawn;
-            if (pawn != null) RecentLines.Record(pawn, r.Text);
-        }
-
-        // #30. A third store, and the three are genuinely different things: the
-        // message history above is this conversation and is meant to be spent, the
-        // recent lines are per-pawn and exist to be avoided, and this is what two
-        // particular people have between them.
-        var speakers = responses
-            .Select(r => Cache.GetByName(r?.Name)?.Pawn)
-            .Where(p => p != null)
-            .Distinct()
-            .ToList();
-
-        if (speakers.Count >= 2)
-        {
-            var lines = responses
-                .Where(r => r != null && !string.IsNullOrWhiteSpace(r.Text))
-                .Select(r => $"{r.Name}: {CommonUtil.StripFormattingTags(r.Text).Trim()}")
-                .ToList();
-            Narrative.PairStore.Record(speakers, lines, GenTicks.TicksGame);
-        }
     }
 
     /// <summary>

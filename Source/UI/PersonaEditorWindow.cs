@@ -151,11 +151,7 @@ public class PersonaEditorWindow : Window
                 {
                     _isGenerating = false;
 
-                    // IsCompleted is true for Faulted and Canceled too, and
-                    // GeneratePersona returns null on any failure -- an empty
-                    // response, an error payload, or a deserialization failure are
-                    // all ordinary outcomes for an LLM call. task.Result.Persona
-                    // then NREs.
+                    // IsCompleted is also true for Faulted/Canceled, and task.Result would NRE then.
                     var result = task.Status == TaskStatus.RanToCompletion ? task.Result : null;
                     if (result == null)
                     {
