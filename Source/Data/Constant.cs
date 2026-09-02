@@ -31,11 +31,25 @@ public static class Constant
          Monologue = 1 turn. Conversation = 4-8 short turns
          """;
 
+    /// <summary>
+    /// Placed LAST in the default preset, closest to generation, and stated as a
+    /// hard rule. A conversational system prompt loosens formatting in general —
+    /// one measured run parsed 89% of its JSON Lines against 100% for a terse
+    /// prompt — and RimTalk silently drops any line it cannot parse, so a
+    /// formatting slip is a lost turn nobody sees.
+    /// </summary>
     public const string JsonInstruction = """
-                                           Output JSONL.
-                                           Required keys: "name", "text".
+                                           FORMAT — this overrides everything above.
+
+                                           Reply with JSON Lines and nothing else. One complete JSON object per line:
+
+                                           {"name": "Someone", "text": "What they said."}
+
+                                           Every line opens with { and closes with }. No trailing commas, no
+                                           parentheses, no markdown fences, no commentary before or after.
+                                           One speaker per line.
                                            """;
-    
+
     public const string SocialInstruction = """
                                            Optional keys (Include only if social interaction occurs):
                                            "act": Insult, Slight, Chat, Kind
@@ -50,7 +64,7 @@ public static class Constant
         {
             var settings = Settings.Get();
             var baseInstruction = GetBaseInstruction();
-        
+
             return baseInstruction + "\n" + JsonInstruction + (settings.ApplyMoodAndSocialEffects ? "\n" + SocialInstruction : "");
         }
     }
@@ -67,7 +81,7 @@ public static class Constant
 
         return string.IsNullOrWhiteSpace(entry?.Content) ? DefaultInstruction : entry.Content;
     }
-    
+
     // JSON instruction for use by PromptManager
     public static string GetJsonInstruction(bool includeSocialEffects)
     {

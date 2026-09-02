@@ -15,7 +15,7 @@ namespace RimTalk.Prompt;
 public class PromptManager : IExposable
 {
     private static PromptManager _instance;
-    
+
     /// <summary>Singleton instance</summary>
     public static PromptManager Instance
     {
@@ -35,7 +35,7 @@ public class PromptManager : IExposable
 
     /// <summary>All presets</summary>
     public List<PromptPreset> Presets = new();
-    
+
     /// <summary>Global variable store (for setvar/getvar)</summary>
     public VariableStore VariableStore = new();
 
@@ -47,7 +47,7 @@ public class PromptManager : IExposable
         {
             EnsureInitialized();
         }
-        
+
         var active = Presets.FirstOrDefault(p => p.IsActive);
         if (active == null && Presets.Count > 0)
         {
@@ -97,7 +97,7 @@ public class PromptManager : IExposable
         if (source == null) return null;
 
         var clone = source.Clone();
-        
+
         string baseName = source.Name;
         // Check if name ends with (n) and extract base name if so
         var match = Regex.Match(baseName, @"^(.*?)\s*\((\d+)\)$");
@@ -154,11 +154,11 @@ public class PromptManager : IExposable
     {
         if (messages == null || messages.Count == 0)
             return string.Empty;
-    
+
         // Find the last user message
         var lastUserMessage = messages
             .LastOrDefault(m => m.role == Role.User);
-    
+
         return lastUserMessage.content ?? string.Empty;
     }
 
@@ -181,13 +181,13 @@ public class PromptManager : IExposable
             return messages;
 
         var merged = new List<(PromptRole role, string content)>();
-        
+
         for (int i = 0; i < messages.Count; i++)
         {
             var (role, content) = messages[i];
             // Force a break at the merge boundary: don't merge across it
             bool forceBreak = (mergeBoundary >= 0 && i == mergeBoundary && merged.Count > 0);
-            
+
             if (!forceBreak && merged.Count > 0 && merged[^1].role == role)
             {
                 // Same role as previous - merge content
@@ -260,17 +260,32 @@ public class PromptManager : IExposable
                 },
                 new()
                 {
-                    Name = "JSON Format",
-                    Role = PromptRole.System,
-                    Position = PromptPosition.Relative,
-                    Content = Constant.JsonInstruction + "\n{{ if settings.ApplyMoodAndSocialEffects }}\n" + Constant.SocialInstruction + "\n{{ end }}"
-                },
-                new()
-                {
                     Name = "Context",
                     Role = PromptRole.System,
                     Position = PromptPosition.Relative,
                     Content = "{{context}}"
+                },
+                // {{pawn.fullinteraction}} is in the variable catalogue and the settings
+                // autocomplete, but no default preset ever referenced it, so it never
+                // ran. It is the closest thing RimTalk has to episodic memory, grounded
+                // in events the game recorded rather than anything the model invented,
+                // and it excludes RimTalk's own log entries so it cannot echo the chat
+                // history back.
+                new()
+                {
+                    Name = "Recent Events",
+                    Role = PromptRole.System,
+                    Position = PromptPosition.Relative,
+                    Content = "{{pawn.fullinteraction}}"
+                },
+                // Format LAST, closest to generation. A conversational system prompt
+                // loosens formatting, and RimTalk drops any line it cannot parse.
+                new()
+                {
+                    Name = "JSON Format",
+                    Role = PromptRole.System,
+                    Position = PromptPosition.Relative,
+                    Content = Constant.JsonInstruction + "\n{{ if settings.ApplyMoodAndSocialEffects }}\n" + Constant.SocialInstruction + "\n{{ end }}"
                 },
                 // 2. History Section
                 new()
@@ -299,7 +314,7 @@ public class PromptManager : IExposable
         Presets.Clear();
         VariableStore.Clear();
         InitializeDefaults();
-        
+
         // Clear blacklist so mod entries can be re-added on next startup
         foreach (var preset in Presets)
         {
@@ -335,7 +350,7 @@ public class PromptManager : IExposable
                     string.Equals(e.Name, "Legacy Custom Instruction", StringComparison.OrdinalIgnoreCase));
             }
         }
-        
+
         // Don't initialize defaults here - game systems may not be ready
         // Defaults will be initialized lazily when needed
     }
@@ -359,7 +374,7 @@ public class PromptManager : IExposable
         {
             talkRequest.Participants = pawns;
         }
-        
+
         // 1. Prepare shared context data
         var (dialogueType, intent, topic) = PromptContextProvider.GetDialogueTypeData(talkRequest, pawns);
         talkRequest.Context = PromptService.BuildContext(pawns, talkRequest.IsAnnouncement);
@@ -386,12 +401,12 @@ public class PromptManager : IExposable
             // Simple Mode: Use active preset but temporarily override Base Instruction
             baseEntry = preset.Entries.FirstOrDefault(e =>
                 string.Equals(e.Name, "Base Instruction", StringComparison.OrdinalIgnoreCase));
-            
+
             if (baseEntry != null)
             {
                 originalBaseContent = baseEntry.Content;
-                baseEntry.Content = string.IsNullOrWhiteSpace(settings.SimpleModeInstruction) 
-                    ? Constant.DefaultInstruction 
+                baseEntry.Content = string.IsNullOrWhiteSpace(settings.SimpleModeInstruction)
+                    ? Constant.DefaultInstruction
                     : settings.SimpleModeInstruction;
             }
         }
@@ -450,7 +465,7 @@ public class PromptManager : IExposable
                 List<(Role role, string message)> history;
 
                 if (marker.Contains("history_simplified")) history = context.GetChatHistory(simplified: true);
-                else history = context.ChatHistory; 
+                else history = context.ChatHistory;
 
                 if (history != null)
                 {
@@ -461,7 +476,7 @@ public class PromptManager : IExposable
                         segments?.Add(new PromptMessageSegment(entry.Id, entry.Name ?? "History", role, message));
                     }
                 }
-                
+
                 if (!boundarySet) { systemBoundary = result.Count; boundarySet = true; }
                 lastHistoryIndex = result.Count;
                 continue;
@@ -472,10 +487,10 @@ public class PromptManager : IExposable
             {
                 var role = GetEffectiveRole(entry);
                 var finalContent = ApplyCustomRolePrefix(entry, content);
-                
+
                 result.Add((role, finalContent));
                 segments?.Add(new PromptMessageSegment(entry.Id, entry.Name ?? "Entry", (Role)role, finalContent));
-                
+
                 // systemBoundary is the end of the initial continuous block of system messages
                 if (!boundarySet && role != PromptRole.System)
                 {
@@ -484,7 +499,7 @@ public class PromptManager : IExposable
                 }
             }
         }
-        
+
         if (!boundarySet) systemBoundary = result.Count;
 
         // 2. Process InChat entries (Anchored to History)
@@ -495,16 +510,16 @@ public class PromptManager : IExposable
             {
                 var role = GetEffectiveRole(entry);
                 var finalContent = ApplyCustomRolePrefix(entry, content);
-                
+
                 // Calculate position relative to history end, clamped by system boundary
                 var insertIndex = Math.Max(systemBoundary, lastHistoryIndex - entry.InChatDepth);
-                
+
                 result.Insert(insertIndex, (role, finalContent));
                 segments?.Insert(insertIndex, new PromptMessageSegment(entry.Id, entry.Name ?? "Entry", (Role)role, finalContent));
-                
+
                 // Shift anchor and boundary forward since we increased the list size
                 if (insertIndex <= lastHistoryIndex) lastHistoryIndex++;
-                systemBoundary++; 
+                systemBoundary++;
             }
         }
 
