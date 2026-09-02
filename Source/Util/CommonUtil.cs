@@ -60,9 +60,12 @@ public static class CommonUtil
 
             return mapData;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // Return default data in case of an exception
+            // "N/A" for the time, the date, the season AND the weather is not a
+            // degraded prompt, it is a prompt with no world in it. Worth one line.
+            Logger.WarningOnce($"ingamedata:{ex.GetType().Name}",
+                $"In-game data unavailable, prompt will read N/A: {ex.Message}");
             return new InGameData
                 { Hour12HString = "N/A", DateString = "N/A", SeasonString = "N/A", WeatherString = "N/A" };
         }
@@ -175,25 +178,25 @@ public static class CommonUtil
         TimeSpeed currentGameSpeed = Find.TickManager.CurTimeSpeed;
         return (int)currentGameSpeed < settings.DisableAiAtSpeed;
     }
-    
+
     public static string Sanitize(string text, Pawn pawn = null)
     {
         if (pawn != null)
             text = text.Formatted(pawn.Named("PAWN")).AdjustedFor(pawn).Resolve();
         return text.StripTags().RemoveLineBreaks();
     }
-    
+
     public static string StripFormattingTags(string text)
     {
         if (string.IsNullOrEmpty(text))
             return text;
-    
+
         // Remove common RimWorld rich text tags
         text = Regex.Replace(text, @"<color[^>]*>|</color>", string.Empty);
         text = Regex.Replace(text, @"<b>|</b>", string.Empty);
         text = Regex.Replace(text, @"<i>|</i>", string.Empty);
         text = Regex.Replace(text, @"<size[^>]*>|</size>", string.Empty);
-    
+
         return text;
     }
 
@@ -201,18 +204,18 @@ public static class CommonUtil
     {
         if (string.IsNullOrEmpty(text))
             return Array.Empty<string>();
-            
+
         return text.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
     }
-    
+
     public static string[] SplitByString(string text, string separator)
     {
         if (string.IsNullOrEmpty(text))
             return Array.Empty<string>();
-            
+
         if (string.IsNullOrEmpty(separator))
             return new[] { text };
-            
+
         return text.Split(new[] { separator }, StringSplitOptions.None);
     }
 }

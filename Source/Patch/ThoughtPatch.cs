@@ -1,3 +1,4 @@
+using RimTalk.Util;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -40,7 +41,7 @@ public static class ThoughtTracker
         }
         catch
         {
-            return null; 
+            return null;
         }
 
 
@@ -100,9 +101,13 @@ public static class PatchMemoryThoughtHandlerTryGainMemory
         {
             moodImpact = newThought.MoodOffset();
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            return; // Skip this thought if another mod has issues
+            // Skipped, not silent. A thought that never reaches the prompt is a mood
+            // the pawn never mentions, and nothing connects the two.
+            Logger.WarningOnce($"mood:{newThought?.def?.defName}",
+                $"MoodOffset failed for {newThought?.def?.defName}: {ex.Message}");
+            return;
         }
 
         if (Math.Abs(moodImpact) < 3f)
@@ -132,7 +137,7 @@ public static class PatchThoughtHandlerGetDistinctMoodThoughtGroups
         {
             return;
         }
-        
+
         if (__instance.pawn == null || !__instance.pawn.Spawned)
             return;
 
