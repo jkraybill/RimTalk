@@ -121,14 +121,36 @@ public static class TalkMemory
     /// The spoken half of some exchanges, as one line. Null when there was no speech
     /// in them — a run of envelopes with no replies compresses to nothing, correctly.
     /// </summary>
+    public const string DigestHeader = "Earlier, these were said:";
+
+    /// <summary>
+    /// The newest lines a digest keeps. CollapseAll stores each night's digest as an AI
+    /// turn, so without a cap one turn grows by a day's speech every night for the life
+    /// of the colony; with one, the oldest lines fall off the digest the way the oldest
+    /// exchanges fall off the verbatim block.
+    /// </summary>
+    public const int MaxDigestLines = 24;
+
     public static string Digest(IEnumerable<(Role, string)> turns)
     {
-        var said = (turns ?? Enumerable.Empty<(Role, string)>())
-            .Where(t => t.Item1 == Role.AI && !string.IsNullOrWhiteSpace(t.Item2))
-            .Select(t => t.Item2.Trim())
-            .ToList();
+        var said = new List<string>();
+        foreach (var t in turns ?? Enumerable.Empty<(Role, string)>())
+        {
+            if (t.Item1 != Role.AI || string.IsNullOrWhiteSpace(t.Item2)) continue;
+            var text = t.Item2.Trim();
+            // A turn that is itself an earlier digest contributes its lines, not itself.
+            // Nine nights of nesting shipped as nine headers, each two spaces deeper, at
+            // the top of every prompt (rim-universe S177, read off Player.log).
+            if (text.StartsWith(DigestHeader))
+                said.AddRange(text.Substring(DigestHeader.Length).Split('\n')
+                                  .Select(l => l.Trim()).Where(l => l.Length > 0));
+            else
+                said.Add(text);
+        }
+        said = said.Distinct().ToList();
+        if (said.Count > MaxDigestLines) said.RemoveRange(0, said.Count - MaxDigestLines);
         if (said.Count == 0) return null;
 
-        return "Earlier, these were said:\n" + string.Join("\n", said.Select(s => "  " + s));
+        return DigestHeader + "\n" + string.Join("\n", said.Select(s => "  " + s));
     }
 }
