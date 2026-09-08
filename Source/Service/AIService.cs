@@ -54,6 +54,17 @@ public static class AIService
 
                         var newLog = ApiHistory.AddResponse(apiLog.Id, response.Text, response.Name,
                             response.InteractionRaw, elapsedMs: elapsedMs);
+                        if (newLog == null)
+                        {
+                            // The request's history row is gone: a game load cleared ApiHistory
+                            // under a stream still arriving (RimTalk.Clear), or the row was
+                            // trimmed. Nothing tracks this request any more, so its lines are
+                            // dropped rather than shown in a colony they were not asked about.
+                            // Before this every such line was a NullReferenceException logged as
+                            // "Failed to parse stream chunk" with the chunk's JSON.
+                            Logger.Debug($"Streamed line for {response.Name} arrived after its request left the history; dropped.");
+                            return;
+                        }
 
                         response.Id = newLog.Id;
                         lastApiLog = newLog;
@@ -80,7 +91,14 @@ public static class AIService
                     var newLog = ApiHistory.AddResponse(apiLog.Id, response.Text, response.Name,
                         response.InteractionRaw, payload: null, elapsedMs: elapsedMs,
                         targetName: response.TargetName);
-                    
+                    if (newLog == null)
+                    {
+                        // Same as above: the row went with a load or a trim; the answer
+                        // belongs to a request nothing tracks, so it is not shown.
+                        Logger.Debug($"Streamed line for {response.Name} arrived after its request left the history; dropped.");
+                        return;
+                    }
+
                     response.Id = newLog.Id;
                     lastApiLog = newLog;
 
