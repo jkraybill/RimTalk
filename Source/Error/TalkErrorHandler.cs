@@ -48,6 +48,25 @@ public static class AIErrorHandler
         }
         catch (Exception ex)
         {
+            // rim-universe #105: a request that received nothing streamed nothing, so it is asked
+            // once more on the same provider before any message; the stall is usually gone.
+            if (RetryPolicy.RetrySameProvider(ex, 0))
+            {
+                Logger.Warning($"{RetryPolicy.Describe(ex)}; nothing arrived, asking the same provider once more");
+                try
+                {
+                    return await operation();
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception again)
+                {
+                    ex = again;
+                }
+            }
+
             // If request had an image and failed, retry once silently without the image
             var currentReq = AIService.CurrentRequest;
             if (!string.IsNullOrEmpty(currentReq?.ImageBase64))
@@ -148,7 +167,8 @@ public static class AIErrorHandler
 
     private static void ShowGenerationWarning(Exception ex)
     {
-        Logger.Warning(ex.StackTrace);
+        // rim-universe #105: the stack alone could not tell a first-byte timeout from a stall mid-stream.
+        Logger.Warning($"{RetryPolicy.Describe(ex)}\n{ex.StackTrace}");
         PendingMessages.Enqueue(() =>
         {
             string message = $"{"RimTalk.TalkService.GenerationFailed".Translate()}: {ex.Message}";

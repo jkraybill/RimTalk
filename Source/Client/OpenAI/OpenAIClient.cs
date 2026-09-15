@@ -315,6 +315,10 @@ public class OpenAIClient(
         ulong lastBytes = 0;
         float connectTimeout = isLocal ? 300f : 60f;
         float readTimeout = 60f;
+        // rim-universe #105: the real wait and the pause state go into a first-byte failure,
+        // because a failure while paused is only shown once the game ticks again.
+        var started = System.Diagnostics.Stopwatch.StartNew();
+        bool startedPaused = Find.TickManager?.Paused ?? false;
 
         while (!asyncOp.isDone)
         {
@@ -342,7 +346,8 @@ public class OpenAIClient(
             if (!hasStartedReceiving && inactivityTimer > connectTimeout)
             {
                 webRequest.Abort();
-                throw new TimeoutException($"Connection timed out (Waited {connectTimeout}s for first token)");
+                throw new global::RimTalk.Error.FirstByteTimeoutException(connectTimeout, started.Elapsed.TotalSeconds,
+                    startedPaused, Find.TickManager?.Paused ?? false);
             }
 
             if (hasStartedReceiving && inactivityTimer > readTimeout)
