@@ -202,44 +202,18 @@ public class PromptManager : IExposable
 
     /// <summary>
     /// Merges consecutive messages with the same role into a single message.
-    /// This improves compatibility with APIs that require strict role alternation (e.g., Gemini).
-    /// Messages at or after <paramref name="mergeBoundary"/> are treated as a new group -
-    /// they will not be merged with messages before the boundary, even if roles match.
+    /// Preserves strict role alternation required by APIs like Gemini.
     /// This prevents chat history messages from being merged with the current prompt.
     /// </summary>
     /// <param name="messages">Original message list</param>
     /// <param name="mergeBoundary">Index at which to force a merge break (e.g. after chat history).
     /// Messages before and after this index will never be merged together.</param>
     /// <returns>Merged message list</returns>
-    private static List<(PromptRole role, string content)> MergeConsecutiveRoles(
+    internal static List<(PromptRole role, string content)> MergeConsecutiveRoles(
         List<(PromptRole role, string content)> messages,
         int mergeBoundary = -1)
     {
-        if (messages == null || messages.Count <= 1)
-            return messages;
-
-        var merged = new List<(PromptRole role, string content)>();
-        
-        for (int i = 0; i < messages.Count; i++)
-        {
-            var (role, content) = messages[i];
-            // Force a break at the merge boundary: don't merge across it
-            bool forceBreak = (mergeBoundary >= 0 && i == mergeBoundary && merged.Count > 0);
-            
-            if (!forceBreak && merged.Count > 0 && merged[^1].role == role)
-            {
-                // Same role as previous - merge content
-                var last = merged[^1];
-                merged[^1] = (role, last.content + "\n\n" + content);
-            }
-            else
-            {
-                // Different role or forced break - add as new message
-                merged.Add((role, content));
-            }
-        }
-
-        return merged;
+        return PromptMessageRoleMerger.MergeConsecutiveRoles(messages, mergeBoundary);
     }
 
     /// <summary>
@@ -276,6 +250,7 @@ public class PromptManager : IExposable
         {
             InitializeDefaults();
         }
+        CleanOrphanedModEntries();
     }
 
     // Creates default preset - entry order is determined by list position (drag-to-reorder like SillyTavern)
@@ -371,9 +346,11 @@ public class PromptManager : IExposable
         Presets ??= new List<PromptPreset>();
         VariableStore ??= new VariableStore();
 
-        // Migration: Fix legacy chat history markers
+        // Migration: Fix legacy chat history markers and clean up orphaned mod entries
         if (Scribe.mode == LoadSaveMode.PostLoadInit || Scribe.mode == LoadSaveMode.LoadingVars)
         {
+            CleanOrphanedModEntries();
+
             foreach (var preset in Presets)
             {
                 // If no entry is marked as history, but we have one with the legacy content tag
@@ -393,6 +370,36 @@ public class PromptManager : IExposable
         
         // Don't initialize defaults here - game systems may not be ready
         // Defaults will be initialized lazily when needed
+    }
+
+    /// <summary>
+    /// Removes entries and presets belonging to mods that are no longer active or installed.
+    /// </summary>
+    public void CleanOrphanedModEntries()
+    {
+        if (Presets == null || Presets.Count == 0) return;
+
+        // Remove presets whose source mod is no longer active
+        Presets.RemoveAll(p => !string.IsNullOrEmpty(p.SourceModId) && !IsModActive(p.SourceModId));
+
+        foreach (var preset in Presets)
+        {
+            if (preset?.Entries == null) continue;
+            preset.Entries.RemoveAll(e => !string.IsNullOrEmpty(e.SourceModId) && !IsModActive(e.SourceModId));
+        }
+    }
+
+    private static bool IsModActive(string packageId)
+    {
+        if (string.IsNullOrEmpty(packageId)) return false;
+        try
+        {
+            return ModsConfig.IsActive(packageId);
+        }
+        catch
+        {
+            return true; // Fail safe: preserve entries in test or uninitialized environments
+        }
     }
 
     /// <summary>Sets the singleton instance (for loading settings)</summary>
@@ -433,44 +440,25 @@ public class PromptManager : IExposable
         PromptPreset preset = GetActivePreset();
         if (preset == null) preset = CreateDefaultPreset();
 
-        string originalBaseContent = null;
-        PromptEntry baseEntry = null;
-
+        PromptPreset effectivePreset;
         if (!settings.UseAdvancedPromptMode)
         {
-            // Simple Mode: Use active preset but temporarily override Base Instruction
-            baseEntry = preset.Entries.FirstOrDefault(e =>
-                string.Equals(e.Name, "Base Instruction", StringComparison.OrdinalIgnoreCase));
-            
-            if (baseEntry != null)
-            {
-                originalBaseContent = baseEntry.Content;
-                baseEntry.Content = string.IsNullOrWhiteSpace(settings.SimpleModeInstruction) 
-                    ? Constant.DefaultInstruction 
-                    : settings.SimpleModeInstruction;
-            }
+            // Simple Mode: Exclude user-added custom entries, keep built-in & active addon entries
+            effectivePreset = PromptPresetAssembler.BuildSimpleModePreset(
+                preset,
+                settings.SimpleModeInstruction,
+                Constant.DefaultInstruction,
+                Constant.JsonInstruction + "\n{{ if settings.ApplyMoodAndSocialEffects }}\n" + Constant.SocialInstruction + "\n{{ end }}");
+        }
+        else
+        {
+            effectivePreset = preset;
         }
 
         // 4. Reset session variables and build
         ScribanParser.ResetSessionVariables();
         var segments = new List<PromptMessageSegment>();
-        List<(PromptRole role, string content)> messages;
-        try
-        {
-            messages = BuildMessagesFromPreset(preset, context, segments);
-        }
-        finally
-        {
-            // Simple mode overwrites the user's saved Base Instruction in place to
-            // render. Scriban templates are user-editable and reach live game state,
-            // so a throw here is ordinary -- and without this finally it would leave
-            // the preset permanently holding the simple-mode text, silently and
-            // stickily, because the next call reads the corrupted value as "original".
-            if (baseEntry != null && originalBaseContent != null)
-            {
-                baseEntry.Content = originalBaseContent;
-            }
-        }
+        var messages = BuildMessagesFromPreset(effectivePreset, context, segments);
 
         talkRequest.PromptMessageSegments = segments.Count > 0 ? segments : null;
 
@@ -497,93 +485,20 @@ public class PromptManager : IExposable
         PromptContext context,
         List<PromptMessageSegment> segments)
     {
-        var result = new List<(PromptRole role, string content)>();
-        int lastHistoryIndex = 0;
-        int systemBoundary = 0;
-        bool boundarySet = false;
-
-        static PromptRole GetEffectiveRole(PromptEntry entry)
+        var markerEntry = preset.Entries.FirstOrDefault(e => e.Enabled && e.Position == PromptPosition.Relative && e.IsMainChatHistory);
+        List<(Role role, string message)> history = null;
+        if (markerEntry != null)
         {
-            return string.IsNullOrWhiteSpace(entry.CustomRole) ? entry.Role : PromptRole.User;
+            var marker = markerEntry.Content.Trim().ToLowerInvariant();
+            history = marker.Contains("history_simplified")
+                ? context.GetChatHistory(simplified: true)
+                : context.ChatHistory;
         }
 
-        static string ApplyCustomRolePrefix(PromptEntry entry, string content)
-        {
-            if (string.IsNullOrWhiteSpace(entry.CustomRole)) return content;
-            return $"[role: {entry.CustomRole}]\n{content}";
-        }
-
-        // 1. Process Relative entries in defined order (System/History/Prompt)
-        foreach (var entry in preset.Entries.Where(e => e.Enabled && e.Position == PromptPosition.Relative))
-        {
-            if (entry.IsMainChatHistory)
-            {
-                // Detect variant from content
-                var marker = entry.Content.Trim().ToLowerInvariant();
-                List<(Role role, string message)> history;
-
-                if (marker.Contains("history_simplified")) history = context.GetChatHistory(simplified: true);
-                else history = context.ChatHistory; 
-
-                if (history != null)
-                {
-                    foreach (var (role, message) in history)
-                    {
-                        var pRole = (PromptRole)role;
-                        result.Add((pRole, message));
-                        segments?.Add(new PromptMessageSegment(entry.Id, entry.Name ?? "History", role, message));
-                    }
-                }
-                
-                if (!boundarySet) { systemBoundary = result.Count; boundarySet = true; }
-                lastHistoryIndex = result.Count;
-                continue;
-            }
-
-            var content = ScribanParser.Render(entry.Content, context);
-            if (!string.IsNullOrWhiteSpace(content))
-            {
-                var role = GetEffectiveRole(entry);
-                var finalContent = ApplyCustomRolePrefix(entry, content);
-                
-                result.Add((role, finalContent));
-                segments?.Add(new PromptMessageSegment(entry.Id, entry.Name ?? "Entry", (Role)role, finalContent));
-                
-                // systemBoundary is the end of the initial continuous block of system messages
-                if (!boundarySet && role != PromptRole.System)
-                {
-                    systemBoundary = result.Count - 1;
-                    boundarySet = true;
-                }
-            }
-        }
-        
-        if (!boundarySet) systemBoundary = result.Count;
-
-        // 2. Process InChat entries (Anchored to History)
-        foreach (var entry in preset.GetInChatEntries())
-        {
-            var content = ScribanParser.Render(entry.Content, context);
-            if (!string.IsNullOrWhiteSpace(content))
-            {
-                var role = GetEffectiveRole(entry);
-                var finalContent = ApplyCustomRolePrefix(entry, content);
-                
-                // Calculate position relative to history end, clamped by system boundary
-                var insertIndex = Math.Max(systemBoundary, lastHistoryIndex - entry.InChatDepth);
-                
-                result.Insert(insertIndex, (role, finalContent));
-                segments?.Insert(insertIndex, new PromptMessageSegment(entry.Id, entry.Name ?? "Entry", (Role)role, finalContent));
-                
-                // Shift anchor and boundary forward since we increased the list size
-                if (insertIndex <= lastHistoryIndex) lastHistoryIndex++;
-                systemBoundary++; 
-            }
-        }
-
-        // Pass lastHistoryIndex as merge boundary to prevent chat history messages
-        // from being merged with the current prompt (e.g. historical User + current User).
-        // lastHistoryIndex points to the end of chat history in the result list.
-        return MergeConsecutiveRoles(result, lastHistoryIndex);
+        return PromptPresetAssembler.AssembleMessages(
+            preset,
+            content => ScribanParser.Render(content, context),
+            history,
+            segments);
     }
 }

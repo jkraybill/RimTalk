@@ -3,6 +3,7 @@ using System.Collections;
 using System.IO;
 using System.Linq;
 using HarmonyLib;
+using RimTalk.UI;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -36,6 +37,8 @@ public static class VisionUtil
     {
         try
         {
+            SpeechBubbleDrawer.Clear();
+
             var bubblerType = AccessTools.TypeByName("Bubbles.Core.Bubbler");
             if (bubblerType != null)
             {
@@ -285,6 +288,19 @@ public class CoroutineRunner : MonoBehaviour
                 _instance = go.AddComponent<CoroutineRunner>();
             }
             return _instance;
+        }
+    }
+}
+
+[HarmonyPatch(typeof(UIRoot_Play), nameof(UIRoot_Play.UIRootOnGUI))]
+public static class VisionOverlayPatch
+{
+    [HarmonyPostfix]
+    public static void Postfix()
+    {
+        if (UI.Overlay.SuppressForScreenshot && Event.current.type == EventType.Repaint)
+        {
+            VisionUtil.DrawThingOverlays();
         }
     }
 }

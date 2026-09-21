@@ -4,8 +4,8 @@ using System.Linq;
 using System.Reflection;
 using HarmonyLib;
 using RimTalk.Data;
+using RimTalk.Service;
 using RimTalk.Source.Data;
-using RimTalk.Util;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -60,22 +60,20 @@ public class Overlay : MapComponent
 
     private List<CachedMessageLine> _cachedMessagesForLog;
     private bool _isCacheDirty = true;
+    private float _statusDotFade;
+    private string _lastStatusTooltipKey;
 
     private const float OptionsBarHeight = 30f;
     private const float ResizeHandleSize = 24f;
     private const float DropdownWidth = 200f;
-    private const float DropdownHeight = 345f;
+    private const float DropdownHeight = 350f;
     private const int MaxMessagesInLog = 10;
     private const float TextPadding = 5f;
     private const float MaxNameColumnFraction = 0.45f;
     private const float MinimumDialogueWidth = 120f;
     private const float LineVerticalPadding = 2f;
     private const string LeftBracket = "[";
-    private const string Direction = " -> ";
     private const string RightBracket = "]";
-
-    private static bool _externalDialogueFormatterResolved;
-    private static MethodInfo _externalDialogueFormatter;
 
     private static readonly Color AnnounceBgColor = new(0.8f, 0.5f, 0.0f, 0.18f);
     private static readonly Color AnnounceNameColor = new(1.0f, 0.78f, 0.2f);
@@ -93,43 +91,9 @@ public class Overlay : MapComponent
         _isCacheDirty = true;
     }
 
-    private static string BuildFinalRichText(string text)
-    {
-        text ??= string.Empty;
-
-        if (!_externalDialogueFormatterResolved)
-        {
-            _externalDialogueFormatterResolved = true;
-            var formatterType = AccessTools.TypeByName("RimTalkDynamicColors.DynamicColorMod");
-            var formatter = formatterType == null
-                ? null
-                : AccessTools.Method(formatterType, "ColorizeString", [typeof(string)]);
-
-            if (formatter is { IsStatic: true } && formatter.ReturnType == typeof(string))
-            {
-                _externalDialogueFormatter = formatter;
-            }
-        }
-
-        if (_externalDialogueFormatter == null) return text;
-
-        try
-        {
-            return _externalDialogueFormatter.Invoke(null, [text]) as string ?? text;
-        }
-        catch
-        {
-            // A compatibility formatter must never prevent the overlay from rendering.
-            _externalDialogueFormatter = null;
-            return text;
-        }
-    }
-
-    private static void SplitParticipantNames(string combinedName, string explicitTargetName,
-        out string speakerName, out string targetName)
+    private static string ExtractSpeakerName(string combinedName)
     {
         string candidate = TrimOuterBrackets(combinedName);
-        targetName = TrimOuterBrackets(explicitTargetName);
 
         int separatorIndex = candidate.IndexOf("->", StringComparison.Ordinal);
         int separatorLength = 2;
@@ -139,21 +103,18 @@ public class Overlay : MapComponent
             separatorLength = 1;
         }
 
-        if (separatorIndex > 0 && separatorIndex + separatorLength < candidate.Length)
-        {
-            speakerName = candidate[..separatorIndex].Trim();
-            if (string.IsNullOrWhiteSpace(targetName))
-            {
-                targetName = candidate[(separatorIndex + separatorLength)..].Trim();
-            }
-        }
-        else
-        {
-            speakerName = candidate;
-        }
+        string speakerName = separatorIndex > 0 && separatorIndex + separatorLength < candidate.Length
+            ? candidate[..separatorIndex].Trim()
+            : candidate;
 
-        if (string.IsNullOrWhiteSpace(speakerName)) speakerName = "Unknown";
-        if (string.IsNullOrWhiteSpace(targetName) || string.Equals(speakerName, targetName, StringComparison.OrdinalIgnoreCase)) targetName = null;
+        return string.IsNullOrWhiteSpace(speakerName) ? "Unknown" : speakerName;
+    }
+
+    private static void SplitParticipantNames(string combinedName, string explicitTargetName,
+        out string speakerName, out string targetName)
+    {
+        speakerName = ExtractSpeakerName(combinedName);
+        targetName = null;
     }
 
     private static string TrimOuterBrackets(string value)
@@ -227,11 +188,10 @@ public class Overlay : MapComponent
     private static string FitDialogueToHeight(string rawDialogue, float width, float maxHeight)
     {
         rawDialogue ??= string.Empty;
-        string fullDialogue = BuildFinalRichText(rawDialogue);
-        if (CalcRichTextHeight(fullDialogue, width) <= maxHeight) return fullDialogue;
+        if (CalcRichTextHeight(rawDialogue, width) <= maxHeight) return rawDialogue;
 
         const string ellipsis = "…";
-        string bestDialogue = BuildFinalRichText(ellipsis);
+        string bestDialogue = ellipsis;
         int low = 0;
         int high = rawDialogue.Length;
 
@@ -240,11 +200,10 @@ public class Overlay : MapComponent
             int middle = (low + high) / 2;
             int safeLength = GetSafeSubstringLength(rawDialogue, middle);
             string candidate = rawDialogue[..safeLength].TrimEnd() + ellipsis;
-            string formattedCandidate = BuildFinalRichText(candidate);
 
-            if (CalcRichTextHeight(formattedCandidate, width) <= maxHeight)
+            if (CalcRichTextHeight(candidate, width) <= maxHeight)
             {
-                bestDialogue = formattedCandidate;
+                bestDialogue = candidate;
                 low = middle + 1;
             }
             else
@@ -256,46 +215,17 @@ public class Overlay : MapComponent
         return bestDialogue;
     }
 
-    private static void CalculateParticipantLayout(string speakerName, string targetName, float maxNameWidth,
-        out string speakerLabel, out string targetLabel, out float leftBracketWidth, out float speakerWidth,
-        out float directionWidth, out float targetWidth, out float rightBracketWidth, out float nameWidth)
+    private static void CalculateParticipantLayout(string speakerName, float maxNameWidth,
+        out string speakerLabel, out float leftBracketWidth, out float speakerWidth,
+        out float rightBracketWidth, out float nameWidth)
     {
         leftBracketWidth = Text.CalcSize(LeftBracket).x;
-        directionWidth = targetName == null ? 0f : Text.CalcSize(Direction).x;
         rightBracketWidth = Text.CalcSize(RightBracket).x;
 
-        float availableNameWidth = Mathf.Max(1f,
-            maxNameWidth - leftBracketWidth - directionWidth - rightBracketWidth);
-        float naturalSpeakerWidth = Text.CalcSize(speakerName).x;
-        float naturalTargetWidth = targetName == null ? 0f : Text.CalcSize(targetName).x;
-
-        float speakerLimit = availableNameWidth;
-        float targetLimit = 0f;
-        if (targetName != null)
-        {
-            float halfWidth = availableNameWidth * 0.5f;
-            if (naturalSpeakerWidth <= halfWidth)
-            {
-                speakerLimit = naturalSpeakerWidth;
-                targetLimit = availableNameWidth - speakerLimit;
-            }
-            else if (naturalTargetWidth <= halfWidth)
-            {
-                targetLimit = naturalTargetWidth;
-                speakerLimit = availableNameWidth - targetLimit;
-            }
-            else
-            {
-                speakerLimit = halfWidth;
-                targetLimit = halfWidth;
-            }
-        }
-
-        speakerLabel = ClampSingleLineWithEllipsis(speakerName, speakerLimit);
-        targetLabel = targetName == null ? null : ClampSingleLineWithEllipsis(targetName, targetLimit);
+        float availableNameWidth = Mathf.Max(1f, maxNameWidth - leftBracketWidth - rightBracketWidth);
+        speakerLabel = ClampSingleLineWithEllipsis(speakerName, availableNameWidth);
         speakerWidth = Text.CalcSize(speakerLabel).x;
-        targetWidth = targetLabel == null ? 0f : Text.CalcSize(targetLabel).x;
-        nameWidth = leftBracketWidth + speakerWidth + directionWidth + targetWidth + rightBracketWidth;
+        nameWidth = leftBracketWidth + speakerWidth + rightBracketWidth;
     }
 
     public override void MapRemoved()
@@ -318,8 +248,6 @@ public class Overlay : MapComponent
         {
             Text.Font = gameFont;
             Text.fontStyles[(int)gameFont].fontSize = (int)settings.OverlayFontSize;
-            Text.Anchor = TextAnchor.UpperLeft;
-
             float contentWidth = settings.OverlayRectNonDebug.width - 10f;
             float contentHeight = Mathf.Max(1f, settings.OverlayRectNonDebug.height - 10f);
             float maxNameWidth = Mathf.Max(1f, Mathf.Min(
@@ -335,16 +263,12 @@ public class Overlay : MapComponent
 
             foreach (var message in messages)
             {
-                SplitParticipantNames(message.Name, message.TargetName, out string speakerName, out string targetName);
-                if (!settings.OverlayShowTargetName)
-                {
-                    targetName = null;
-                }
+                string speakerName = ExtractSpeakerName(message.Name);
 
-                CalculateParticipantLayout(speakerName, targetName, maxNameWidth,
-                    out string speakerLabel, out string targetLabel,
-                    out float leftBracketWidth, out float speakerWidth, out float directionWidth,
-                    out float targetWidth, out float rightBracketWidth, out float nameWidth);
+                CalculateParticipantLayout(speakerName, maxNameWidth,
+                    out string speakerLabel,
+                    out float leftBracketWidth, out float speakerWidth,
+                    out float rightBracketWidth, out float nameWidth);
 
                 newCache.Add(new CachedMessageLine
                 {
@@ -352,14 +276,14 @@ public class Overlay : MapComponent
                     PawnInstance = FindPawn(speakerName, message.TalkRequest),
                     SpeakerName = speakerName,
                     SpeakerLabel = speakerLabel,
-                    TargetName = targetName,
-                    TargetLabel = targetLabel,
-                    TargetPawnInstance = FindPawn(targetName, message.TalkRequest),
+                    TargetName = null,
+                    TargetLabel = null,
+                    TargetPawnInstance = null,
                     RawDialogue = message.Response ?? string.Empty,
                     LeftBracketWidth = leftBracketWidth,
                     SpeakerWidth = speakerWidth,
-                    DirectionWidth = directionWidth,
-                    TargetWidth = targetWidth,
+                    DirectionWidth = 0f,
+                    TargetWidth = 0f,
                     RightBracketWidth = rightBracketWidth,
                     NameWidth = nameWidth,
                     TalkType = message.TalkRequest?.TalkType ?? TalkType.Other,
@@ -386,11 +310,10 @@ public class Overlay : MapComponent
                     // message when it cannot fit even with every older row omitted.
                     line.Dialogue = i == 0
                         ? FitDialogueToHeight(line.RawDialogue, dialogueWidth, maxLatestDialogueHeight)
-                        : BuildFinalRichText(line.RawDialogue);
+                        : line.RawDialogue;
 
                     float dialogueHeight = CalcRichTextHeight(line.Dialogue, dialogueWidth);
-                    float nameHeight = Text.CalcSize(LeftBracket + line.SpeakerLabel +
-                        (line.TargetLabel == null ? string.Empty : Direction + line.TargetLabel) + RightBracket).y;
+                    float nameHeight = Text.CalcSize(LeftBracket + line.SpeakerLabel + RightBracket).y;
                     line.LineHeight = Mathf.Max(dialogueHeight, nameHeight) + LineVerticalPadding;
 
                     if (i == 0) line.LineHeight = Mathf.Min(line.LineHeight, contentHeight);
@@ -446,7 +369,7 @@ public class Overlay : MapComponent
         _gearIconScreenRect.Set(currentOverlayRect.xMax - iconSize - 5f, currentOverlayRect.y + 2f, iconSize, iconSize);
 
         float dropdownY = _gearIconScreenRect.yMax;
-        
+
         // Check if the dropdown would go off the bottom of the screen
         if (dropdownY + DropdownHeight > Verse.UI.screenHeight)
         {
@@ -456,8 +379,8 @@ public class Overlay : MapComponent
 
         _settingsDropdownRect.Set(
             _gearIconScreenRect.x - DropdownWidth + _gearIconScreenRect.width,
-            dropdownY, 
-            DropdownWidth, 
+            dropdownY,
+            DropdownWidth,
             DropdownHeight
         );
 
@@ -468,7 +391,7 @@ public class Overlay : MapComponent
         HandleInput(ref currentOverlayRect);
 
         bool isMouseOver = Mouse.IsOver(currentOverlayRect);
-        
+
         GUI.BeginGroup(currentOverlayRect);
         var inRect = new Rect(Vector2.zero, currentOverlayRect.size);
 
@@ -477,6 +400,8 @@ public class Overlay : MapComponent
         var contentRect = new Rect(inRect.x, inRect.y, inRect.width, inRect.height);
 
         DrawMessageLog(contentRect);
+
+        DrawStatusIndicator(inRect);
 
         if (isMouseOver)
         {
@@ -493,6 +418,86 @@ public class Overlay : MapComponent
         if (_showSettingsDropdown)
         {
             DrawSettingsDropdown();
+        }
+    }
+
+
+    private void DrawStatusIndicator(Rect inRect)
+    {
+        var settings = Settings.Get();
+        if (settings.OverlayIndicatorMode == RimTalkSettings.OverlayIndicatorType.Disabled)
+            return;
+        if (Event.current.type is not EventType.Repaint) return;
+
+        bool isBusy = AIService.IsBusy();
+        int pendingCount = isBusy ? 0 : TalkService.PendingTalksCount;
+        bool hasPending = pendingCount > 0;
+        bool isActive = isBusy || hasPending;
+
+        float targetFade = isActive ? 1f : 0f;
+        _statusDotFade = Mathf.MoveTowards(_statusDotFade, targetFade, Time.unscaledDeltaTime * 6f);
+
+        const int numSegments = 3;
+        const float segWidth = 8f;
+        const float segHeight = 2.5f;
+        const float segGap = 3f;
+        float startX = inRect.x;
+        float startY = inRect.height - segHeight;
+
+        var hitRect = new Rect(inRect.x, inRect.height - 10f, 36f, 10f);
+
+        if (isBusy)
+        {
+            _lastStatusTooltipKey = "RimTalk.Overlay.StatusGenerating";
+        }
+        else if (hasPending)
+        {
+            _lastStatusTooltipKey = "RimTalk.Overlay.StatusPendingTalks";
+        }
+
+        // 1) Always draw 3 dim chassis slots (housing frame)
+        Color slotHousingColor = new Color(1f, 1f, 1f, 0.15f);
+        for (int i = 0; i < numSegments; i++)
+        {
+            Rect segRect = new Rect(startX + i * (segWidth + segGap), startY, segWidth, segHeight);
+            Widgets.DrawBoxSolid(segRect, slotHousingColor);
+        }
+
+        // 2) Draw active glowing lights
+        for (int i = 0; i < numSegments; i++)
+        {
+            Rect segRect = new Rect(startX + i * (segWidth + segGap), startY, segWidth, segHeight);
+
+            if (isBusy)
+            {
+                // Sine chase wave across the 3 slots
+                float time = Time.realtimeSinceStartup * 4.5f;
+                float phase = time - i * 1.05f;
+                float wave = Mathf.Sin(phase);
+                float segAlpha = Mathf.Clamp01(Mathf.Max(0f, wave)) * _statusDotFade;
+                if (segAlpha > 0.01f)
+                {
+                    Widgets.DrawBoxSolid(segRect, new Color(0.35f, 0.70f, 1.0f, segAlpha));
+                }
+            }
+            else if (hasPending)
+            {
+                // Fixed 3-slot queue buffer: immediate 1:1 visual on talk consume
+                if (i < pendingCount)
+                {
+                    Widgets.DrawBoxSolid(segRect, new Color(0.35f, 0.85f, 0.45f, 0.85f * _statusDotFade));
+                }
+            }
+        }
+
+        if (_statusDotFade > 0.1f && !string.IsNullOrEmpty(_lastStatusTooltipKey))
+        {
+            string tipText = _lastStatusTooltipKey.Translate();
+            if (hasPending)
+            {
+                tipText += $" ({pendingCount})";
+            }
+            TooltipHandler.TipRegion(hitRect, tipText);
         }
     }
 
@@ -599,10 +604,35 @@ public class Overlay : MapComponent
         TooltipHandler.TipRegion(localIconRect, "RimTalk.Overlay.Option".Translate());
     }
 
-    private void DrawSettingsCheckbox(Listing_Standard listing, string label, bool initialValue, Action<bool> onValueChanged)
+    private static bool DrawTinyButtonText(Rect rect, string label)
     {
+        bool clicked = Widgets.ButtonText(rect, string.Empty);
+        var prevAnchor = Text.Anchor;
+        var prevFont = Text.Font;
+        Text.Anchor = TextAnchor.MiddleCenter;
+        Text.Font = GameFont.Tiny;
+        Widgets.Label(rect, label);
+        Text.Font = prevFont;
+        Text.Anchor = prevAnchor;
+        return clicked;
+    }
+
+    private void DrawSettingsCheckbox(Listing_Standard listing, string label, bool initialValue, Action<bool> onValueChanged, string tooltipKey = null)
+    {
+        Text.Font = GameFont.Tiny;
+        var rowRect = listing.GetRect(24f);
+        if (Mouse.IsOver(rowRect))
+        {
+            Widgets.DrawHighlight(rowRect);
+        }
+
+        if (!string.IsNullOrEmpty(tooltipKey))
+        {
+            TooltipHandler.TipRegion(rowRect, tooltipKey.Translate());
+        }
+
         bool currentValue = initialValue;
-        listing.CheckboxLabeled(label, ref currentValue);
+        Widgets.CheckboxLabeled(rowRect, label, ref currentValue);
         if (currentValue != initialValue)
         {
             onValueChanged(currentValue);
@@ -615,136 +645,130 @@ public class Overlay : MapComponent
 
         Widgets.DrawBoxSolid(_settingsDropdownRect, new Color(0.15f, 0.15f, 0.15f, 0.95f));
 
-        var listing = new Listing_Standard();
-        listing.Begin(_settingsDropdownRect.ContractedBy(10f));
+        var originalFont = Text.Font;
 
-        DrawSettingsCheckbox(listing, "RimTalk.DebugWindow.EnableRimTalk".Translate(), settings.IsEnabled, value =>
+        try
         {
-            settings.IsEnabled = value;
-            settings.Write();
-        });
-        
-        listing.Gap(6);
-        
-        DrawSettingsCheckbox(listing, "RimTalk.Overlay.DrawAboveUI".Translate(), settings.OverlayDrawAboveUI, value =>
-        {
-            settings.OverlayDrawAboveUI = value;
-            settings.Write();
-        });
+            var listing = new Listing_Standard();
+            listing.Begin(_settingsDropdownRect.ContractedBy(10f));
+            Text.Font = GameFont.Tiny;
 
-        listing.Gap(6);
-
-        DrawSettingsCheckbox(listing, "RimTalk.Overlay.ShowGroupColors".Translate(), settings.OverlayShowGroupColors, value =>
-        {
-            settings.OverlayShowGroupColors = value;
-            settings.Write();
-        });
-
-        listing.Gap(6);
-
-        DrawSettingsCheckbox(listing, "RimTalk.Overlay.ShowTargetName".Translate(), settings.OverlayShowTargetName, value =>
-        {
-            settings.OverlayShowTargetName = value;
-            _isCacheDirty = true;
-            settings.Write();
-        });
-
-        listing.Gap(6);
-
-        DrawSettingsCheckbox(listing, "RimTalk.Overlay.AlignNameColumn".Translate(), settings.OverlayAlignNameColumn, value =>
-        {
-            settings.OverlayAlignNameColumn = value;
-            _isCacheDirty = true;
-            settings.Write();
-        });
-
-        listing.Gap(6);
-
-        listing.Label("RimTalk.Overlay.Opacity".Translate() + ": " + settings.OverlayOpacity.ToString("P0"));
-        settings.OverlayOpacity = listing.Slider(settings.OverlayOpacity, 0f, 1.0f);
-
-        listing.Label("RimTalk.Overlay.FontSize".Translate() + ": " + settings.OverlayFontSize.ToString("F0"));
-        float newFontSize = listing.Slider(Mathf.Round(settings.OverlayFontSize), 10f, 24f);
-        if (Mathf.Round(newFontSize) != Mathf.Round(settings.OverlayFontSize))
-        {
-            _isCacheDirty = true;
-            settings.OverlayFontSize = newFontSize;
-        }
-
-        listing.Gap(10);
-
-        Rect buttonRowRect = listing.GetRect(28f);
-        const float buttonGap = 4f;
-        float buttonWidth = (buttonRowRect.width - buttonGap) / 2f;
-
-        var debugRect = new Rect(buttonRowRect.x, buttonRowRect.y, buttonWidth, buttonRowRect.height);
-        var settingsButtonRect = new Rect(debugRect.xMax + buttonGap, buttonRowRect.y, buttonWidth, buttonRowRect.height);
-
-        if (Widgets.ButtonText(debugRect, "RimTalk.Overlay.Debug".Translate()))
-        {
-            if (!Find.WindowStack.IsOpen<DebugWindow>())
+            DrawSettingsCheckbox(listing, "RimTalk.DebugWindow.EnableRimTalk".Translate(), settings.IsEnabled, value =>
             {
-                Find.WindowStack.Add(new DebugWindow());
+                settings.IsEnabled = value;
+                settings.Write();
+            }, "RimTalk.Overlay.EnableRimTalkTooltip");
+
+            listing.Gap(6);
+
+            DrawSettingsCheckbox(listing, "RimTalk.Overlay.DrawAboveUI".Translate(), settings.OverlayDrawAboveUI, value =>
+            {
+                settings.OverlayDrawAboveUI = value;
+                settings.Write();
+            }, "RimTalk.Overlay.DrawAboveUITooltip");
+
+            listing.Gap(6);
+
+            DrawSettingsCheckbox(listing, "RimTalk.Overlay.ShowGroupColors".Translate(), settings.OverlayShowGroupColors, value =>
+            {
+                settings.OverlayShowGroupColors = value;
+                settings.Write();
+            }, "RimTalk.Overlay.ShowGroupColorsTooltip");
+
+            listing.Gap(6);
+
+            DrawSettingsCheckbox(listing, "RimTalk.Overlay.AlignNameColumn".Translate(), settings.OverlayAlignNameColumn, value =>
+            {
+                settings.OverlayAlignNameColumn = value;
+                _isCacheDirty = true;
+                settings.Write();
+            }, "RimTalk.Overlay.AlignNameColumnTooltip");
+
+            listing.Gap(6);
+
+            bool indicatorEnabled = settings.OverlayIndicatorMode != RimTalkSettings.OverlayIndicatorType.Disabled;
+            DrawSettingsCheckbox(listing, "RimTalk.Overlay.StatusIndicator".Translate(), indicatorEnabled, value =>
+            {
+                settings.OverlayIndicatorMode = value 
+                    ? RimTalkSettings.OverlayIndicatorType.BottomLedChase 
+                    : RimTalkSettings.OverlayIndicatorType.Disabled;
+                settings.Write();
+            }, "RimTalk.Overlay.StatusIndicatorTooltip");
+
+            listing.Gap(10);
+
+            Text.Font = GameFont.Tiny;
+            listing.Label("RimTalk.Overlay.Opacity".Translate() + ": " + settings.OverlayOpacity.ToString("P0"));
+            settings.OverlayOpacity = listing.Slider(settings.OverlayOpacity, 0f, 1.0f);
+
+            Text.Font = GameFont.Tiny;
+            listing.Label("RimTalk.Overlay.FontSize".Translate() + ": " + settings.OverlayFontSize.ToString("F0"));
+            float newFontSize = listing.Slider(Mathf.Round(settings.OverlayFontSize), 10f, 24f);
+            if (Mathf.Round(newFontSize) != Mathf.Round(settings.OverlayFontSize))
+            {
+                _isCacheDirty = true;
+                settings.OverlayFontSize = newFontSize;
             }
-            _showSettingsDropdown = false;
-        }
 
-        if (Widgets.ButtonText(settingsButtonRect, "RimTalk.DebugWindow.ModSettings".Translate()))
+            listing.Gap(10);
+
+            Rect buttonRowRect = listing.GetRect(28f);
+            const float buttonGap = 4f;
+            float buttonWidth = (buttonRowRect.width - buttonGap) / 2f;
+
+            var bubbleSettingsBtnRect = new Rect(buttonRowRect.x, buttonRowRect.y, buttonWidth, buttonRowRect.height);
+            var settingsButtonRect = new Rect(bubbleSettingsBtnRect.xMax + buttonGap, buttonRowRect.y, buttonWidth, buttonRowRect.height);
+
+            if (DrawTinyButtonText(bubbleSettingsBtnRect, "RimTalk.BubbleSettings.Button".Translate()))
+            {
+                Find.WindowStack.Add(new Dialog_BubbleSettings());
+                _showSettingsDropdown = false;
+            }
+            TooltipHandler.TipRegion(bubbleSettingsBtnRect, "RimTalk.BubbleSettings.OpenTooltip".Translate());
+
+            if (DrawTinyButtonText(settingsButtonRect, "RimTalk.DebugWindow.ModSettings".Translate()))
+            {
+                Find.WindowStack.Add(new Dialog_ModSettings(LoadedModManager.GetMod<Settings>()));
+                _showSettingsDropdown = false;
+            }
+
+            listing.Gap(6);
+
+            Rect bottomRowRect = listing.GetRect(28f);
+            var debugRect = new Rect(bottomRowRect.x, bottomRowRect.y, buttonWidth, bottomRowRect.height);
+            var turnOffRect = new Rect(debugRect.xMax + buttonGap, bottomRowRect.y, buttonWidth, bottomRowRect.height);
+
+            if (DrawTinyButtonText(debugRect, "RimTalk.Overlay.Debug".Translate()))
+            {
+                if (!Find.WindowStack.IsOpen<DebugWindow>())
+                {
+                    Find.WindowStack.Add(new DebugWindow());
+                }
+                _showSettingsDropdown = false;
+            }
+
+            if (DrawTinyButtonText(turnOffRect, "RimTalk.Overlay.TurnOff".Translate()))
+            {
+                settings.OverlayEnabled = false;
+                settings.Write();
+                _showSettingsDropdown = false;
+            }
+            TooltipHandler.TipRegion(turnOffRect, "RimTalk.Overlay.TurnOffTooltip".Translate());
+
+            listing.End();
+        }
+        finally
         {
-            Find.WindowStack.Add(new Dialog_ModSettings(LoadedModManager.GetMod<Settings>()));
-            _showSettingsDropdown = false;
+            Text.Font = originalFont;
         }
-
-
-        listing.Gap(6);
-
-        Rect turnOffRect = listing.GetRect(28f);
-        if (Widgets.ButtonText(turnOffRect, "RimTalk.Overlay.TurnOff".Translate()))
-        {
-            settings.OverlayEnabled = false;
-            settings.Write();
-            _showSettingsDropdown = false;
-        }
-        TooltipHandler.TipRegion(turnOffRect, "RimTalk.Overlay.TurnOffTooltip".Translate());
-
-        listing.End();
     }
 
-    private static void DrawCachedLabel(Rect rect, string text)
-    {
-        // Keep Widgets.Label outside DrawMessageLog so compatibility transpilers cannot
-        // transform the already measured rich text a second time at the call site.
-        Widgets.Label(rect, text);
-    }
 
     private static void DrawParticipants(Rect rowRect, CachedMessageLine message)
     {
-        float currentX = rowRect.x;
-
-        if (message.TargetName == null)
-        {
-            float totalPawnLabelWidth = message.LeftBracketWidth + message.SpeakerWidth + message.RightBracketWidth;
-            var speakerRect = new Rect(currentX, rowRect.y, totalPawnLabelWidth, rowRect.height);
-            UIUtil.DrawClickablePawnName(speakerRect, message.SpeakerLabel, message.PawnInstance, includeBrackets: true);
-        }
-        else
-        {
-            DrawCachedLabel(new Rect(currentX, rowRect.y, message.LeftBracketWidth, rowRect.height), LeftBracket);
-            currentX += message.LeftBracketWidth;
-
-            var speakerRect = new Rect(currentX, rowRect.y, message.SpeakerWidth, rowRect.height);
-            UIUtil.DrawClickablePawnName(speakerRect, message.SpeakerLabel, message.PawnInstance, false);
-            currentX += message.SpeakerWidth;
-
-            DrawCachedLabel(new Rect(currentX, rowRect.y, message.DirectionWidth, rowRect.height), Direction);
-            currentX += message.DirectionWidth;
-
-            var targetRect = new Rect(currentX, rowRect.y, message.TargetWidth, rowRect.height);
-            UIUtil.DrawClickablePawnName(targetRect, message.TargetLabel, message.TargetPawnInstance, false);
-            currentX += message.TargetWidth;
-
-            DrawCachedLabel(new Rect(currentX, rowRect.y, message.RightBracketWidth, rowRect.height), RightBracket);
-        }
+        float totalPawnLabelWidth = message.LeftBracketWidth + message.SpeakerWidth + message.RightBracketWidth;
+        var speakerRect = new Rect(rowRect.x, rowRect.y, totalPawnLabelWidth, rowRect.height);
+        UIUtil.DrawClickablePawnName(speakerRect, message.SpeakerLabel, message.PawnInstance, includeBrackets: true);
     }
 
     private void DrawMessageLog(Rect inRect)
@@ -774,6 +798,7 @@ public class Overlay : MapComponent
             for (int i = 0; i < _cachedMessagesForLog.Count; i++)
             {
                 var message = _cachedMessagesForLog[i];
+
                 float remainingHeight = currentY - contentRect.y;
                 if (i > 0 && message.LineHeight > remainingHeight) break;
 
@@ -802,7 +827,7 @@ public class Overlay : MapComponent
                     GUI.color = AnnounceNameColor;
                     DrawParticipants(rowRect, message);
                     GUI.color = AnnounceTextColor;
-                    DrawCachedLabel(dialogueRect, message.Dialogue);
+                    Widgets.Label(dialogueRect, message.Dialogue);
                     GUI.color = Color.white;
                 }
                 else if (message.IsUserEntered && message.TalkType == TalkType.User)
@@ -810,13 +835,13 @@ public class Overlay : MapComponent
                     GUI.color = UserNameColor;
                     DrawParticipants(rowRect, message);
                     GUI.color = UserTextColor;
-                    DrawCachedLabel(dialogueRect, message.Dialogue);
+                    Widgets.Label(dialogueRect, message.Dialogue);
                     GUI.color = Color.white;
                 }
                 else
                 {
                     DrawParticipants(rowRect, message);
-                    DrawCachedLabel(dialogueRect, message.Dialogue);
+                    Widgets.Label(dialogueRect, message.Dialogue);
                 }
             }
         }
@@ -857,10 +882,6 @@ public static class OverlayPatch
     {
         if (Overlay.SuppressForScreenshot)
         {
-            if (Event.current.type == EventType.Repaint)
-            {
-                VisionUtil.DrawThingOverlays();
-            }
             return;
         }
 

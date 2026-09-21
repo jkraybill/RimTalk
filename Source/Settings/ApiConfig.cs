@@ -1,4 +1,7 @@
+using System.Collections.Generic;
+using RimTalk.Client.Player2;
 using RimTalk.Data;
+using RimTalk.Util;
 using Verse;
 
 namespace RimTalk;
@@ -22,48 +25,68 @@ public class ApiConfig : IExposable
         Scribe_Values.Look(ref CustomModelName, "customModelName", "");
         Scribe_Values.Look(ref BaseUrl, "baseUrl", "");
         Scribe_Values.Look(ref CustomRequestJson, "customRequestJson", "");
+
+        if (Scribe.mode == LoadSaveMode.PostLoadInit && !string.IsNullOrWhiteSpace(CustomRequestJson))
+        {
+            if (CustomRequestJson.Trim() == GetDefaultRequestJson().Trim())
+            {
+                CustomRequestJson = "";
+            }
+        }
     }
 
     public string GetEffectiveModelName()
     {
         if (Provider == AIProvider.Local)
-            return !string.IsNullOrWhiteSpace(CustomModelName) ? CustomModelName : "Local";
+            return CustomModelName ?? "";
 
         return SelectedModel == "Custom" ? CustomModelName : SelectedModel;
     }
 
-    public string GetDefaultRequestJson()
+    public string GetDetectedThinkingLevel()
     {
-        var model = GetEffectiveModelName();
-        if (!string.IsNullOrEmpty(model))
+        var settings = Settings.Get();
+        if (settings?.DetectedThinkingLevels != null)
         {
-            string m = model.ToLower();
-            if (m.Contains("gemini") && (m.Contains("pro") || m.Contains("3.7-flash")))
-            {
-                return "{\n  \"reasoning_effort\": \"low\"\n}";
-            }
-            if ((m.Contains("gemini") && m.Contains("flash")) || m.Contains("gemma-4"))
-            {
-                return "{\n  \"reasoning_effort\": \"minimal\"\n}";
-            }
+            string modelName = GetEffectiveModelName();
+            if (modelName.StartsWith("models/")) modelName = modelName.Substring(7);
+            string key = $"{Provider}_{modelName}";
+            if (settings.DetectedThinkingLevels.TryGetValue(key, out var level))
+                return level;
+        }
+        return null;
+    }
+
+    public Dictionary<string, object> GetDefaultRequestDict()
+    {
+        var dict = new Dictionary<string, object>();
+        string level = GetDetectedThinkingLevel();
+
+        if (level == "disabled")
+        {
+            dict["thinking"] = new Dictionary<string, object> { ["type"] = "disabled" };
+        }
+        else if (!string.IsNullOrEmpty(level) && level != "standard")
+        {
+            dict["reasoning_effort"] = level;
         }
 
-        return "{}";
+        return dict;
+    }
+
+    public string GetDefaultRequestJson()
+    {
+        var dict = GetDefaultRequestDict();
+        return dict.Count > 0 ? JsonUtil.SerializeJsonValue(dict, indent: true) : "{}";
     }
 
     public bool IsValid()
     {
         if (!IsEnabled) return false;
-            
-        if (Settings.Get().UseCloudProviders)
-        {
-            // Player2 can work without API key (local app detection)
-            if (Provider == AIProvider.Player2)
-                return SelectedModel != Constant.ChooseModel;
-                
-            return !string.IsNullOrWhiteSpace(ApiKey) && SelectedModel != Constant.ChooseModel;
-        }
-        else
-            return !string.IsNullOrWhiteSpace(BaseUrl);
+        if (Provider == AIProvider.Local) return !string.IsNullOrWhiteSpace(BaseUrl);
+        bool hasKey = !string.IsNullOrWhiteSpace(ApiKey);
+        if (Provider == AIProvider.Player2)
+            return (hasKey || Player2Client.GetLocalAppStatusCached() == true) && SelectedModel != Constant.ChooseModel;
+        return hasKey && SelectedModel != Constant.ChooseModel;
     }
 }

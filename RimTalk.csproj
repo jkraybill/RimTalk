@@ -14,7 +14,6 @@
         <OutputPath>$(GameVersion)/Assemblies</OutputPath>
         <ModFolderName>RimTalk</ModFolderName>
         <LangVersion>default</LangVersion>
-        <EnableBubbles>true</EnableBubbles>
     </PropertyGroup>
 
     <!-- Define version constants based on GameVersion -->
@@ -32,6 +31,9 @@
     <ItemGroup>
         <PackageReference Include="Lib.Harmony.Ref" Version="2.*" PrivateAssets="All"/>
         <PackageReference Include="IndexRange" Version="1.0.3" />
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+            <_Parameter1>RimTalk.Tests</_Parameter1>
+        </AssemblyAttribute>
     </ItemGroup>
 
     <!-- Use reference assemblies by default (for other users and CI) -->
@@ -56,17 +58,14 @@
         </Reference>
     </ItemGroup>
 
-    <!-- Remove BubblePatch.cs when bubble is disabled -->
-    <ItemGroup Condition=" '$(EnableBubbles)' == 'false' ">
-        <Compile Remove="Source/Patch/BubblePatch.cs"/>
+    <!-- Exclude test source code from mod compilation, but keep folder visible in IDE -->
+    <ItemGroup>
+        <Compile Remove="Tests/**" />
+        <None Include="Tests/**" />
     </ItemGroup>
 
     <!-- Include External Libraries -->
     <ItemGroup>
-        <Reference Include="Bubbles" Condition=" '$(EnableBubbles)' == 'true' ">
-            <HintPath>Libs/Bubbles.dll</HintPath>
-            <Private>false</Private>
-        </Reference>
         <Reference Include="Scriban">
             <HintPath>Libs/Scriban.dll</HintPath>
             <Private>true</Private>

@@ -21,6 +21,11 @@ internal static class TickManagerPatch
     private static bool _chatHistoryCleared;
     private static int _lastTalkEndTick;
 
+    internal static void MarkCacheRefreshed()
+    {
+        _initialCacheRefresh = true;
+    }
+
     public static void Postfix()
     {
         Counter.Tick++;
@@ -76,82 +81,108 @@ internal static class TickManagerPatch
 
         if (IsNow(1))
         {
-            // Fast-track requests: User-initiated talks (priority 1), Interactions (priority 2)
-            while (UserRequestPool.GetNextUserRequest() is { } pawn)
-            {
-                var pawnState = Cache.Get(pawn);
-                if (pawnState == null)
-                {
-                    UserRequestPool.Remove(pawn);
-                    continue;
-                }
-                var request = pawnState.GetNextTalkRequest();
-                
-                if (request == null)
-                {
-                    UserRequestPool.Remove(pawn);
-                    continue;
-                }
-
-                if (AIService.IsBusy())
-                {
-                    if (AIService.CanCancelFor(request))
-                        AIService.CancelCurrent();
-                    return;
-                }
-
-                TalkService.GenerateTalk(request);
-                UserRequestPool.Remove(pawn);
-                return;
-            }
+            ProcessFastTrackRequests();
         }
 
+        ProcessRegularTalkRequests();
+    }
+
+    private static void ProcessRegularTalkRequests()
+    {
         if (AIService.IsBusy())
         {
-            _lastTalkEndTick = GenTicks.TicksGame;
+            if (AIService.CurrentRequest == null || !AIService.CurrentRequest.TalkType.IsFastTrack())
+            {
+                _lastTalkEndTick = GenTicks.TicksGame;
+            }
             return;
         }
 
         int intervalTicks = CommonUtil.GetTicksForDuration(TalkInterval);
-        if (intervalTicks > 0 && GenTicks.TicksGame - _lastTalkEndTick >= intervalTicks)
+        if (intervalTicks <= 0 || GenTicks.TicksGame - _lastTalkEndTick < intervalTicks)
+            return;
+
+        // Select a pawn based on the current iteration strategy
+        Pawn selectedPawn = PawnSelector.SelectNextAvailablePawn();
+
+        if (selectedPawn != null)
         {
-            // Select a pawn based on the current iteration strategy
-            Pawn selectedPawn = PawnSelector.SelectNextAvailablePawn();
+            // Own queue before the pool. rim-universe #40: the pool holds map-wide
+            // events whose Initiator is overwritten with whoever was selected, so a
+            // pool line is something this pawn merely witnessed. Answering a witnessed
+            // event before the remark you just made yourself is what put the courtship
+            // in the log after the line about the sick knot.
+            var pawnState = Cache.Get(selectedPawn);
+            var ownRequest = pawnState?.GetNextTalkRequest();
+            var talkGenerated = ownRequest != null && TalkService.GenerateTalk(ownRequest);
 
-            if (selectedPawn != null)
+            // 2. Then the general pool.
+            if (!talkGenerated)
+                talkGenerated = TryGenerateTalkFromPool(selectedPawn);
+
+            // 3. Fallback: generate based on current context if nothing else worked.
+            //
+            // Upstream passes a null prompt here, so the model has nothing but the
+            // profile and the environment envelope -- which is why untopiced dialogue
+            // is all weather, meals and bedrolls. A conversation with no topic cannot
+            // have a SMALL topic, so there is nothing for the situation to collide
+            // with either (#34, #35). rim-universe #38.
+            //
+            // Seeded from what the pawn is actually doing. Thin, but real, and it is
+            // replaced by a Need (#30) once those exist.
+            if (!talkGenerated)
             {
-                // Own queue before the pool. rim-universe #40: the pool holds map-wide
-                // events whose Initiator is overwritten with whoever was selected, so a
-                // pool line is something this pawn merely witnessed. Answering a
-                // witnessed event before the remark you just made yourself is what put
-                // the courtship in the log after the line about the sick knot.
-                var pawnState = Cache.Get(selectedPawn);
-                var ownRequest = pawnState?.GetNextTalkRequest();
-
-                var talkGenerated = ownRequest != null && TalkService.GenerateTalk(ownRequest);
-
-                if (!talkGenerated)
-                    talkGenerated = TryGenerateTalkFromPool(selectedPawn);
-
-                // 3. Fallback: generate based on current context if nothing else worked.
-                //
-                // This used to pass a null prompt, so the model had nothing but the
-                // profile and the environment envelope -- which is why untopiced
-                // dialogue is all weather, meals and bedrolls. A conversation with no
-                // topic cannot have a SMALL topic, so there is nothing for the
-                // situation to collide with either (#34, #35). rim-universe #38.
-                //
-                // Seeded from what the pawn is actually doing. Thin, but real, and it
-                // is replaced by a Need (#30) once those exist.
-                if (!talkGenerated)
-                {
-                    TalkRequest talkRequest = new TalkRequest(FallbackTopic(selectedPawn), selectedPawn);
-                    TalkService.GenerateTalk(talkRequest);
-                }
+                TalkRequest talkRequest = new TalkRequest(FallbackTopic(selectedPawn), selectedPawn, talkType: TalkType.Chitchat);
+                TalkService.GenerateTalk(talkRequest);
             }
-            
-            _lastTalkEndTick = GenTicks.TicksGame;
         }
+
+        _lastTalkEndTick = GenTicks.TicksGame;
+    }
+
+    private static void ProcessFastTrackRequests()
+    {
+        while (UserRequestPool.GetNextUserRequest() is { } pawn)
+        {
+            var pawnState = Cache.Get(pawn);
+            if (pawnState == null)
+            {
+                UserRequestPool.Remove(pawn);
+                continue;
+            }
+            var request = pawnState.GetNextTalkRequest();
+
+            if (request == null)
+            {
+                UserRequestPool.Remove(pawn);
+                continue;
+            }
+
+            if (AIService.IsBusy())
+            {
+                if (AIService.CanCancelFor(request))
+                {
+                    AIService.CancelCurrent();
+                }
+                else if (request.TalkType == TalkType.Interaction)
+                {
+                    DropQueuedRequest(pawn, pawnState, request);
+                    continue;
+                }
+                return;
+            }
+
+            TalkService.GenerateTalk(request);
+            UserRequestPool.Remove(pawn);
+            return;
+        }
+    }
+
+    private static void DropQueuedRequest(Pawn pawn, PawnState state, TalkRequest request)
+    {
+        UserRequestPool.Remove(pawn);
+        state.TalkRequests.Remove(request);
+        TalkRequestPool.AddToHistory(request, RequestStatus.Expired);
     }
 
     /// <summary>
@@ -175,7 +206,12 @@ internal static class TickManagerPatch
         // If the pawn is a free colonist not in danger and the pool has requests
         if (!pawn.IsFreeNonSlaveColonist || pawn.IsQuestLodger() || TalkRequestPool.IsEmpty || pawn.IsInDanger(true)) return false;
         var request = TalkRequestPool.GetRequestFromPool(pawn);
-        return request != null && TalkService.GenerateTalk(request);
+        if (request != null && TalkService.GenerateTalk(request))
+        {
+            TalkRequestPool.Remove(request);
+            return true;
+        }
+        return false;
     }
 
     private static bool IsNow(double interval)

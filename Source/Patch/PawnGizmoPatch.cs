@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using HarmonyLib;
 using RimTalk.UI;
 using RimTalk.Util;
@@ -12,54 +11,68 @@ namespace RimTalk.Patch
     [HarmonyPatch(typeof(Pawn), "GetGizmos")]
     public static class PawnGizmoPatch
     {
+        private static Texture2D _chatGizmoIcon, _announceGizmoIcon;
+        private static Texture2D ChatGizmoIcon => UIUtil.GetTexture(ref _chatGizmoIcon, "UI/ChatGizmo");
+        private static Texture2D AnnounceGizmoIcon => UIUtil.GetTexture(ref _announceGizmoIcon, "UI/AnnounceGizmo");
+
+        private static TaggedString CachedAnnounceLabel => "RimTalk.Gizmo.Announce".Translate();
+
         [HarmonyPostfix]
         public static void Postfix(Pawn __instance, ref IEnumerable<Gizmo> __result)
         {
             if (__instance == null) return;
-            if (!Settings.Get().AllowCustomConversation) return;
-            if (Settings.Get().PlayerDialogueMode == Settings.PlayerDialogueMode.Disabled) return;
-            if (!__instance.Spawned || __instance.Dead) return;
-            if (!__instance.IsTalkEligible()) return;
-            if (__instance.IsPlayer()) return;
 
             var selector = Find.Selector;
-            if (selector.SelectedPawns.Count != 1) return;
+            if (selector.SelectedPawns.Count != 1 || selector.SingleSelectedThing != __instance) return;
 
-            var list = (__result != null) ? __result.ToList() : new List<Gizmo>();
+            var settings = Settings.Get();
+            if (!settings.AllowCustomConversation) return;
+            if (settings.PlayerDialogueMode == Settings.PlayerDialogueMode.Disabled) return;
+            if (!__instance.Spawned || __instance.Dead) return;
+            if (__instance.IsPlayer()) return;
+            if (!__instance.IsTalkEligible()) return;
+
+            __result = AddRimTalkGizmos(__result, __instance, settings.AllowAnnouncement);
+        }
+
+        private static IEnumerable<Gizmo> AddRimTalkGizmos(IEnumerable<Gizmo> original, Pawn targetPawn, bool allowAnnouncement)
+        {
+            if (original != null)
+            {
+                foreach (var gizmo in original)
+                {
+                    yield return gizmo;
+                }
+            }
 
             // Chat gizmo — player talks to this pawn
-            var chatCmd = new Command_Action
+            yield return new Command_Action
             {
-                defaultLabel = "RimTalk.Gizmo.ChatWithTarget".Translate(__instance.LabelShort),
-                defaultDesc = "RimTalk.Gizmo.ChatWithTargetDesc".Translate(__instance.LabelShort),
-                icon = ContentFinder<Texture2D>.Get("UI/ChatGizmo", true),
+                defaultLabel = "RimTalk.Gizmo.ChatWithTarget".Translate(targetPawn.LabelShort),
+                defaultDesc = "RimTalk.Gizmo.ChatWithTargetDesc".Translate(targetPawn.LabelShort),
+                icon = ChatGizmoIcon,
                 action = () =>
                 {
                     Pawn player = Cache.GetPlayer();
                     if (player == null) return;
-                    Find.WindowStack.Add(new CustomDialogueWindow(player, __instance, DialogueMode.Direct));
+                    Find.WindowStack.Add(new CustomDialogueWindow(player, targetPawn, DialogueMode.Direct));
                 }
             };
 
             // Announce gizmo — pawn announces to nearby, no player involved
-            // Player uses tab-toggle inside the chat window instead
-            var announceCmd = new Command_Action
+            if (allowAnnouncement)
             {
-                defaultLabel = "RimTalk.Gizmo.Announce".Translate(),
-                defaultDesc = "RimTalk.Gizmo.AnnounceDesc".Translate(__instance.LabelShort),
-                icon = ContentFinder<Texture2D>.Get("UI/AnnounceGizmo", true),
-                action = () =>
+                yield return new Command_Action
                 {
-                    Find.WindowStack.Add(new CustomDialogueWindow(__instance, __instance, DialogueMode.Announce));
-                }
-            };
-
-            list.Add(chatCmd);
-            if (Settings.Get().AllowAnnouncement)
-            {
-                list.Add(announceCmd);
+                    defaultLabel = CachedAnnounceLabel,
+                    defaultDesc = "RimTalk.Gizmo.AnnounceDesc".Translate(targetPawn.LabelShort),
+                    icon = AnnounceGizmoIcon,
+                    action = () =>
+                    {
+                        Find.WindowStack.Add(new CustomDialogueWindow(targetPawn, targetPawn, DialogueMode.Announce));
+                    }
+                };
             }
-            __result = list;
         }
     }
 }

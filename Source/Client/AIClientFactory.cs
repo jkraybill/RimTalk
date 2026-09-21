@@ -12,6 +12,9 @@ public static class AIClientFactory
 {
     private static IAIClient _instance;
     private static AIProvider _currentProvider;
+    private static string _currentApiKey;
+    private static string _currentModel;
+    private static string _currentBaseUrl;
 
     /// <summary>
     /// Async method for getting AI client - required for Player2 local detection
@@ -24,10 +27,19 @@ public static class AIClientFactory
             return null;
         }
 
-        if (_instance == null || _currentProvider != config.Provider)
+        var effectiveModel = config.GetEffectiveModelName();
+        if (_instance == null || _currentProvider != config.Provider || _currentApiKey != config.ApiKey 
+            || _currentModel != effectiveModel || _currentBaseUrl != config.BaseUrl)
         {
             _instance = await CreateServiceInstanceAsync(config);
             _currentProvider = config.Provider;
+            _currentApiKey = config.ApiKey;
+            _currentModel = effectiveModel;
+            _currentBaseUrl = config.BaseUrl;
+        }
+        else if (_instance is Player2Client p2)
+        {
+            p2.SetFallbackApiKey(config.ApiKey);
         }
 
         return _instance;
@@ -45,14 +57,14 @@ public static class AIClientFactory
         switch (config.Provider)
         {
             case AIProvider.Player2: return await Player2Client.CreateAsync(config.ApiKey, config.CustomRequestJson);
-            case AIProvider.Local:   return new OpenAIClient(config.BaseUrl, config.CustomModelName, customRequestJson: config.CustomRequestJson);
-            case AIProvider.Custom:  return new OpenAIClient(config.BaseUrl, config.CustomModelName, config.ApiKey, customRequestJson: config.CustomRequestJson);
+            case AIProvider.Local:   return new OpenAIClient(config.BaseUrl, model, null, null, config.CustomRequestJson, config.Provider);
+            case AIProvider.Custom:  return new OpenAIClient(config.BaseUrl, model, config.ApiKey, null, config.CustomRequestJson, config.Provider);
         }
 
         // 2. Handle Standard Clients via Registry
         if (AIProviderRegistry.Defs.TryGetValue(config.Provider, out var def))
         {
-            return new OpenAIClient(def.EndpointUrl, model, config.ApiKey, def.ExtraHeaders, customRequestJson: config.CustomRequestJson);
+            return new OpenAIClient(def.EndpointUrl, model, config.ApiKey, def.ExtraHeaders, config.CustomRequestJson, config.Provider);
         }
 
         return null;
@@ -69,5 +81,8 @@ public static class AIClientFactory
         }
         _instance = null;
         _currentProvider = AIProvider.None;
+        _currentApiKey = null;
+        _currentModel = null;
+        _currentBaseUrl = null;
     }
 }

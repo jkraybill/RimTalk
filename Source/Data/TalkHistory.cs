@@ -68,6 +68,8 @@ public static class TalkHistory
     public static void AddIgnored(Guid id)
     {
         IgnoredTickCache.TryAdd(id, GenTicks.TicksGame);
+        var log = ApiHistory.GetApiLog(id);
+        log?.SpokenTick = -1;
         Prune();
     }
 

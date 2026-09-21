@@ -26,11 +26,11 @@ public class PromptPreset : IExposable
     public bool IsActive;
 
     /// <summary>
-    /// The mod that registered this preset through RimTalkPromptAPI.RegisterPreset,
-    /// sanitized the way entry ids are. Null for presets the player made.
+    /// Source mod's package ID (null means user-created or built-in). Also what
+    /// RimTalkPromptAPI.RegisterPreset stamps, sanitized the way entry ids are.
     /// </summary>
     public string SourceModId;
-    
+
     /// <summary>
     /// Set of deleted mod entry IDs. Entries with these IDs will not be re-added by mods.
     /// Uses the deterministic ID (e.g., "mod_mymod_myentry") directly.

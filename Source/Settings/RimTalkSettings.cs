@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using RimTalk.Client.Player2;
 using RimTalk.Data;
 using RimTalk.Prompt;
 using UnityEngine;
@@ -15,21 +15,76 @@ public class RimTalkSettings : ModSettings
     public ApiConfig LocalConfig = new() { Provider = AIProvider.Local };
     public bool UseCloudProviders = true;
     public bool UseSimpleConfig = true;
+    public AIProvider SimpleProvider = AIProvider.Google;
     public string SimpleApiKey = "";
+    public string SimplePlayer2ApiKey = "";
     public bool IsUsingFallbackModel = false;
     public bool IsEnabled = true;
     public int TalkInterval = 10;
     public int ReplyInterval = 4;
     public bool ProcessNonRimTalkInteractions = true;
     public bool AllowSimultaneousConversations = false;
-    public string SimpleModeInstruction = Constant.DefaultInstruction;
+    public string SimpleModeInstruction = null;
     public string CustomInstruction = "";
     
     // New Prompt System
     public PromptManager PromptSystem = new();
     public bool UseAdvancedPromptMode = false;  // Default to Simple Mode
+    
+    public enum BubbleDisplayMode
+    {
+        Native = 0,
+        InteractionBubbles = 1,
+        Disabled = 2
+    }
+
+    public enum SpeechBubbleTheme
+    {
+        Dark = 0,
+        Light = 1
+    }
+
+    public enum BorderThicknessMode
+    {
+        Thin = 0,
+        Normal = 1,
+        Thick = 2
+    }
+
+    public BubbleDisplayMode BubbleMode = BubbleDisplayMode.Native;
+    public SpeechBubbleTheme BubbleTheme = SpeechBubbleTheme.Light;
+    public BorderThicknessMode BubbleBorderThickness = BorderThicknessMode.Normal;
+    public GameFont BubbleFontSize = GameFont.Tiny;
+    public float BubbleCustomFontSize = 11f;
+    public float BubbleDurationMultiplier = 1f;
+    public float BubbleScale = 1f;
+    public float BubbleOpacity = 0.90f;
+    public float BubbleVerticalOffset = 1.0f;
+    public float BubblePadding = 0.5f;
+    public bool BubbleUseColors = true;
+    public bool BubbleUrgentShake = true;
+    public bool BubbleScaleWithZoom = false;
+
+    public void ResetBubbleSettings()
+    {
+        BubbleTheme = SpeechBubbleTheme.Light;
+        BubbleBorderThickness = BorderThicknessMode.Normal;
+        BubbleFontSize = GameFont.Tiny;
+        BubbleCustomFontSize = 11f;
+        BubbleDurationMultiplier = 1f;
+        BubbleScale = 1f;
+        BubbleOpacity = 0.90f;
+        BubbleVerticalOffset = 1.0f;
+        BubblePadding = 0.5f;
+        BubbleUseColors = true;
+        BubbleUrgentShake = true;
+        BubbleScaleWithZoom = false;
+    }
+
+    public bool? ShowQuickSettings = true;
     public Dictionary<string, bool> EnabledArchivableTypes = new();
     public Dictionary<string, bool> FastTrackInteractions = new();
+    public Dictionary<string, string> DetectedThinkingLevels = new();
     public bool DisplayTalkWhenDrafted = true;
     public bool AllowMonologue = true;
     public bool AllowSlavesToTalk = true;
@@ -37,6 +92,8 @@ public class RimTalkSettings : ModSettings
     public bool AllowOtherFactionsToTalk = false;
     public bool AllowEnemiesToTalk = false;
     public bool AllowCustomConversation = true;
+    public bool EnableDialoguePresets = false;
+    public string LastLoadedLanguage = null;
     public List<CustomDialoguePreset> DialoguePresets = [];
     public Settings.PlayerDialogueMode PlayerDialogueMode = Settings.PlayerDialogueMode.Manual;
     public string PlayerName = "Player";
@@ -65,8 +122,15 @@ public class RimTalkSettings : ModSettings
     public float OverlayOpacity = 0.5f;
     public float OverlayFontSize = 15f;
     public bool OverlayDrawAboveUI = true;
+    public OverlayIndicatorType OverlayIndicatorMode = OverlayIndicatorType.Disabled;
     public Rect OverlayRectDebug = new(200f, 200f, 600f, 450f);
     public Rect OverlayRectNonDebug = new(200f, 200f, 400f, 250f);
+
+    public enum OverlayIndicatorType
+    {
+        BottomLedChase,
+        Disabled
+    }
 
     /// <summary>
     /// Gets the first active and valid API configuration.
@@ -77,6 +141,21 @@ public class RimTalkSettings : ModSettings
     {
         if (UseSimpleConfig)
         {
+            if (SimpleProvider == AIProvider.Player2)
+            {
+                bool hasKey = !string.IsNullOrWhiteSpace(SimplePlayer2ApiKey);
+                bool isAppRunning = Player2Client.GetLocalAppStatusCached() == true;
+                if (!hasKey && !isAppRunning) return null;
+
+                return new ApiConfig
+                {
+                    ApiKey = SimplePlayer2ApiKey,
+                    Provider = AIProvider.Player2,
+                    SelectedModel = "Default",
+                    IsEnabled = true
+                };
+            }
+
             if (!string.IsNullOrWhiteSpace(SimpleApiKey))
             {
                 return new ApiConfig
@@ -160,19 +239,49 @@ public class RimTalkSettings : ModSettings
     {
         base.ExposeData();
 
-        Scribe_Values.Look(ref SimpleModeInstruction, "simpleModeInstruction", Constant.DefaultInstruction);
+        Scribe_Values.Look(ref SimpleModeInstruction, "simpleModeInstruction", null, true);
         Scribe_Values.Look(ref CustomInstruction, "customInstruction", "");
 
         Scribe_Collections.Look(ref CloudConfigs, "cloudConfigs", LookMode.Deep);
         Scribe_Deep.Look(ref LocalConfig, "localConfig");
         Scribe_Values.Look(ref UseCloudProviders, "useCloudProviders", true);
         Scribe_Values.Look(ref UseSimpleConfig, "useSimpleConfig", true);
+        Scribe_Values.Look(ref SimpleProvider, "simpleProvider", AIProvider.Google);
         Scribe_Values.Look(ref SimpleApiKey, "simpleApiKey", "");
+        Scribe_Values.Look(ref SimplePlayer2ApiKey, "simplePlayer2ApiKey", "");
         Scribe_Values.Look(ref IsEnabled, "isEnabled", true);
         Scribe_Values.Look(ref TalkInterval, "talkInterval", 10);
         Scribe_Values.Look(ref ReplyInterval, "replyInterval", 4);
         Scribe_Values.Look(ref ProcessNonRimTalkInteractions, "processNonRimTalkInteractions", true);
         Scribe_Values.Look(ref AllowSimultaneousConversations, "allowSimultaneousConversations", false);
+        BubbleDisplayMode? savedMode = BubbleMode;
+        Scribe_Values.Look(ref savedMode, "bubbleMode", null, true);
+        if (Scribe.mode == LoadSaveMode.LoadingVars)
+        {
+            if (savedMode == null)
+            {
+                // Existing user upgrading from v1.2: seamlessly preserve Interaction Bubbles if active
+                BubbleMode = ModsConfig.IsActive("Jaxe.Bubbles")
+                    ? BubbleDisplayMode.InteractionBubbles
+                    : BubbleDisplayMode.Native;
+            }
+            else
+            {
+                BubbleMode = savedMode.Value;
+            }
+        }
+        Scribe_Values.Look(ref BubbleTheme, "bubbleTheme", SpeechBubbleTheme.Light, true);
+        Scribe_Values.Look(ref BubbleBorderThickness, "bubbleBorderThickness", BorderThicknessMode.Normal, true);
+        Scribe_Values.Look(ref BubbleFontSize, "bubbleFontSize", GameFont.Tiny, true);
+        Scribe_Values.Look(ref BubbleCustomFontSize, "bubbleCustomFontSize", 11f, true);
+        Scribe_Values.Look(ref BubbleDurationMultiplier, "bubbleDurationMultiplier", 1f, true);
+        Scribe_Values.Look(ref BubbleScale, "bubbleScale", 1f, true);
+        Scribe_Values.Look(ref BubbleOpacity, "bubbleOpacity", 0.90f, true);
+        Scribe_Values.Look(ref BubbleVerticalOffset, "bubbleVerticalOffset", 1.0f, true);
+        Scribe_Values.Look(ref BubblePadding, "bubblePadding", 0.5f, true);
+        Scribe_Values.Look(ref BubbleUseColors, "bubbleUseColors", true, true);
+        Scribe_Values.Look(ref BubbleUrgentShake, "bubbleUrgentShake", true, true);
+        Scribe_Values.Look(ref BubbleScaleWithZoom, "bubbleScaleWithZoom", false);
         Scribe_Values.Look(ref DisplayTalkWhenDrafted, "displayTalkWhenDrafted", true);
         Scribe_Values.Look(ref AllowMonologue, "allowMonologue", true);
         Scribe_Values.Look(ref AllowSlavesToTalk, "allowSlavesToTalk", true);
@@ -190,6 +299,8 @@ public class RimTalkSettings : ModSettings
         Scribe_Collections.Look(ref EnabledArchivableTypes, "enabledArchivableTypes", LookMode.Value, LookMode.Value);
         Scribe_Collections.Look(ref FastTrackInteractions, "fastTrackInteractions", LookMode.Value, LookMode.Value);
         FastTrackInteractions ??= new Dictionary<string, bool>();
+        Scribe_Collections.Look(ref DetectedThinkingLevels, "detectedThinkingLevels", LookMode.Value, LookMode.Value);
+        DetectedThinkingLevels ??= new Dictionary<string, string>();
         Scribe_Values.Look(ref AllowBabiesToTalk, "allowBabiesToTalk", true);
         Scribe_Values.Look(ref AllowNonHumanToTalk, "allowNonHumanToTalk", true);
         Scribe_Values.Look(ref AllowAnnouncement, "allowAnnouncement", true);
@@ -200,6 +311,7 @@ public class RimTalkSettings : ModSettings
         // New Prompt System
         Scribe_Deep.Look(ref PromptSystem, "promptSystem");
         Scribe_Values.Look(ref UseAdvancedPromptMode, "useAdvancedPromptMode", false);
+        Scribe_Values.Look(ref ShowQuickSettings, "showQuickSettings", null);
 
         // Debug window settings
         Scribe_Values.Look(ref ButtonDisplay, "buttonDisplay", Settings.ButtonDisplayMode.Toggle, true);
@@ -215,6 +327,7 @@ public class RimTalkSettings : ModSettings
         Scribe_Values.Look(ref OverlayOpacity, "overlayOpacity", 0.5f);
         Scribe_Values.Look(ref OverlayFontSize, "overlayFontSize", 15f);
         Scribe_Values.Look(ref OverlayDrawAboveUI, "overlayDrawAboveUI", true);
+        Scribe_Values.Look(ref OverlayIndicatorMode, "overlayIndicatorMode", OverlayIndicatorType.Disabled);
 
         // Scribe Debug Overlay Rect
         Rect defaultDebugRect = new Rect(200f, 200f, 600f, 450f);
@@ -244,7 +357,14 @@ public class RimTalkSettings : ModSettings
             OverlayRectNonDebug = new Rect(overlayNonDebugX, overlayNonDebugY, overlayNonDebugWidth, overlayNonDebugHeight);
         }
 
+        bool? savedEnablePresets = EnableDialoguePresets;
+        Scribe_Values.Look(ref savedEnablePresets, "enableDialoguePresets", null, true);
         Scribe_Collections.Look(ref DialoguePresets, "dialoguePresets", LookMode.Deep);
+        if (Scribe.mode == LoadSaveMode.LoadingVars)
+        {
+            EnableDialoguePresets = savedEnablePresets ?? (DialoguePresets?.Exists(p => p.IsEnabled) == true);
+        }
+        Scribe_Values.Look(ref LastLoadedLanguage, "lastLoadedLanguage");
 
         // Initialize collections if null
         if (CloudConfigs == null)
@@ -255,6 +375,8 @@ public class RimTalkSettings : ModSettings
                 
         if (DialoguePresets == null || DialoguePresets.Count == 0)
             DialoguePresets = CustomDialoguePreset.CreateDefaultPresets();
+
+        EnsureDialoguePresetsLanguage();
 
         if (EnabledArchivableTypes == null)
             EnabledArchivableTypes = new Dictionary<string, bool>();
@@ -298,23 +420,16 @@ public class RimTalkSettings : ModSettings
         // Migration Logic for Simple Mode Instruction
         if (Scribe.mode == LoadSaveMode.PostLoadInit)
         {
-            // 1. Recover from Preset (Reverse Migration)
-            // If SimpleModeInstruction is default, but we have a custom instruction in the preset, pull it back.
-            if (string.IsNullOrWhiteSpace(SimpleModeInstruction) || SimpleModeInstruction == Constant.DefaultInstruction)
-            {
-                var preset = PromptSystem.GetActivePreset();
-                var entry = GetOrCreateBaseInstructionEntry(preset);
-                if (entry != null && !string.IsNullOrWhiteSpace(entry.Content) && entry.Content != Constant.DefaultInstruction)
-                {
-                    SimpleModeInstruction = entry.Content;
-                }
-            }
-            
-            // 2. Migrate from Legacy CustomInstruction
+            // Migrate from Legacy CustomInstruction (pre-1.2 upgrade)
             if (!string.IsNullOrWhiteSpace(CustomInstruction))
             {
                 SimpleModeInstruction = CustomInstruction;
                 CustomInstruction = "";
+            }
+
+            if (string.IsNullOrWhiteSpace(SimpleModeInstruction) && LanguageDatabase.activeLanguage != null)
+            {
+                SimpleModeInstruction = Constant.DefaultInstruction;
             }
         }
 
@@ -351,5 +466,33 @@ public class RimTalkSettings : ModSettings
     public bool IsFastTrackInteraction(string defName)
     {
         return defName != null && FastTrackInteractions.TryGetValue(defName, out bool enabled) && enabled;
+    }
+
+    /// <summary>
+    /// Synchronizes unmodified default dialogue presets with the active language.
+    /// </summary>
+    public void EnsureDialoguePresetsLanguage()
+    {
+        string currentLang = LanguageDatabase.activeLanguage?.folderName;
+        if (string.IsNullOrEmpty(currentLang) || LastLoadedLanguage == currentLang) return;
+        LastLoadedLanguage = currentLang;
+
+        if (DialoguePresets == null) return;
+        for (int i = 0; i < DialoguePresets.Count; i++)
+        {
+            var preset = DialoguePresets[i];
+            if (preset == null || string.IsNullOrEmpty(preset.DefaultKey)) continue;
+
+            if (!preset.IsCustomTitle)
+            {
+                string titleKey = $"RimTalk.PlayerSettings.{preset.DefaultKey}.Title";
+                if (titleKey.CanTranslate()) preset.Title = titleKey.Translate();
+            }
+            if (!preset.IsCustomPrompt)
+            {
+                string promptKey = $"RimTalk.PlayerSettings.{preset.DefaultKey}.Prompt";
+                if (promptKey.CanTranslate()) preset.Prompt = promptKey.Translate();
+            }
+        }
     }
 }

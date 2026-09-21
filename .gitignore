@@ -1,6 +1,8 @@
 /.config
-/*.sln 
-/obj
+/*.sln
+/*.slnx
+obj/
+bin/
 /*/Assemblies
 .idea
 .vscode
@@ -11,9 +13,7 @@ Folder.DotSettings.user
 Directory.Build.props
 *.sh
 .vs
+*.py
 
-## Interaction bubble library
-Libs/Bubbles.dll
-!Libs/Bubbles.sh
 Release_Mod/*
 AGENTS.md

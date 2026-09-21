@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using RimTalk.UI;
 using RimTalk.Util;
 using UnityEngine;
@@ -31,6 +30,10 @@ public partial class Settings
     {
         RimTalkSettings settings = Get();
 
+        // 3-Card Mode Selector Header (Google | Player2 | Advanced)
+        DrawApiModeSelector(listingStandard, settings);
+        listingStandard.Gap(8f);
+
         // API Configuration section
         if (!settings.UseSimpleConfig)
         {
@@ -41,7 +44,7 @@ public partial class Settings
             DrawSimpleApiSettings(listingStandard);
         }
 
-        listingStandard.Gap(30f);
+        listingStandard.Gap(42f);
 
         // Define column layout
         const float columnGap = 200f;
@@ -60,9 +63,9 @@ public partial class Settings
 
         // 1. AI Cooldown
         Rect cooldownRect = leftListing.GetRect(24f);
-        float cooldownLabelWidth = cooldownRect.width - intervalFieldWidth - 10f;
-        Rect cooldownLabelRect = new Rect(cooldownRect.x, cooldownRect.y, cooldownLabelWidth, cooldownRect.height);
-        Rect cooldownFieldRect = new Rect(cooldownLabelRect.xMax + 10f, cooldownRect.y, intervalFieldWidth, 24f);
+        float cooldownFieldX = cooldownRect.xMax - intervalFieldWidth - 2f;
+        Rect cooldownLabelRect = new Rect(cooldownRect.x, cooldownRect.y, cooldownFieldX - cooldownRect.x - 10f, cooldownRect.height);
+        Rect cooldownFieldRect = new Rect(cooldownFieldX, cooldownRect.y, intervalFieldWidth, 24f);
 
         TextAnchor originalAnchor = Text.Anchor;
         TextAnchor middleLeft = TextAnchor.MiddleLeft;
@@ -76,9 +79,9 @@ public partial class Settings
 
         // 2. Reply Interval
         Rect replyRect = leftListing.GetRect(24f);
-        float replyLabelWidth = replyRect.width - intervalFieldWidth - 10f;
-        Rect replyLabelRect = new Rect(replyRect.x, replyRect.y, replyLabelWidth, replyRect.height);
-        Rect replyFieldRect = new Rect(replyLabelRect.xMax + 10f, replyRect.y, intervalFieldWidth, 24f);
+        float replyFieldX = replyRect.xMax - intervalFieldWidth - 2f;
+        Rect replyLabelRect = new Rect(replyRect.x, replyRect.y, replyFieldX - replyRect.x - 10f, replyRect.height);
+        Rect replyFieldRect = new Rect(replyFieldX, replyRect.y, intervalFieldWidth, 24f);
 
         Widgets.Label(replyLabelRect, "RimTalk.Settings.ReplyInterval".Translate().ToString());
         Text.Anchor = originalAnchor;
@@ -90,26 +93,21 @@ public partial class Settings
 
         // 3. Checkboxes in Left Column
         Rect overrideRowRect = leftListing.GetRect(24f);
-        if (settings.ProcessNonRimTalkInteractions)
+        bool hasGear = settings.ProcessNonRimTalkInteractions;
+        Rect checkboxRect = new Rect(overrideRowRect.x, overrideRowRect.y, overrideRowRect.width - (hasGear ? 30f : 0f), 24f);
+        Widgets.CheckboxLabeled(checkboxRect, "RimTalk.Settings.OverrideInteractions".Translate().ToString(),
+            ref settings.ProcessNonRimTalkInteractions);
+        TooltipHandler.TipRegion(checkboxRect, "RimTalk.Settings.OverrideInteractionsTooltip".Translate().ToString());
+
+        if (hasGear)
         {
-            const float btnWidth = 75f;
-            Rect checkboxRect = new Rect(overrideRowRect.x, overrideRowRect.y, overrideRowRect.width - btnWidth - 6f, overrideRowRect.height);
-            Rect btnRect = new Rect(checkboxRect.xMax + 6f, overrideRowRect.y, btnWidth, 24f);
-
-            Widgets.CheckboxLabeled(checkboxRect, "RimTalk.Settings.OverrideInteractions".Translate().ToString(),
-                ref settings.ProcessNonRimTalkInteractions);
-            TooltipHandler.TipRegion(checkboxRect, "RimTalk.Settings.OverrideInteractionsTooltip".Translate().ToString());
-
-            if (Widgets.ButtonText(btnRect, "RimTalk.Settings.SettingsButton".Translate().ToString()))
+            Rect gearRect = new Rect(checkboxRect.xMax + 6f, overrideRowRect.y, 24f, 24f);
+            var gearIcon = ContentFinder<Texture2D>.Get("UI/Icons/Options/OptionsGeneral");
+            if (Widgets.ButtonImage(gearRect, gearIcon, new Color(0.85f, 0.85f, 0.85f), GenUI.MouseoverColor))
             {
                 Find.WindowStack.Add(new Dialog_FastTrackInteractions());
             }
-        }
-        else
-        {
-            Widgets.CheckboxLabeled(overrideRowRect, "RimTalk.Settings.OverrideInteractions".Translate().ToString(),
-                ref settings.ProcessNonRimTalkInteractions);
-            TooltipHandler.TipRegion(overrideRowRect, "RimTalk.Settings.OverrideInteractionsTooltip".Translate().ToString());
+            TooltipHandler.TipRegion(gearRect, "RimTalk.Settings.FastTrackInteractionsTitle".Translate());
         }
 
         leftListing.Gap(6f);
@@ -169,12 +167,32 @@ public partial class Settings
         float tallerColumnHeight = Mathf.Max(leftListing.CurHeight, rightListing.CurHeight);
         listingStandard.Gap(tallerColumnHeight - estimatedHeight); // Adjust for the initial GetRect height
 
-        listingStandard.Gap();
+        listingStandard.Gap(12f);
 
-        // --- Dropdown for PauseAtSpeed ---
+        const float dropdownWidth = 140f;
+        const float rowGap = 8f;
+
+        // 1. --- Open Bubble Settings Window ---
+        var bubbleRowRect = listingStandard.GetRect(30f);
+        var bubbleLabelRect = new Rect(bubbleRowRect.x, bubbleRowRect.y,
+            bubbleRowRect.width - dropdownWidth - 10f, bubbleRowRect.height);
+        originalAnchor = Text.Anchor;
+        Text.Anchor = TextAnchor.MiddleLeft;
+        Widgets.Label(bubbleLabelRect, "RimTalk.Settings.BubbleMode".Translate().ToString());
+        Text.Anchor = originalAnchor;
+
+        var bubbleBtnRect = new Rect(bubbleRowRect.xMax - dropdownWidth, bubbleRowRect.y, dropdownWidth,
+            bubbleRowRect.height);
+        if (Widgets.ButtonText(bubbleBtnRect, "RimTalk.BubbleSettings.OpenWindow".Translate().ToString()))
+        {
+            Find.WindowStack.Add(new Dialog_BubbleSettings());
+        }
+        TooltipHandler.TipRegion(bubbleRowRect, "RimTalk.Settings.BubbleModeTooltip".Translate().ToString());
+
+        listingStandard.Gap(rowGap);
+
+        // 2. --- Dropdown for PauseAtSpeed ---
         Rect pauseLineRect = listingStandard.GetRect(30f);
-        const float dropdownWidth = 120f;
-
         Rect labelRect = new Rect(pauseLineRect.x, pauseLineRect.y, pauseLineRect.width - dropdownWidth - 10f,
             pauseLineRect.height);
         originalAnchor = Text.Anchor;
@@ -182,7 +200,7 @@ public partial class Settings
         Widgets.Label(labelRect, "RimTalk.Settings.PauseAtSpeed".Translate().ToString());
         Text.Anchor = originalAnchor;
 
-        Rect dropdownRect = new Rect(labelRect.xMax + 10f, pauseLineRect.y, dropdownWidth, pauseLineRect.height);
+        Rect dropdownRect = new Rect(pauseLineRect.xMax - dropdownWidth, pauseLineRect.y, dropdownWidth, pauseLineRect.height);
 
         // Use the helper function to determine the current label for the button
         string currentSpeedLabel = settings.DisableAiAtSpeed > (int)TimeSpeed.Normal
@@ -214,17 +232,18 @@ public partial class Settings
 
         TooltipHandler.TipRegion(pauseLineRect, "RimTalk.Settings.DisableAiAtSpeedTooltip".Translate().ToString());
 
-        listingStandard.Gap();
+        listingStandard.Gap(rowGap);
 
-        // --- Dropdown for Button Display Mode ---
+        // 3. --- Dropdown for Button Display Mode ---
         var buttonDisplayRect = listingStandard.GetRect(30f);
         var buttonDisplayLabelRect = new Rect(buttonDisplayRect.x, buttonDisplayRect.y,
             buttonDisplayRect.width - dropdownWidth - 10f, buttonDisplayRect.height);
+        originalAnchor = Text.Anchor;
         Text.Anchor = TextAnchor.MiddleLeft;
         Widgets.Label(buttonDisplayLabelRect, "RimTalk.Settings.ButtonDisplay".Translate().ToString());
         Text.Anchor = originalAnchor;
 
-        var buttonDisplayDropdownRect = new Rect(buttonDisplayLabelRect.xMax + 10f, buttonDisplayRect.y, dropdownWidth,
+        var buttonDisplayDropdownRect = new Rect(buttonDisplayRect.xMax - dropdownWidth, buttonDisplayRect.y, dropdownWidth,
             buttonDisplayRect.height);
 
         if (Widgets.ButtonText(buttonDisplayDropdownRect, settings.ButtonDisplay.ToString()))
@@ -254,6 +273,8 @@ public partial class Settings
             _replyIntervalBuffer = "4";
             settings.ProcessNonRimTalkInteractions = true;
             settings.AllowSimultaneousConversations = false;
+            settings.ResetBubbleSettings();
+            SpeechBubbleDrawer.RecomputeAllBubbleDimensions();
             settings.DisplayTalkWhenDrafted = true;
             settings.AllowMonologue = true;
             settings.AllowSlavesToTalk = true;

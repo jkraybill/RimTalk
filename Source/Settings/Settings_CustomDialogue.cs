@@ -1,7 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using RimWorld;
+using RimTalk.UI;
 using UnityEngine;
 using Verse;
 using Cache = RimTalk.Data.Cache;
@@ -13,15 +10,15 @@ public partial class Settings
     private const int MaxPersonaLength = 500;
     private static Vector2 _personaScrollPos = Vector2.zero;
 
-    private static Texture2D _visionGizmoIcon;
-    private static Texture2D VisionGizmoIcon => _visionGizmoIcon ??= ContentFinder<Texture2D>.Get("UI/VisionGizmo");
-
-    private static Texture2D _announceGizmoIcon;
-    private static Texture2D AnnounceGizmoIcon => _announceGizmoIcon ??= ContentFinder<Texture2D>.Get("UI/AnnounceGizmo");
+    private static Texture2D _visionGizmoIcon, _announceGizmoIcon, _chatGizmoIcon;
+    private static Texture2D VisionGizmoIcon => UIUtil.GetTexture(ref _visionGizmoIcon, "UI/VisionGizmo");
+    private static Texture2D AnnounceGizmoIcon => UIUtil.GetTexture(ref _announceGizmoIcon, "UI/AnnounceGizmo");
+    private static Texture2D ChatGizmoIcon => UIUtil.GetTexture(ref _chatGizmoIcon, "UI/ChatGizmo");
 
     private void DrawCustomDialogueSettings(Listing_Standard listing)
     {
         RimTalkSettings settings = Get();
+        settings.EnsureDialoguePresetsLanguage();
         if (settings.DialoguePresets == null || settings.DialoguePresets.Count == 0)
         {
             settings.DialoguePresets = CustomDialoguePreset.CreateDefaultPresets();
@@ -32,18 +29,26 @@ public partial class Settings
         // =========================================================================
         Text.Font = GameFont.Small;
         GUI.color = settings.AllowCustomConversation ? new Color(0.6f, 0.9f, 0.6f) : Color.gray;
-        listing.CheckboxLabeled(
+        Rect masterRect = listing.GetRect(24f);
+        Widgets.DrawHighlightIfMouseover(masterRect);
+        Widgets.CheckboxLabeled(
+            masterRect,
             "RimTalk.PlayerSettings.AllowCustomConversation".Translate(),
-            ref settings.AllowCustomConversation,
-            "RimTalk.PlayerSettings.AllowCustomConversationTooltip".Translate());
+            ref settings.AllowCustomConversation);
         GUI.color = Color.white;
+
+        Text.Font = GameFont.Tiny;
+        GUI.color = new Color(0.75f, 0.75f, 0.75f);
+        listing.Label("RimTalk.PlayerSettings.AllowCustomConversationDesc".Translate());
+        GUI.color = Color.white;
+        Text.Font = GameFont.Small;
 
         listing.Gap(4f);
 
         // If master toggle is disabled, display notice and return
         if (!settings.AllowCustomConversation)
         {
-            listing.Gap(12f);
+            listing.Gap(8f);
             Text.Font = GameFont.Tiny;
             GUI.color = new Color(0.7f, 0.7f, 0.7f);
             listing.Label("RimTalk.PlayerSettings.DisabledNotice".Translate());
@@ -67,12 +72,18 @@ public partial class Settings
         bool allowDirectPlayerTalk = settings.PlayerDialogueMode != PlayerDialogueMode.Disabled;
         bool allowPlayerAiGen = settings.PlayerDialogueMode == PlayerDialogueMode.AIDriven;
 
-        // Direct Player Talk Checkbox
+        // Direct Player Talk Checkbox with Gizmo Previews (no tooltip)
         bool prevDirectTalk = allowDirectPlayerTalk;
-        listing.CheckboxLabeled(
-            "RimTalk.PlayerSettings.AllowDirectPlayerTalk".Translate(),
-            ref allowDirectPlayerTalk,
-            "RimTalk.PlayerSettings.AllowDirectPlayerTalkTooltip".Translate());
+        Rect row = listing.GetRect(24f);
+        Widgets.DrawHighlightIfMouseover(row);
+        string label = "RimTalk.PlayerSettings.AllowDirectPlayerTalk".Translate();
+        Widgets.CheckboxLabeled(row, label, ref allowDirectPlayerTalk);
+
+        float x = row.x + Text.CalcSize(label).x + 8f;
+        if (!allowDirectPlayerTalk) GUI.color = new Color(1f, 1f, 1f, 0.4f);
+        GUI.DrawTexture(new Rect(x, row.y + 2f, 20f, 20f), ChatGizmoIcon);
+        GUI.DrawTexture(new Rect(x + 24f, row.y + 2f, 20f, 20f), AnnounceGizmoIcon);
+        GUI.color = Color.white;
 
         if (prevDirectTalk != allowDirectPlayerTalk)
         {
@@ -81,6 +92,12 @@ public partial class Settings
                 : PlayerDialogueMode.Disabled;
             Cache.InitializePlayerPawn();
         }
+
+        Text.Font = GameFont.Tiny;
+        GUI.color = new Color(0.75f, 0.75f, 0.75f);
+        listing.Label("RimTalk.PlayerSettings.AllowDirectPlayerTalkDesc".Translate());
+        GUI.color = Color.white;
+        Text.Font = GameFont.Small;
 
         listing.Gap(6f);
 
@@ -168,6 +185,24 @@ public partial class Settings
 
         listing.Gap(4f);
 
+        listing.CheckboxLabeled(
+            "RimTalk.PlayerSettings.EnablePresets".Translate(),
+            ref settings.EnableDialoguePresets,
+            "RimTalk.PlayerSettings.EnablePresetsTooltip".Translate());
+
+        if (!settings.EnableDialoguePresets)
+        {
+            listing.Gap(4f);
+            Text.Font = GameFont.Tiny;
+            GUI.color = new Color(0.7f, 0.7f, 0.7f);
+            listing.Label("RimTalk.PlayerSettings.PresetsDisabledNotice".Translate());
+            GUI.color = Color.white;
+            Text.Font = GameFont.Small;
+            return;
+        }
+
+        listing.Gap(6f);
+
         // Subline: Description on left, Buttons (+ Add, Reset) on right
         Rect toolbarRow = listing.GetRect(26f);
 
@@ -194,7 +229,11 @@ public partial class Settings
                 "",
                 includeVision: false,
                 isAnnouncement: false,
-                isEnabled: false));
+                isEnabled: false)
+            {
+                IsCustomTitle = true,
+                IsCustomPrompt = true
+            });
         }
         GUI.color = Color.white;
 
@@ -260,7 +299,12 @@ public partial class Settings
 
             // Title TextField
             Rect titleRect = new Rect(inner.x + enabledWidth, innerY, titleWidth, row1Height);
-            preset.Title = DrawTextFieldWithPlaceholder(titleRect, preset.Title, "RimTalk.PlayerSettings.PresetTitlePlaceholder".Translate());
+            string newTitle = DrawTextFieldWithPlaceholder(titleRect, preset.Title, "RimTalk.PlayerSettings.PresetTitlePlaceholder".Translate());
+            if (newTitle != preset.Title)
+            {
+                preset.Title = newTitle;
+                preset.IsCustomTitle = true;
+            }
             TooltipHandler.TipRegion(titleRect, "RimTalk.PlayerSettings.PresetTitleTooltip".Translate());
 
             float currentBtnX = titleRect.xMax + 10f;
@@ -302,8 +346,13 @@ public partial class Settings
 
             // Row 2: Scrollable Prompt TextArea with Horizontal & Vertical scroll
             Rect promptBoxRect = new Rect(inner.x + 4f, innerY, inner.width - 8f, promptBoxHeight);
-            preset.Prompt = DrawScrollableTextArea(promptBoxRect, preset.Prompt ?? "",
+            string newPrompt = DrawScrollableTextArea(promptBoxRect, preset.Prompt ?? "",
                 ref preset.ScrollPosition, $"PresetPrompt_{preset.Id}");
+            if (newPrompt != preset.Prompt)
+            {
+                preset.Prompt = newPrompt;
+                preset.IsCustomPrompt = true;
+            }
 
             listing.Gap(4f);
         }

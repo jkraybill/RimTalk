@@ -19,6 +19,24 @@ namespace RimTalk.Service;
 /// </summary>
 public static class TalkService
 {
+    private static readonly List<TalkType> PriorityTalkTypes = [TalkType.Urgent, TalkType.User, TalkType.Announcement];
+
+
+    public static int PendingTalksCount
+    {
+        get
+        {
+            int count = 0;
+            foreach (Pawn pawn in Cache.Keys)
+            {
+                var ps = Cache.Get(pawn);
+                if (ps != null)
+                    count += ps.TalkResponses.Count + ps.IncomingCount;
+            }
+            return count;
+        }
+    }
+
     /// <summary>
     /// Initiates the process of generating a conversation. It performs initial checks and then
     /// starts a background task to handle the actual AI communication.
@@ -45,10 +63,10 @@ public static class TalkService
             talkRequest.Recipient = null;
         }
 
-        // Recipient may have just been nulled above. IsPlayer() is an extension, so it
-        // does not throw on null -- and when no player pawn exists it returns true for
-        // null, inserting a null that NREs downstream in GetPawnStatusFull. rim-universe fix.
-        bool isPlayerAnnouncement = talkRequest.IsAnnouncement && talkRequest.Recipient != null && talkRequest.Recipient.IsPlayer();
+        // Recipient may have just been nulled above; `?.` keeps IsPlayer() from being
+        // called on null, which returned true when no player pawn existed and inserted a
+        // null that NREd downstream in GetPawnStatusFull (rim-universe).
+        bool isPlayerAnnouncement = talkRequest.IsAnnouncement && talkRequest.Recipient?.IsPlayer() == true;
         Pawn mainPawn = isPlayerAnnouncement ? talkRequest.Recipient : talkRequest.Initiator;
 
         List<Pawn> nearbyPawns = PawnSelector.GetAllNearByPawns(talkRequest.Initiator, isAnnouncement: talkRequest.IsAnnouncement);
@@ -85,7 +103,7 @@ public static class TalkService
 
         if (talkRequest.IsAnnouncement)
             foreach (var p in pawns.Where(p => p != null && !p.IsPlayer()))
-                Cache.Get(p)?.IgnoreAllTalkResponses([TalkType.Urgent, TalkType.User, TalkType.Announcement]);
+                Cache.Get(p)?.IgnoreAllTalkResponses(PriorityTalkTypes);
         
         if (talkRequest.TalkType == TalkType.Sleep)
             talkRequest.IsMonologue = pawns.Count == 1;
@@ -138,6 +156,13 @@ public static class TalkService
                     if (pawnState == null) return;
                     talkResponse.Name = pawnState.Pawn.LabelShort;
 
+                    if (!string.IsNullOrEmpty(talkResponse.TargetName))
+                    {
+                        talkResponse.TargetPawn = talkRequest.ResolvePawnState(talkResponse.TargetName)?.Pawn;
+                        if (talkResponse.TargetPawn != null)
+                            talkResponse.TargetName = talkResponse.TargetPawn.LabelShort;
+                    }
+
                     // Link replies to the previous message in the conversation.
                     if (receivedResponses.Any())
                     {
@@ -146,6 +171,13 @@ public static class TalkService
 
                     // Who said it, so the NEXT line can be addressed to them.
                     TalkHistory.RecordSpeaker(talkResponse.Id, talkResponse.Name);
+
+                    // All LLM-generated dialogue in response to an announcement are conversational replies,
+                    // NOT announcements themselves (the actual announcement is the initiator's user prompt).
+                    if (talkRequest.IsAnnouncement || talkResponse.TalkType == TalkType.Announcement)
+                    {
+                        talkResponse.TalkType = TalkType.User;
+                    }
 
                     receivedResponses.Add(talkResponse);
 
@@ -209,26 +241,43 @@ public static class TalkService
 
             if (pawnState.TalkResponses.Empty()) continue;
 
-            var talk = pawnState.TalkResponses.First();
+            if (pawn.IsInDanger())
+                pawnState.IgnoreAllTalkResponses(PriorityTalkTypes);
+
+            var talk = pawnState.TalkResponses.FirstOrDefault();
             if (talk == null)
             {
-                pawnState.TalkResponses.RemoveAt(0);
+                if (!pawnState.TalkResponses.Empty()) 
+                    pawnState.TalkResponses.RemoveAt(0);
                 continue;
             }
 
-            // Skip this talk if its parent was ignored or the pawn is currently unable to speak.
-            if (TalkHistory.IsTalkIgnored(talk.ParentTalkId) || !pawnState.CanDisplayTalk())
+            // Skip this talk if the pawn is currently unable to speak.
+            if (!pawnState.CanDisplayTalk())
             {
                 pawnState.IgnoreTalkResponse();
                 continue;
+            }
+
+            if (TalkHistory.IsTalkIgnored(talk.ParentTalkId))
+            {
+                if (talk.TalkType.IsFromUser())
+                {
+                    // For user dialogues and announcements, do not drop the talk if a prior listener was ignored;
+                    // reset parent link so this response can be spoken independently.
+                    talk.ParentTalkId = Guid.Empty;
+                }
+                else
+                {
+                    pawnState.IgnoreTalkResponse();
+                    continue;
+                }
             }
 
             int replyInterval = Settings.Get().ReplyInterval;
             if (pawn.IsInDanger() || talk.TalkType == TalkType.Announcement)
             {
                 replyInterval = Math.Min(replyInterval, 2);
-                if (pawn.IsInDanger())
-                    pawnState.IgnoreAllTalkResponses([TalkType.Urgent, TalkType.User, TalkType.Announcement]);
             }
 
             // Enforce a delay for replies to make conversations feel more natural.
@@ -359,6 +408,13 @@ public static class TalkService
         InteractionDef intDef = DefDatabase<InteractionDef>.GetNamed("RimTalkInteraction");
         var recipient = RecipientOf(pawn, talk);
         var playLogEntryInteraction = new PlayLogEntry_RimTalkInteraction(intDef, pawn, recipient, null);
+        var apiLog = ApiHistory.GetApiLog(talk.Id);
+        if (apiLog != null)
+        {
+            playLogEntryInteraction.ConversationId = apiLog.ConversationId;
+        }
+        playLogEntryInteraction.InteractionType = talk.GetInteractionType();
+        playLogEntryInteraction.TalkType = talk.TalkType;
 
         if (playLogEntryInteraction.CachedString.NullOrEmpty())
             return;

@@ -56,6 +56,16 @@ public static class ApiHistory
         return log;
     }
 
+    /// <summary>
+    /// Backward-compatible overload for third-party addon mods.
+    /// </summary>
+    [Obsolete("Use AddRequest instead")]
+    public static ApiLog AddUserHistory(Pawn initiator, Pawn recipient, string prompt, TalkType talkType)
+    {
+        var request = new TalkRequest(prompt, initiator, recipient, talkType);
+        return AddRequest(request, Channel.User);
+    }
+
     public static void UpdatePayload(Guid id, Payload payload)
     {
         if (History.TryGetValue(id, out var log))
@@ -70,9 +80,10 @@ public static class ApiHistory
         if (log.Payload != null) return log.Payload;
         if (log.ConversationId >= 0)
         {
-            foreach (var item in History.Values)
+            for (int i = HistoryOrder.Count - 1; i >= 0; i--)
             {
-                if (item.ConversationId == log.ConversationId && item.Payload != null)
+                if (History.TryGetValue(HistoryOrder[i], out var item) &&
+                    item.ConversationId == log.ConversationId && item.Payload != null)
                     return item.Payload;
             }
         }
@@ -103,7 +114,7 @@ public static class ApiHistory
         }
         
         // multi-turn messages
-        var newLog = new ApiLog(name, originalLog.TalkRequest, response, payload, DateTime.Now, originalLog.Channel)
+        var newLog = new ApiLog(name, originalLog.TalkRequest, response, payload ?? originalLog.Payload, DateTime.Now, originalLog.Channel)
         {
             TargetName = targetName
         };
@@ -144,9 +155,10 @@ public static class ApiHistory
 
     public static IEnumerable<ApiLog> GetAll()
     {
-        foreach (var log in History)
+        foreach (var id in HistoryOrder)
         {
-            yield return log.Value;
+            if (History.TryGetValue(id, out var log))
+                yield return log;
         }
     }
 

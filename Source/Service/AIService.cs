@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using RimTalk.Client;
-using RimTalk.Client.OpenAI;
 using RimTalk.Data;
 using RimTalk.Error;
 using RimTalk.Source.Data;
@@ -35,77 +34,55 @@ public static class AIService
         var apiLog = ApiHistory.AddRequest(request, Channel.Stream);
         var lastApiLog = apiLog;
 
-        var payload = await ExecuteWithRetry(apiLog, async client =>
+        Action<TalkResponse> onResponse = response =>
         {
-            if (!string.IsNullOrEmpty(request.ImageBase64) && client is OpenAIClient openAIClient)
+            if (IsCancellationRequested()) return;
+            var pawnState = request.ResolvePawnState(response.Name);
+            if (pawnState == null) return;
+
+            response.TalkType = request.TalkType;
+
+            // Calculate timing relative to the correct previous log
+            int elapsedMs = (int)(DateTime.Now - lastApiLog.Timestamp).TotalMilliseconds;
+            if (lastApiLog == apiLog) elapsedMs -= lastApiLog.ElapsedMs;
+
+            var newLog = ApiHistory.AddResponse(apiLog.Id, response.Text, response.Name,
+                response.InteractionRaw, payload: null, elapsedMs: elapsedMs,
+                targetName: response.TargetName);
+            if (newLog == null)
             {
-                return await openAIClient.GetStreamingChatCompletionAsync<TalkResponse>(prefixMessages, [],
-                    request.ImageBase64,
-                    response =>
-                    {
-                        var pawnState = request.ResolvePawnState(response.Name);
-                        if (pawnState == null) return;
-
-                        response.TalkType = request.TalkType;
-
-                        // Calculate timing relative to the correct previous log
-                        int elapsedMs = (int)(DateTime.Now - lastApiLog.Timestamp).TotalMilliseconds;
-                        if (lastApiLog == apiLog) elapsedMs -= lastApiLog.ElapsedMs;
-
-                        var newLog = ApiHistory.AddResponse(apiLog.Id, response.Text, response.Name,
-                            response.InteractionRaw, elapsedMs: elapsedMs);
-                        if (newLog == null)
-                        {
-                            // The request's history row is gone: a game load cleared ApiHistory
-                            // under a stream still arriving (RimTalk.Clear), or the row was
-                            // trimmed. Nothing tracks this request any more, so its lines are
-                            // dropped rather than shown in a colony they were not asked about.
-                            // Before this every such line was a NullReferenceException logged as
-                            // "Failed to parse stream chunk" with the chunk's JSON.
-                            Logger.Debug($"Streamed line for {response.Name} arrived after its request left the history; dropped.");
-                            return;
-                        }
-
-                        response.Id = newLog.Id;
-                        lastApiLog = newLog;
-
-                        onPlayerResponseReceived?.Invoke(response);
-                    },
-                    prep => ApiHistory.UpdatePayload(apiLog.Id, prep));
+                // The request's history row is gone: a game load cleared ApiHistory under a
+                // stream still arriving (RimTalk.Clear), or the row was trimmed. Nothing
+                // tracks this request any more, so its lines are dropped rather than shown
+                // in a colony they were not asked about. Before this, every such line was a
+                // NullReferenceException logged as "Failed to parse stream chunk" with the
+                // chunk's JSON. rim-universe.
+                Logger.Debug($"Streamed line for {response.Name} arrived after its request left the history; dropped.");
+                return;
             }
 
+            response.Id = newLog.Id;
+            lastApiLog = newLog;
+
+            onPlayerResponseReceived?.Invoke(response);
+        };
+
+        var payload = await ExecuteWithRetry(apiLog, async client =>
+        {
             // All prompt messages are already in prefixMessages, pass empty list for messages
-            return await client.GetStreamingChatCompletionAsync<TalkResponse>(prefixMessages, [],
-                response =>
-                {
-                    if (IsCancellationRequested()) return;
-                    var pawnState = request.ResolvePawnState(response.Name);
-                    if (pawnState == null) return; 
-                    
-                    response.TalkType = request.TalkType;
-
-                    // Calculate timing relative to the correct previous log
-                    int elapsedMs = (int)(DateTime.Now - lastApiLog.Timestamp).TotalMilliseconds;
-                    if (lastApiLog == apiLog) elapsedMs -= lastApiLog.ElapsedMs;
-
-                    var newLog = ApiHistory.AddResponse(apiLog.Id, response.Text, response.Name,
-                        response.InteractionRaw, payload: null, elapsedMs: elapsedMs,
-                        targetName: response.TargetName);
-                    if (newLog == null)
-                    {
-                        // Same as above: the row went with a load or a trim; the answer
-                        // belongs to a request nothing tracks, so it is not shown.
-                        Logger.Debug($"Streamed line for {response.Name} arrived after its request left the history; dropped.");
-                        return;
-                    }
-
-                    response.Id = newLog.Id;
-                    lastApiLog = newLog;
-
-                    onPlayerResponseReceived?.Invoke(response);
-                },
+            var result = await client.GetStreamingChatCompletionAsync<TalkResponse>(prefixMessages, [],
+                request.ImageBase64, onResponse,
                 prep => ApiHistory.UpdatePayload(apiLog.Id, prep));
-        });
+
+            // Only adjust graph points when API returns real token counts (e.g. OpenAI)
+            if (result?.TokenCount > 0)
+            {
+                Stats.IncrementTokens(result.TokenCount);
+                Stats.AdjustActiveRequestPoints(result.TokenCount);
+            }
+
+            return result;
+        }, skipTokenIncrement: true);
 
         HandleFinalStatus(apiLog, payload);
         _firstInstruction = false;
@@ -136,12 +113,12 @@ public static class AIService
         }
         catch (Exception)
         {
-            ReportError(apiLog, payload, "Json Deserialization Failed");
+            ReportDeserializationError(apiLog, payload);
             return null;
         }
     }
 
-    private static async Task<Payload> ExecuteWithRetry(ApiLog apiLog, Func<IAIClient, Task<Payload>> action)
+    private static async Task<Payload> ExecuteWithRetry(ApiLog apiLog, Func<IAIClient, Task<Payload>> action, bool skipTokenIncrement = false)
     {
         _busy = true;
         _busySince = DateTime.Now;
@@ -171,16 +148,20 @@ public static class AIService
             else
             {
                 Stats.IncrementCalls();
-                Stats.IncrementTokens(payload.TokenCount);
+                if (!skipTokenIncrement && payload.TokenCount > 0)
+                    Stats.IncrementTokens(payload.TokenCount);
             }
 
             return payload;
         }
         catch (OperationCanceledException)
         {
-            apiLog.Response = "RimTalk.DebugWindow.Canceled".Translate();
-            apiLog.SpokenTick = -1;
-            return new Payload("Canceled", "Canceled", "", null, 0, "Canceled");
+            if (apiLog.SpokenTick == 0 && string.IsNullOrEmpty(apiLog.Response))
+            {
+                apiLog.Response = "RimTalk.DebugWindow.Canceled".Translate();
+                apiLog.SpokenTick = -1;
+            }
+            return new Payload("Canceled", null, "", null, 0, null);
         }
         finally
         {
@@ -194,14 +175,23 @@ public static class AIService
 
     private static void HandleFinalStatus(ApiLog apiLog, Payload payload)
     {
-        // If response is empty but no explicit error yet, mark as deserialization failure (or empty response)
+        // If response is empty but no explicit error yet, mark as empty response or deserialization failure
         if (string.IsNullOrEmpty(apiLog.Response) && !apiLog.IsError && string.IsNullOrEmpty(payload.ErrorMessage))
         {
-            ReportError(apiLog, payload, "Json Deserialization Failed");
+            if (string.IsNullOrWhiteSpace(payload?.Response))
+                ReportError(apiLog, payload, "Empty Response (AI returned no content)");
+            else
+                ReportDeserializationError(apiLog, payload);
             return;
         }
         
         ApiHistory.UpdatePayload(apiLog.Id, payload);
+    }
+
+    private static void ReportDeserializationError(ApiLog apiLog, Payload payload)
+    {
+        var tip = "RimTalk.DebugWindow.JsonDeserializationFailedTip".Translate();
+        ReportError(apiLog, payload, $"Json Deserialization Failed {tip}");
     }
 
     private static void ReportError(ApiLog apiLog, Payload payload, string errorMsg)
@@ -219,16 +209,7 @@ public static class AIService
     public static bool CanCancelFor(TalkRequest incomingRequest)
     {
         if (!_busy || _currentRequest == null || incomingRequest == null) return false;
-
-        // User talks and announcements always preempt any ongoing generation
-        if (incomingRequest.TalkType.IsFromUser())
-            return true;
-
-        // Interactions and Urgent can cancel low-priority background talks (Other, Sleep, Thought, etc.)
-        if (incomingRequest.TalkType is TalkType.Interaction or TalkType.Urgent)
-            return !_currentRequest.TalkType.IsFastTrack();
-
-        return false;
+        return incomingRequest.TalkType.CanPreempt(_currentRequest.TalkType);
     }
 
     public static void CancelCurrent()
@@ -254,10 +235,6 @@ public static class AIService
     public static void Clear()
     {
         CancelCurrent();
-        _busy = false;
-        _busySince = null;
         _firstInstruction = true;
-        _currentCts = null;
-        _currentRequest = null;
     }
 }

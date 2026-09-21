@@ -29,7 +29,7 @@ public class TalkRequest(string prompt, Pawn initiator, Pawn recipient = null, T
     public string RawPrompt { get; set; } = prompt;
     public Pawn Initiator { get; set; } = initiator;
     public Pawn Recipient { get; set; } = recipient;
-    public int MapId { get; set; }
+    public int MapId { get; set; } = -1;
     public int CreatedTick { get; set; } = GenTicks.TicksGame;
     public DateTime CreatedTime { get; set; } = DateTime.Now; 
     public int FinishedTick { get; set; } = -1; 
@@ -38,6 +38,7 @@ public class TalkRequest(string prompt, Pawn initiator, Pawn recipient = null, T
     public bool IsMonologue;
     public bool IsAnnouncement => TalkType == TalkType.Announcement;
     public string ImageBase64 { get; set; }
+    public string RawJsonOverride { get; set; }
     public SleepDialogueKind SleepDialogueKind { get; set; }
     
     /// <summary>

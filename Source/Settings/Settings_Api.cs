@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using RimTalk.Client.OpenAI;
 using RimTalk.Client.Player2;
@@ -10,6 +11,7 @@ using RimWorld;
 using UnityEngine;
 using Verse;
 using Verse.Sound;
+using Logger = RimTalk.Util.Logger;
 
 namespace RimTalk;
 
@@ -17,65 +19,288 @@ public partial class Settings
 {
     private static readonly Dictionary<string, List<string>> ModelCache = new();
 
+    private bool DrawApiModeCard(Rect rect, string title, string desc, bool isSelected)
+    {
+        // Background
+        Widgets.DrawBoxSolid(rect, isSelected ? new Color(0.2f, 0.4f, 0.6f, 0.85f) : new Color(0.18f, 0.18f, 0.18f, 0.6f));
+
+        // Border
+        GUI.color = isSelected ? new Color(0.4f, 0.75f, 1f, 1f) : new Color(0.35f, 0.35f, 0.35f, 0.6f);
+        Widgets.DrawBox(rect, 1);
+        GUI.color = Color.white;
+
+        if (Mouse.IsOver(rect)) Widgets.DrawHighlight(rect);
+
+        if (!string.IsNullOrEmpty(desc))
+        {
+            TooltipHandler.TipRegion(rect, desc);
+        }
+
+        bool clicked = Widgets.ButtonInvisible(rect);
+
+        Rect content = rect.ContractedBy(5f);
+        Text.Anchor = TextAnchor.UpperCenter;
+
+        // Title
+        Text.Font = GameFont.Small;
+        GUI.color = isSelected ? Color.white : new Color(0.85f, 0.85f, 0.85f);
+        Widgets.Label(new Rect(content.x, content.y + 2f, content.width, Text.LineHeight), title);
+
+        // Subtitle / Desc
+        Text.Font = GameFont.Tiny;
+        GUI.color = isSelected ? new Color(0.8f, 0.92f, 1f) : new Color(0.6f, 0.6f, 0.6f);
+        Widgets.Label(new Rect(content.x, content.y + Text.LineHeight + 2f, content.width, content.height - Text.LineHeight - 2f), desc);
+
+        Text.Anchor = TextAnchor.UpperLeft;
+        GUI.color = Color.white;
+        Text.Font = GameFont.Small;
+
+        return clicked;
+    }
+
+    private void DrawApiModeSelector(Listing_Standard listingStandard, RimTalkSettings settings)
+    {
+        // Guide Header
+        Rect headerRect = listingStandard.GetRect(Text.LineHeight);
+        GUI.color = Color.gray;
+        Text.Font = GameFont.Tiny;
+        Widgets.Label(headerRect, "RimTalk.Settings.ModeSelectorHeader".Translate());
+        GUI.color = Color.white;
+        Text.Font = GameFont.Small;
+        listingStandard.Gap(2f);
+
+        const float cardGap = 8f;
+        const float cardHeight = 52f;
+        float cardWidth = (listingStandard.ColumnWidth - cardGap * 2f) / 3f;
+        Rect rowRect = listingStandard.GetRect(cardHeight);
+
+        Rect googleCard = new Rect(rowRect.x, rowRect.y, cardWidth, cardHeight);
+        Rect player2Card = new Rect(rowRect.x + cardWidth + cardGap, rowRect.y, cardWidth, cardHeight);
+        Rect advancedCard = new Rect(rowRect.x + (cardWidth + cardGap) * 2f, rowRect.y, cardWidth, cardHeight);
+
+        bool isGoogle = settings.UseSimpleConfig && settings.SimpleProvider == AIProvider.Google;
+        bool isPlayer2 = settings.UseSimpleConfig && settings.SimpleProvider == AIProvider.Player2;
+        bool isAdvanced = !settings.UseSimpleConfig;
+
+        // 1. Google Gemini Card
+        if (DrawApiModeCard(googleCard, "RimTalk.Settings.ModeGoogleTitle".Translate(), "RimTalk.Settings.ModeGoogleDesc".Translate(), isGoogle))
+        {
+            settings.UseSimpleConfig = true;
+            settings.SimpleProvider = AIProvider.Google;
+        }
+
+        // 2. Player2 Card
+        if (DrawApiModeCard(player2Card, "RimTalk.Settings.ModePlayer2Title".Translate(), "RimTalk.Settings.ModePlayer2Desc".Translate(), isPlayer2))
+        {
+            settings.UseSimpleConfig = true;
+            settings.SimpleProvider = AIProvider.Player2;
+        }
+
+        // 3. Advanced Card
+        if (DrawApiModeCard(advancedCard, "RimTalk.Settings.ModeAdvancedTitle".Translate(), "RimTalk.Settings.ModeAdvancedDesc".Translate(), isAdvanced))
+        {
+            settings.UseSimpleConfig = false;
+        }
+    }
+
+    private void DrawQuickApiModeSelector(Listing_Standard listingStandard, RimTalkSettings settings)
+    {
+        // Guide Header
+        Rect headerRect = listingStandard.GetRect(Text.LineHeight);
+        GUI.color = Color.gray;
+        Text.Font = GameFont.Tiny;
+        Widgets.Label(headerRect, "RimTalk.Settings.ModeSelectorHeader".Translate());
+        GUI.color = Color.white;
+        Text.Font = GameFont.Small;
+        listingStandard.Gap(2f);
+
+        const float cardGap = 12f;
+        const float cardHeight = 54f;
+        float cardWidth = (listingStandard.ColumnWidth - cardGap) / 2f;
+        Rect rowRect = listingStandard.GetRect(cardHeight);
+
+        Rect googleCard = new Rect(rowRect.x, rowRect.y, cardWidth, cardHeight);
+        Rect player2Card = new Rect(rowRect.x + cardWidth + cardGap, rowRect.y, cardWidth, cardHeight);
+
+        bool isGoogle = settings.UseSimpleConfig && settings.SimpleProvider == AIProvider.Google;
+        bool isPlayer2 = settings.UseSimpleConfig && settings.SimpleProvider == AIProvider.Player2;
+
+        if (DrawApiModeCard(googleCard, "RimTalk.Settings.ModeGoogleTitle".Translate(), "RimTalk.Settings.ModeGoogleDesc".Translate(), isGoogle))
+        {
+            settings.UseSimpleConfig = true;
+            settings.SimpleProvider = AIProvider.Google;
+        }
+
+        if (DrawApiModeCard(player2Card, "RimTalk.Settings.ModePlayer2Title".Translate(), "RimTalk.Settings.ModePlayer2Desc".Translate(), isPlayer2))
+        {
+            settings.UseSimpleConfig = true;
+            settings.SimpleProvider = AIProvider.Player2;
+        }
+    }
+
     private void DrawSimpleApiSettings(Listing_Standard listingStandard)
     {
         RimTalkSettings settings = Get();
 
-        // API Key section
-        listingStandard.Label("RimTalk.Settings.GoogleApiKeyLabel".Translate());
-
-        const float buttonWidth = 150f;
-        const float spacing = 5f;
-
-        Rect rowRect = listingStandard.GetRect(30f);
-        rowRect.width -= buttonWidth + spacing;
-
-        settings.SimpleApiKey = Widgets.TextField(rowRect, settings.SimpleApiKey);
-
-        Rect buttonRect = new Rect(rowRect.xMax + spacing, rowRect.y, buttonWidth, rowRect.height);
-        if (Widgets.ButtonText(buttonRect, "RimTalk.Settings.GetFreeApiKeyButton".Translate()))
+        if (settings.SimpleProvider == AIProvider.Google)
         {
-            Application.OpenURL("https://aistudio.google.com/app/apikey");
+            // Google Section (Default)
+            listingStandard.Label("RimTalk.Settings.GoogleApiKeyLabel".Translate());
+
+            const float buttonWidth = 150f;
+            const float spacing = 5f;
+
+            Rect rowRect = listingStandard.GetRect(30f);
+            rowRect.width -= buttonWidth + spacing;
+
+            settings.SimpleApiKey = Widgets.TextField(rowRect, settings.SimpleApiKey);
+
+            Rect buttonRect = new Rect(rowRect.xMax + spacing, rowRect.y, buttonWidth, rowRect.height);
+            if (Widgets.ButtonText(buttonRect, "RimTalk.Settings.GetFreeApiKeyButton".Translate()))
+            {
+                Application.OpenURL("https://aistudio.google.com/app/apikey");
+            }
+
+            // Description
+            Text.Font = GameFont.Tiny;
+            GUI.color = Color.gray;
+            Rect cloudDescRect = listingStandard.GetRect(Text.LineHeight);
+            Widgets.Label(cloudDescRect, "RimTalk.Settings.GoogleApiKeyDesc".Translate());
+            GUI.color = Color.white;
+            Text.Font = GameFont.Small;
         }
-
-        // Add description for free Google providers
-        Text.Font = GameFont.Tiny;
-        GUI.color = Color.gray;
-        Rect cloudDescRect = listingStandard.GetRect(Text.LineHeight);
-        Widgets.Label(cloudDescRect, "RimTalk.Settings.GoogleApiKeyDesc".Translate());
-        GUI.color = Color.white;
-        Text.Font = GameFont.Small;
-
-        listingStandard.Gap();
-
-        // Show Advanced Settings button
-        Rect advancedButtonRect = listingStandard.GetRect(30f);
-        if (Widgets.ButtonText(advancedButtonRect, "RimTalk.Settings.SwitchToAdvancedSettings".Translate()))
+        else
         {
-            settings.UseSimpleConfig = false;
+            // Player2 Section: Split Cards (Symmetrical Bottom Buttons)
+            const float boxHeight = 125f;
+            const float cardGap = 12f;
+            const float padding = 10f;
+            const float btnHeight = 28f;
+
+            Rect totalBox = listingStandard.GetRect(boxHeight);
+            // Left & Right Cards: symmetrical split aligning with listingStandard.ColumnWidth
+            float cardW = (listingStandard.ColumnWidth - cardGap) / 2f;
+
+            Rect leftCard = new Rect(totalBox.x, totalBox.y, cardW, boxHeight);
+            Rect rightCard = new Rect(totalBox.x + cardW + cardGap, totalBox.y, cardW, boxHeight);
+
+            bool? status = Player2Client.GetLocalAppStatusCached();
+
+            bool isSimpleActive = settings.UseSimpleConfig && settings.SimpleProvider == AIProvider.Player2;
+            bool isLeftActive = isSimpleActive && (status == true);
+            bool isRightActive = isSimpleActive && !string.IsNullOrEmpty(settings.SimplePlayer2ApiKey);
+            bool isAppRunning = (status == true);
+
+            // Color palettes (Muted Emerald/Green theme for both cards)
+            Color greenActiveBg = new Color(0.12f, 0.24f, 0.20f, 0.5f);
+            Color greenActiveBorder = new Color(0.25f, 0.68f, 0.52f, 0.85f);
+
+            // Inactive & Dimmed
+            Color inactiveBg = new Color(0.12f, 0.14f, 0.17f, 0.5f);
+            Color inactiveBorder = new Color(0.3f, 0.35f, 0.42f, 0.5f);
+            Color dimmedBg = new Color(0.08f, 0.09f, 0.11f, 0.4f);
+            Color dimmedBorder = new Color(0.22f, 0.25f, 0.28f, 0.4f);
+
+            // 1. Left Card: Option 1 - Desktop App
+            Widgets.DrawBoxSolid(leftCard, isLeftActive ? greenActiveBg : inactiveBg);
+            GUI.color = isLeftActive ? greenActiveBorder : inactiveBorder;
+            Widgets.DrawBox(leftCard, 1);
+            GUI.color = Color.white;
+
+            Rect leftInner = leftCard.ContractedBy(padding);
+            // Left Content: Title
+            Rect leftTitleRect = new Rect(leftInner.x, leftInner.y, leftInner.width, 22f);
+            Text.Font = GameFont.Small;
+            Widgets.Label(leftTitleRect, "RimTalk.Settings.Player2AppTitle".Translate());
+
+            // Left Status Row (matches inputRow height 24f and Y position for alignment)
+            Rect statusRow = new Rect(leftInner.x, leftTitleRect.yMax + 1f, leftInner.width, 24f);
+            GUI.color = isLeftActive ? new Color(0.4f, 0.85f, 0.65f) : Color.gray;
+            Text.Font = GameFont.Tiny;
+            Text.Anchor = TextAnchor.MiddleLeft;
+            Widgets.Label(statusRow, isLeftActive ? "RimTalk.Settings.Player2StatusConnected".Translate() : "RimTalk.Settings.Player2StatusDisconnected".Translate());
+            Text.Anchor = TextAnchor.UpperLeft;
+            GUI.color = Color.white;
+
+            // Left Description Row (matches rightDescRect height 18f and Y position)
+            Rect leftDescRect = new Rect(leftInner.x, statusRow.yMax + 2f, leftInner.width, 18f);
+            Text.Font = GameFont.Tiny;
+            GUI.color = Color.gray;
+            Widgets.Label(leftDescRect, "RimTalk.Settings.Player2AppDesc".Translate());
+            GUI.color = Color.white;
+            Text.Font = GameFont.Small;
+
+            // Left Bottom Button
+            Rect leftBtnRect = new Rect(leftInner.x, leftCard.yMax - padding - btnHeight, leftInner.width, btnHeight);
+            if (Widgets.ButtonText(leftBtnRect, "RimTalk.Settings.Player2DownloadApp".Translate()))
+            {
+                Application.OpenURL("https://player2.game");
+            }
+
+            // 2. Right Card: Option 2 - Web API Key (shares same green theme)
+            Widgets.DrawBoxSolid(rightCard, isAppRunning ? dimmedBg : (isRightActive ? greenActiveBg : inactiveBg));
+            GUI.color = isAppRunning ? dimmedBorder : (isRightActive ? greenActiveBorder : inactiveBorder);
+            Widgets.DrawBox(rightCard, 1);
+            GUI.color = Color.white;
+
+            Rect rightInner = rightCard.ContractedBy(padding);
+            // Right Content
+            Rect rightTitleRect = new Rect(rightInner.x, rightInner.y, rightInner.width, 22f);
+            Text.Font = GameFont.Small;
+            if (isAppRunning) GUI.color = Color.gray;
+            Widgets.Label(rightTitleRect, "RimTalk.Settings.Player2WebTitle".Translate());
+            GUI.color = Color.white;
+
+            // Right Content: inputs and buttons remain usable even if visually subordinated
+            Rect inputRow = new Rect(rightInner.x, rightTitleRect.yMax + 1f, rightInner.width, 24f);
+            settings.SimplePlayer2ApiKey = Widgets.TextField(inputRow, settings.SimplePlayer2ApiKey);
+
+            Rect rightDescRect = new Rect(rightInner.x, inputRow.yMax + 2f, rightInner.width, 18f);
+            Text.Font = GameFont.Tiny;
+            GUI.color = Color.gray;
+            Widgets.Label(rightDescRect, "RimTalk.Settings.Player2WebDesc".Translate());
+            GUI.color = Color.white;
+
+            // Right Bottom Button
+            Rect rightBtnRect = new Rect(rightInner.x, rightCard.yMax - padding - btnHeight, rightInner.width, btnHeight);
+            Text.Font = GameFont.Small;
+
+            bool isAuthenticating = Player2AuthService.IsAuthenticating;
+            string btnLabel = isAuthenticating
+                ? "RimTalk.Settings.Player2AuthWaiting".Translate()
+                : "RimTalk.Settings.Player2GetWebKey".Translate();
+
+            if (Widgets.ButtonText(rightBtnRect, btnLabel))
+            {
+                if (isAuthenticating)
+                {
+                    List<FloatMenuOption> authOptions =
+                    [
+                        new("RimTalk.Settings.Player2AuthReopen".Translate(), () =>
+                        {
+                            if (!string.IsNullOrEmpty(Player2AuthService.ApprovalUrl))
+                            {
+                                Application.OpenURL(Player2AuthService.ApprovalUrl);
+                            }
+                        }),
+                        new("RimTalk.Settings.Player2AuthCancel".Translate(), () =>
+                        {
+                            Player2AuthService.Cancel();
+                        })
+                    ];
+                    Find.WindowStack.Add(new FloatMenu(authOptions));
+                }
+                else
+                {
+                    Player2AuthService.StartAuth();
+                }
+            }
         }
     }
 
     private void DrawAdvancedApiSettings(Listing_Standard listingStandard)
     {
         RimTalkSettings settings = Get();
-
-        // Show Simple Settings button
-        Rect simpleButtonRect = listingStandard.GetRect(30f);
-        if (Widgets.ButtonText(simpleButtonRect, "RimTalk.Settings.SwitchToSimpleSettings".Translate()))
-        {
-            if (string.IsNullOrWhiteSpace(settings.SimpleApiKey))
-            {
-                var firstValidCloudConfig = settings.CloudConfigs.FirstOrDefault(c => c.IsValid());
-                if (firstValidCloudConfig != null)
-                {
-                    settings.SimpleApiKey = firstValidCloudConfig.ApiKey;
-                }
-            }
-            settings.UseSimpleConfig = true;
-        }
-
-        listingStandard.Gap();
 
         // Cloud providers option with description
         Rect radioRect1 = listingStandard.GetRect(24f);
@@ -346,7 +571,19 @@ public partial class Settings
         }
         else
         {
-            if (Widgets.ButtonText(modelRect, config.SelectedModel))
+            string label = config.SelectedModel;
+            if (config.Provider == AIProvider.Player2)
+            {
+                bool? status = Player2Client.GetLocalAppStatusCached();
+                if (status == true)
+                    label = "Desktop App";
+                else if (!string.IsNullOrEmpty(config.ApiKey))
+                    label = "Web API";
+                else
+                    label = "Default";
+            }
+
+            if (Widgets.ButtonText(modelRect, label))
             {
                 ShowModelSelectionMenu(config);
             }
@@ -375,16 +612,31 @@ public partial class Settings
         return result;
     }
 
+    private static readonly AIProvider[] DropdownProviders =
+    [
+        AIProvider.Google,
+        AIProvider.Player2,
+        AIProvider.OpenAI,
+        AIProvider.Claude,
+        AIProvider.DeepSeek,
+        AIProvider.Grok,
+        AIProvider.GLM,
+        AIProvider.GLMCoding,
+        AIProvider.OpenRouter,
+        AIProvider.AlibabaIntl,
+        AIProvider.AlibabaCN,
+        AIProvider.Moonshot,
+        AIProvider.Custom
+    ];
+
     private void DrawProviderDropdown(float x, float y, float height, float width, ApiConfig config)
     {
         Rect providerRect = new Rect(x, y, width, height);
         if (Widgets.ButtonText(providerRect, config.Provider.GetLabel()))
         {
             List<FloatMenuOption> providerOptions = [];
-            foreach (AIProvider provider in Enum.GetValues(typeof(AIProvider)))
+            foreach (AIProvider provider in DropdownProviders)
             {
-                if (provider is AIProvider.None or AIProvider.Local) continue;
-                
                 providerOptions.Add(new FloatMenuOption(provider.GetLabel(), () =>
                 {
                     config.Provider = provider;
@@ -392,7 +644,6 @@ public partial class Settings
                     {
                         case AIProvider.Player2:
                             config.SelectedModel = "Default";
-                            Player2Client.CheckPlayer2StatusAndNotify();
                             break;
                         case AIProvider.Custom:
                             config.SelectedModel = "Custom";
@@ -490,56 +741,127 @@ public partial class Settings
         }
     }
 
-    private void DrawEnableToggle(Rect rowRect, float y, float height, ApiConfig config)
+    private struct DetectedServerInfo
     {
-        Rect toggleRect = new Rect(rowRect.xMax - 70f, y, 24f, height);
-        Widgets.Checkbox(new Vector2(toggleRect.x, toggleRect.y), ref config.IsEnabled);
-        if (Mouse.IsOver(toggleRect))
-        {
-            TooltipHandler.TipRegion(toggleRect, "RimTalk.Settings.EnableDisableApiConfigTooltip".Translate());
-        }
+        public string Url;
+        public string Name;
+        public List<string> Models;
     }
+
+    private static string GetLocalServerDisplayName(string url)
+    {
+        if (Uri.TryCreate(url, UriKind.Absolute, out Uri uri))
+        {
+            string hostPort = $"{uri.Host}:{uri.Port}";
+            string appName = uri.Port switch
+            {
+                11434 => "Ollama",
+                1234 => "LM Studio",
+                8080 => "llama.cpp",
+                8000 => "vLLM",
+                5000 => "TextGen",
+                5001 => "KoboldCpp",
+                1337 => "Jan",
+                _ => null
+            };
+
+            return appName != null ? $"{appName} ({hostPort})" : hostPort;
+        }
+
+        return url;
+    }
+
+    private static bool isScanningLocal;
+    private static List<DetectedServerInfo> pendingLocalServers;
+    private static ApiConfig pendingLocalConfig;
 
     private void DrawLocalProviderSection(Listing_Standard listingStandard, RimTalkSettings settings)
     {
-        listingStandard.Label("RimTalk.Settings.LocalProviderConfiguration".Translate());
-        listingStandard.Gap(6f);
-
         if (settings.LocalConfig == null)
         {
             settings.LocalConfig = new ApiConfig { Provider = AIProvider.Local };
         }
 
+        listingStandard.Gap(20f);
         DrawLocalConfigRow(listingStandard, settings.LocalConfig);
+    }
+
+    private static void ApplyDetectedServer(DetectedServerInfo server, ApiConfig config)
+    {
+        config.BaseUrl = server.Url;
+        if (server.Models.Count == 1)
+        {
+            config.CustomModelName = server.Models[0];
+        }
+        else if (server.Models.Count > 1)
+        {
+            var modelOptions = server.Models.Select(m => new FloatMenuOption(m, () =>
+            {
+                config.CustomModelName = m;
+            })).ToList();
+            Find.WindowStack.Add(new FloatMenu(modelOptions) { vanishIfMouseDistant = false });
+        }
     }
 
     private void DrawLocalConfigRow(Listing_Standard listingStandard, ApiConfig config)
     {
-        Rect rowRect = listingStandard.GetRect(24f);
-        float x = rowRect.x;
+        if (pendingLocalServers != null && pendingLocalConfig == config)
+        {
+            var servers = pendingLocalServers;
+            pendingLocalServers = null;
+            pendingLocalConfig = null;
+
+            if (servers.Count == 1)
+            {
+                ApplyDetectedServer(servers[0], config);
+            }
+            else
+            {
+                var serverOptions = servers.Select(server => new FloatMenuOption(server.Name, () =>
+                {
+                    ApplyDetectedServer(server, config);
+                })).ToList();
+
+                Find.WindowStack.Add(new FloatMenu(serverOptions) { vanishIfMouseDistant = false });
+            }
+        }
+
+        const float totalWidth = 708f;
+        const float height = 26f;
+
+        Rect rowRect = listingStandard.GetRect(height);
+        float x = rowRect.x + Mathf.Max(0f, (listingStandard.ColumnWidth - totalWidth) / 2f);
         float y = rowRect.y;
-        float height = rowRect.height;
 
-        Rect baseUrlLabelRect = new Rect(x, y, 80f, height);
-        var labelText = "RimTalk.Settings.BaseUrlLabel".Translate() + " [?]";
-        Widgets.Label(baseUrlLabelRect, labelText);
-        TooltipHandler.TipRegion(baseUrlLabelRect, "RimTalk_Settings_Api_BaseUrlInfo".Translate());
-        x += 85f;
+        TextAnchor prevAnchor = Text.Anchor;
+        Text.Anchor = TextAnchor.MiddleLeft;
 
-        Rect urlRect = new Rect(x, y, 250f, height);
+        // Base URL label & info icon
+        Widgets.Label(new Rect(x, y, 38f, height), "RimTalk.Settings.BaseUrlLabel".Translate());
+        Rect infoRect = new Rect(x + 40f, y + 4f, 18f, 18f);
+        GUI.DrawTexture(infoRect, TexButton.Info);
+        TooltipHandler.TipRegion(infoRect, "RimTalk_Settings_Api_BaseUrlInfo".Translate());
+        x += 66f;
+
+        Text.Anchor = prevAnchor;
+
+        // URL TextField
+        Rect urlRect = new Rect(x, y, 230f, height);
         config.BaseUrl = Widgets.TextField(urlRect, config.BaseUrl);
-        x += 285f;
+        x += 262f;
 
-        Rect modelLabelRect = new Rect(x, y, 70f, height);
-        Widgets.Label(modelLabelRect, "RimTalk.Settings.ModelLabel".Translate());
-        x += 75f;
+        Text.Anchor = TextAnchor.MiddleLeft;
+        Widgets.Label(new Rect(x, y, 60f, height), "RimTalk.Settings.ModelLabel".Translate());
+        Text.Anchor = prevAnchor;
+        x += 64f;
 
+        // Model TextField
         Rect modelRect = new Rect(x, y, 200f, height);
         config.CustomModelName = Widgets.TextField(modelRect, config.CustomModelName);
-        x += 205f;
+        x += 218f;
 
-        // Customize Button (OptionsGeneral Icon)
-        Rect customRect = new Rect(x, y + 1f, 22f, 22f);
+        // Customize Button (gear icon)
+        Rect customRect = new Rect(x, y + 2f, 22f, 22f);
         var iconTexture = ContentFinder<Texture2D>.Get("UI/Icons/Options/OptionsGeneral");
         bool hasCustom = !string.IsNullOrWhiteSpace(config.CustomRequestJson);
         Color iconColor = hasCustom ? new Color(0.4f, 0.9f, 0.5f) : new Color(0.85f, 0.85f, 0.85f);
@@ -551,5 +873,94 @@ public partial class Settings
             Find.WindowStack.Add(new Dialog_CustomizeRequest(config));
         }
         TooltipHandler.TipRegion(customRect, "RimTalk.Settings.CustomizeRequestTooltip".Translate());
+        x += 40f;
+
+        // Auto Detect Button
+        Rect scanBtnRect = new Rect(x, y, 118f, height);
+        string scanLabel = isScanningLocal
+            ? "RimTalk.Settings.LocalScanning".Translate()
+            : "RimTalk.Settings.LocalAutoDetect".Translate();
+
+        if (Widgets.ButtonText(scanBtnRect, scanLabel, true, true, !isScanningLocal))
+        {
+            SoundDefOf.Click.PlayOneShotOnCamera(null);
+            StartScanLocalEndpoints(config);
+        }
+    }
+
+    private static void StartScanLocalEndpoints(ApiConfig config)
+    {
+        if (isScanningLocal) return;
+        isScanningLocal = true;
+
+        Task.Run(async () =>
+        {
+            try
+            {
+                string[] candidates =
+                [
+                    "http://localhost:11434",
+                    "http://localhost:1234",
+                    "http://localhost:8080",
+                    "http://localhost:8000",
+                    "http://localhost:5000",
+                    "http://localhost:5001",
+                    "http://localhost:1337"
+                ];
+
+                var tasks = candidates.Select(async url =>
+                {
+                    try
+                    {
+                        string modelsUrl = url.TrimEnd('/') + "/v1/models";
+                        var models = await OpenAIClient.FetchModelsAsync(null, modelsUrl);
+                        if (models != null && models.Count > 0)
+                        {
+                            return (url, models, alive: true);
+                        }
+                    }
+                    catch
+                    {
+                        // Ignore connection failures / timeouts
+                    }
+                    return (url, models: new List<string>(), alive: false);
+                }).ToList();
+
+                var results = await Task.WhenAll(tasks);
+                var activeServers = results
+                    .Where(r => r.alive)
+                    .Select(r => new DetectedServerInfo
+                    {
+                        Url = r.url,
+                        Name = GetLocalServerDisplayName(r.url),
+                        Models = r.models
+                    })
+                    .ToList();
+
+                LongEventHandler.ExecuteWhenFinished(() =>
+                {
+                    isScanningLocal = false;
+                    if (activeServers.Count == 0)
+                    {
+                        Messages.Message("RimTalk.Settings.LocalNotFound".Translate(), MessageTypeDefOf.RejectInput, false);
+                    }
+                    else
+                    {
+                        Messages.Message("RimTalk.Settings.LocalDetected".Translate(), MessageTypeDefOf.PositiveEvent, false);
+                        pendingLocalServers = activeServers;
+                        pendingLocalConfig = config;
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error scanning local endpoints: {ex.Message}");
+                LongEventHandler.ExecuteWhenFinished(() =>
+                {
+                    isScanningLocal = false;
+                    Messages.Message("RimTalk.Settings.LocalNotFound".Translate(), MessageTypeDefOf.RejectInput, false);
+                });
+            }
+        });
     }
 }

@@ -9,7 +9,6 @@ using RimTalk.Service;
 using RimTalk.Util;
 using UnityEngine.Networking;
 using Verse;
-using Enumerable = System.Linq.Enumerable;
 
 namespace RimTalk.Client.OpenAI;
 
@@ -24,16 +23,36 @@ public class OpenAIClient(
     private const string DefaultPath = "/v1/chat/completions";
     private readonly string _endpointUrl = FormatEndpointUrl(baseUrl);
     private readonly Random _random = new();
+    private readonly AIProvider _provider = AIProvider.None;
+
+    public OpenAIClient(
+        string baseUrl,
+        string model,
+        string apiKey,
+        Dictionary<string, string> extraHeaders,
+        string customRequestJson,
+        AIProvider provider) : this(baseUrl, model, apiKey, extraHeaders, customRequestJson)
+    {
+        _provider = provider;
+    }
+
+    private AIProvider GetEffectiveProvider()
+    {
+        if (_provider != AIProvider.None) return _provider;
+        return Settings.Get()?.GetActiveConfig()?.Provider ?? AIProvider.None;
+    }
 
     private static string FormatEndpointUrl(string baseUrl)
     {
         if (string.IsNullOrEmpty(baseUrl)) return string.Empty;
         var trimmed = baseUrl.Trim().TrimEnd('/');
         var uri = new Uri(trimmed);
-        // Append default path if only base domain is provided
-        return (uri.AbsolutePath == "/" || string.IsNullOrEmpty(uri.AbsolutePath.Trim('/')))
-            ? trimmed + DefaultPath
-            : trimmed;
+        // Append default path if only base domain or /v1 is provided
+        if (uri.AbsolutePath == "/" || string.IsNullOrEmpty(uri.AbsolutePath.Trim('/')))
+            return trimmed + DefaultPath;
+        if (uri.AbsolutePath.TrimEnd('/') == "/v1")
+            return trimmed + "/chat/completions";
+        return trimmed;
     }
 
     public async Task<Payload> GetChatCompletionAsync(List<(Role role, string message)> prefixMessages,
@@ -43,20 +62,26 @@ public class OpenAIClient(
         return await GetChatCompletionAsync(prefixMessages, messages, null, onRequestPrepared);
     }
 
+    private static readonly string[] ThinkingLadder = ["disabled", "minimal", "low", "standard"];
+
     public async Task<Payload> GetChatCompletionAsync(List<(Role role, string message)> prefixMessages,
         List<(Role role, string message)> messages,
         string imageBase64,
         Action<Payload> onRequestPrepared = null)
     {
-        string jsonContent = BuildRequestJson(prefixMessages, messages, stream: false, imageBase64: imageBase64);
-        onRequestPrepared?.Invoke(new Payload(_endpointUrl, model, jsonContent, null, 0));
-        string responseText = await SendRequestAsync(jsonContent, new DownloadHandlerBuffer());
+        return await ExecuteWithFallbackAsync(async reasoningLevel =>
+        {
+            string jsonContent = BuildRequestJson(prefixMessages, messages, stream: false, imageBase64: imageBase64, reasoningLevel: reasoningLevel);
+            string effectiveModel = GetEffectiveModel(jsonContent);
+            onRequestPrepared?.Invoke(new Payload(_endpointUrl, effectiveModel, jsonContent, null, 0));
+            string responseText = await SendRequestAsync(jsonContent, new DownloadHandlerBuffer());
 
-        var response = JsonUtil.DeserializeFromJson<OpenAIResponse>(responseText);
-        var content = response?.Choices?[0]?.Message?.Content;
-        var tokens = response?.Usage?.TotalTokens ?? 0;
-
-        return new Payload(_endpointUrl, model, jsonContent, content, tokens);
+            var response = JsonUtil.DeserializeFromJson<OpenAIResponse>(responseText);
+            return new Payload(_endpointUrl, effectiveModel, jsonContent, response?.Choices?[0]?.Message?.Content, response?.Usage?.TotalTokens ?? 0)
+            {
+                StatusCode = 200
+            };
+        });
     }
 
     public async Task<Payload> GetStreamingChatCompletionAsync<T>(List<(Role role, string message)> prefixMessages,
@@ -73,201 +98,182 @@ public class OpenAIClient(
         Action<T> onResponseParsed,
         Action<Payload> onRequestPrepared = null) where T : class
     {
-        string jsonContent = BuildRequestJson(prefixMessages, messages, stream: true, imageBase64: imageBase64);
-        onRequestPrepared?.Invoke(new Payload(_endpointUrl, model, jsonContent, null, 0));
-        var jsonParser = new JsonStreamParser<T>();
-
-        var streamHandler = new OpenAIStreamHandler(chunk =>
+        var parser = new JsonStreamParser<T>();
+        return await StreamAsync(prefixMessages, messages, imageBase64, chunk =>
         {
-            foreach (var response in jsonParser.Parse(chunk))
+            foreach (var response in parser.Parse(chunk))
                 onResponseParsed?.Invoke(response);
-        });
-
-        await SendRequestAsync(jsonContent, streamHandler);
-
-        return new Payload(_endpointUrl, model, jsonContent, streamHandler.GetFullText(),
-            streamHandler.GetTotalTokens());
+        }, onRequestPrepared);
     }
 
-    public async Task<Payload> GetStreamingTextCompletionAsync(
+    private async Task<Payload> StreamAsync(
         List<(Role role, string message)> prefixMessages,
         List<(Role role, string message)> messages,
         string imageBase64,
-        Action<string> onChunkReceived,
-        Action<Payload> onRequestPrepared = null)
+        Action<string> onChunk,
+        Action<Payload> onRequestPrepared)
     {
-        string jsonContent = BuildRequestJson(prefixMessages, messages, stream: true, imageBase64: imageBase64);
-        onRequestPrepared?.Invoke(new Payload(_endpointUrl, model, jsonContent, null, 0));
-
-        var streamHandler = new OpenAIStreamHandler(chunk =>
+        return await ExecuteWithFallbackAsync(async reasoningLevel =>
         {
-            if (!string.IsNullOrEmpty(chunk))
+            string jsonContent = BuildRequestJson(prefixMessages, messages, stream: true, imageBase64: imageBase64, reasoningLevel: reasoningLevel);
+            string effectiveModel = GetEffectiveModel(jsonContent);
+            onRequestPrepared?.Invoke(new Payload(_endpointUrl, effectiveModel, jsonContent, null, 0));
+
+            var streamHandler = new OpenAIStreamHandler(onChunk);
+            await SendRequestAsync(jsonContent, streamHandler);
+
+            return new Payload(_endpointUrl, effectiveModel, jsonContent, streamHandler.GetFullText(),
+                streamHandler.GetTotalTokens())
             {
-                onChunkReceived?.Invoke(chunk);
-            }
+                StatusCode = 200
+            };
         });
+    }
 
-        await SendRequestAsync(jsonContent, streamHandler);
+    private async Task<Payload> ExecuteWithFallbackAsync(Func<string, Task<Payload>> requestFunc)
+    {
+        if (!string.IsNullOrEmpty(AIService.CurrentRequest?.RawJsonOverride))
+            return await requestFunc(null);
 
-        return new Payload(_endpointUrl, model, jsonContent, streamHandler.GetFullText(),
-            streamHandler.GetTotalTokens());
+        bool userOverrodeReasoning = !string.IsNullOrWhiteSpace(customRequestJson) &&
+            (customRequestJson.Contains("\"thinking\"") || customRequestJson.Contains("\"reasoning_effort\""));
+
+        if (userOverrodeReasoning)
+            return await requestFunc(null);
+
+        var settings = Settings.Get();
+        string normalizedModel = model?.StartsWith("models/") == true ? model.Substring(7) : model;
+        string cacheKey = $"{GetEffectiveProvider()}_{normalizedModel}";
+
+        if (settings?.DetectedThinkingLevels != null &&
+            settings.DetectedThinkingLevels.TryGetValue(cacheKey, out var cachedLevel))
+        {
+            try
+            {
+                return await requestFunc(cachedLevel);
+            }
+            catch (AIRequestException ex) when (ex.Payload?.StatusCode == 400)
+            {
+                LongEventHandler.ExecuteWhenFinished(() =>
+                {
+                    var s = Settings.Get();
+                    if (s?.DetectedThinkingLevels != null && s.DetectedThinkingLevels.Remove(cacheKey))
+                    {
+                        s.Write();
+                    }
+                });
+                Logger.Warning($"Cached thinking level '{cachedLevel}' failed for '{cacheKey}'. Retrying ladder...");
+            }
+        }
+
+        AIRequestException lastEx = null;
+        foreach (var level in ThinkingLadder)
+        {
+            try
+            {
+                var payload = await requestFunc(level);
+                LongEventHandler.ExecuteWhenFinished(() =>
+                {
+                    var s = Settings.Get();
+                    if (s != null)
+                    {
+                        s.DetectedThinkingLevels ??= new Dictionary<string, string>();
+                        s.DetectedThinkingLevels[cacheKey] = level;
+                        s.Write();
+                        Logger.Message($"Detected and saved thinking level '{level}' for '{cacheKey}'.");
+                    }
+                });
+                return payload;
+            }
+            catch (AIRequestException ex) when (ex.Payload?.StatusCode == 400)
+            {
+                lastEx = ex;
+                Logger.Warning($"Model '{model}' failed with thinking level '{level}' (HTTP 400). Trying next level...");
+            }
+        }
+
+        if (lastEx != null)
+            throw lastEx;
+
+        return null;
+    }
+
+    private string GetEffectiveModel(string jsonContent)
+    {
+        if (!string.IsNullOrEmpty(AIService.CurrentRequest?.RawJsonOverride))
+        {
+            var parsed = JsonUtil.ParseJsonValue(jsonContent, out _) as Dictionary<string, object>;
+            if (parsed != null && parsed.TryGetValue("model", out var m) && m is string mStr && !string.IsNullOrWhiteSpace(mStr))
+                return mStr;
+        }
+        return model;
     }
 
     private string BuildRequestJson(List<(Role role, string message)> prefixMessages,
-        List<(Role role, string message)> messages, bool stream, string imageBase64 = null)
+        List<(Role role, string message)> messages, bool stream, string imageBase64 = null,
+        string reasoningLevel = null)
+    {
+        if (!string.IsNullOrEmpty(AIService.CurrentRequest?.RawJsonOverride))
+            return AIService.CurrentRequest.RawJsonOverride;
+        
+        bool disableThinking = reasoningLevel == "disabled";
+        string effort = reasoningLevel is "minimal" or "low" ? reasoningLevel : null;
+
+        var request = new ChatRequest
+        {
+            Model = model,
+            Stream = stream,
+            DisableThinking = disableThinking,
+            ReasoningEffort = effort,
+            Messages = BuildMessages(prefixMessages, messages, imageBase64)
+        };
+
+        string baseJson = JsonUtil.SerializeJsonValue(request.ToPayload());
+        return string.IsNullOrWhiteSpace(customRequestJson)
+            ? baseJson
+            : JsonUtil.MergeJson(baseJson, customRequestJson);
+    }
+
+    private List<ChatMessage> BuildMessages(List<(Role role, string message)> prefixMessages,
+        List<(Role role, string message)> messages, string imageBase64)
     {
         var rawMessages = new List<(Role role, string message)>();
         if (prefixMessages != null) rawMessages.AddRange(prefixMessages);
         if (messages != null) rawMessages.AddRange(messages);
 
-        var mergedMessages = new List<Message>();
+        var merged = new List<ChatMessage>();
 
-        bool isGemma3 = !string.IsNullOrEmpty(model) && model.Contains("gemma-3");
-        if (isGemma3)
+        // Gemma-3 workaround: convert system messages into an initial user message
+        if (!string.IsNullOrEmpty(model) && model.Contains("gemma-3"))
         {
-            var systemMessages = Enumerable.ToList(Enumerable.Where(rawMessages, m => m.role == Role.System));
-            if (systemMessages.Any())
+            var systemMessages = rawMessages.Where(m => m.role == Role.System).ToList();
+            if (systemMessages.Count > 0)
             {
-                var systemText = string.Join("\n\n", Enumerable.Select(systemMessages, m => m.message));
-
-                mergedMessages.Add(new Message
-                {
-                    Role = "user",
-                    Content = $"{_random.Next()} {systemText}"
-                });
+                var systemText = string.Join("\n\n", systemMessages.Select(m => m.message));
+                merged.Add(new ChatMessage("user", $"{_random.Next()} {systemText}"));
                 rawMessages.RemoveAll(m => m.role == Role.System);
             }
         }
 
-        foreach (var m in rawMessages)
+        foreach (var (role, text) in rawMessages)
         {
-            var roleStr = RoleToString(m.role);
-            if (mergedMessages.Count > 0 && mergedMessages.Last().Role == roleStr)
-            {
-                mergedMessages.Last().Content += "\n\n" + m.message;
-            }
+            var roleStr = RoleToString(role);
+            if (merged.Count > 0 && merged.Last().Role == roleStr)
+                merged.Last().Text += "\n\n" + text;
             else
-            {
-                mergedMessages.Add(new Message
-                {
-                    Role = roleStr,
-                    Content = m.message
-                });
-            }
-        }
-        
-        string reasoningEffort = null;
-
-        if (!string.IsNullOrEmpty(model))
-        {
-            string m = model.ToLower();
-            if (m.Contains("gemini") && (m.Contains("pro") || m.Contains("3.7-flash")))
-                reasoningEffort = "low";
-            else if ((m.Contains("gemini") && m.Contains("flash")) || m.Contains("gemma-4"))
-                reasoningEffort = "minimal";
+                merged.Add(new ChatMessage(roleStr, text));
         }
 
-        string baseJson;
         if (!string.IsNullOrEmpty(imageBase64))
         {
-            var messageDicts = new List<object>();
-            bool imageAttached = false;
-
-            for (int i = 0; i < mergedMessages.Count; i++)
-            {
-                var msg = mergedMessages[i];
-                if (i == mergedMessages.Count - 1 && msg.Role == "user")
-                {
-                    imageAttached = true;
-                    messageDicts.Add(new Dictionary<string, object>
-                    {
-                        ["role"] = msg.Role,
-                        ["content"] = new List<object>
-                        {
-                            new Dictionary<string, object>
-                            {
-                                ["type"] = "text",
-                                ["text"] = msg.Content ?? ""
-                            },
-                            new Dictionary<string, object>
-                            {
-                                ["type"] = "image_url",
-                                ["image_url"] = new Dictionary<string, object>
-                                {
-                                    ["url"] = $"data:image/jpeg;base64,{imageBase64}",
-                                    ["detail"] = "auto"
-                                }
-                            }
-                        }
-                    });
-                }
-                else
-                {
-                    messageDicts.Add(new Dictionary<string, object>
-                    {
-                        ["role"] = msg.Role,
-                        ["content"] = msg.Content ?? ""
-                    });
-                }
-            }
-
-            if (!imageAttached)
-            {
-                messageDicts.Add(new Dictionary<string, object>
-                {
-                    ["role"] = "user",
-                    ["content"] = new List<object>
-                    {
-                        new Dictionary<string, object>
-                        {
-                            ["type"] = "image_url",
-                            ["image_url"] = new Dictionary<string, object>
-                            {
-                                ["url"] = $"data:image/jpeg;base64,{imageBase64}",
-                                ["detail"] = "auto"
-                            }
-                        }
-                    }
-                });
-            }
-
-            var rootDict = new Dictionary<string, object>
-            {
-                ["model"] = model,
-                ["messages"] = messageDicts,
-                ["stream"] = stream
-            };
-            if (stream)
-            {
-                rootDict["stream_options"] = new Dictionary<string, object> { ["include_usage"] = true };
-            }
-            if (!string.IsNullOrEmpty(reasoningEffort))
-            {
-                rootDict["reasoning_effort"] = reasoningEffort;
-            }
-
-            baseJson = JsonUtil.SerializeJsonValue(rootDict);
-        }
-        else
-        {
-            var request = new OpenAIRequest
-            {
-                Model = model,
-                Messages = mergedMessages,
-                Stream = stream,
-                StreamOptions = stream ? new StreamOptions { IncludeUsage = true } : null,
-                ReasoningEffort = reasoningEffort
-            };
-
-            baseJson = JsonUtil.SerializeToJson(request);
+            var lastUser = merged.LastOrDefault(m => m.Role == "user");
+            if (lastUser != null && lastUser == merged.Last())
+                lastUser.ImageBase64 = imageBase64;
+            else
+                merged.Add(new ChatMessage("user", "", imageBase64));
         }
 
-        if (!string.IsNullOrWhiteSpace(customRequestJson))
-        {
-            return JsonUtil.MergeJson(baseJson, customRequestJson);
-        }
-
-        return baseJson;
+        return merged;
     }
 
     private static string RoleToString(Role role)
@@ -297,7 +303,10 @@ public class OpenAIClient(
         webRequest.SetRequestHeader("Content-Type", "application/json");
 
         if (!string.IsNullOrEmpty(apiKey))
+        {
             webRequest.SetRequestHeader("Authorization", $"Bearer {apiKey}");
+            webRequest.SetRequestHeader("x-api-key", apiKey);
+        }
 
         if (extraHeaders != null)
         {
@@ -311,7 +320,7 @@ public class OpenAIClient(
         bool isLocal = _endpointUrl.Contains("localhost") || _endpointUrl.Contains("127.0.0.1") ||
                        _endpointUrl.Contains("192.168.") || _endpointUrl.Contains("10.");
 
-        float inactivityTimer = 0f;
+        DateTime lastActiveTime = DateTime.UtcNow;
         ulong lastBytes = 0;
         float connectTimeout = isLocal ? 300f : 60f;
         float readTimeout = 60f;
@@ -335,22 +344,20 @@ public class OpenAIClient(
 
             if (currentBytes > lastBytes)
             {
-                inactivityTimer = 0f;
+                lastActiveTime = DateTime.UtcNow;
                 lastBytes = currentBytes;
             }
-            else
-            {
-                inactivityTimer += 0.1f;
-            }
 
-            if (!hasStartedReceiving && inactivityTimer > connectTimeout)
+            float inactiveSeconds = (float)(DateTime.UtcNow - lastActiveTime).TotalSeconds;
+
+            if (!hasStartedReceiving && inactiveSeconds > connectTimeout)
             {
                 webRequest.Abort();
                 throw new global::RimTalk.Error.FirstByteTimeoutException(connectTimeout, started.Elapsed.TotalSeconds,
                     startedPaused, Find.TickManager?.Paused ?? false);
             }
 
-            if (hasStartedReceiving && inactivityTimer > readTimeout)
+            if (hasStartedReceiving && inactiveSeconds > readTimeout)
             {
                 webRequest.Abort();
                 throw new TimeoutException($"Read timed out (Stalled for {readTimeout}s during generation)");
@@ -362,12 +369,13 @@ public class OpenAIClient(
         // Recover text for streaming errors
         if (downloadHandler is OpenAIStreamHandler sHandler)
         {
+            sHandler.Flush();
             if (!string.IsNullOrEmpty(sHandler.DetectedError))
             {
                 string errorMsg = sHandler.DetectedError;
                 string allText = sHandler.GetAllReceivedText();
                 throw new AIRequestException(errorMsg,
-                    new Payload(_endpointUrl, model, jsonContent, allText, 0, errorMsg));
+                    new Payload(_endpointUrl, model, jsonContent, allText, 0, errorMsg) { StatusCode = (int)webRequest.responseCode });
             }
 
             if (webRequest.responseCode >= 400 || webRequest.isNetworkError || webRequest.isHttpError)
@@ -381,7 +389,7 @@ public class OpenAIClient(
         {
             string errorMsg = ErrorUtil.ExtractErrorMessage(responseText) ?? "Quota exceeded";
             throw new QuotaExceededException(errorMsg,
-                new Payload(_endpointUrl, model, jsonContent, responseText, 0, errorMsg));
+                new Payload(_endpointUrl, model, jsonContent, responseText, 0, errorMsg) { StatusCode = (int)webRequest.responseCode });
         }
 
         if (webRequest.isNetworkError || webRequest.isHttpError)
@@ -389,7 +397,7 @@ public class OpenAIClient(
             string errorMsg = ErrorUtil.ExtractErrorMessage(responseText) ?? webRequest.error;
             Logger.Warning($"Request failed: {webRequest.responseCode} - {errorMsg}");
             throw new AIRequestException(errorMsg,
-                new Payload(_endpointUrl, model, jsonContent, responseText, 0, errorMsg));
+                new Payload(_endpointUrl, model, jsonContent, responseText, 0, errorMsg) { StatusCode = (int)webRequest.responseCode });
         }
 
         if (downloadHandler is DownloadHandlerBuffer)
@@ -403,18 +411,23 @@ public class OpenAIClient(
     public static async Task<List<string>> FetchModelsAsync(string apiKey, string url)
     {
         using var webRequest = UnityWebRequest.Get(url);
-        webRequest.SetRequestHeader("Authorization", "Bearer " + apiKey);
+        if (!string.IsNullOrEmpty(apiKey))
+        {
+            webRequest.SetRequestHeader("Authorization", "Bearer " + apiKey);
+            webRequest.SetRequestHeader("x-api-key", apiKey);
+            webRequest.SetRequestHeader("anthropic-version", "2023-06-01");
+        }
 
         var asyncOp = webRequest.SendWebRequest();
         while (!asyncOp.isDone) await Task.Delay(100);
 
         if (webRequest.isNetworkError || webRequest.isHttpError)
         {
-            Logger.Error($"Failed to fetch models: {webRequest.error}");
-            return new List<string>();
+            Logger.Warning($"Failed to fetch models: {webRequest.error}");
+            return [];
         }
 
         var response = JsonUtil.DeserializeFromJson<OpenAIModelsResponse>(webRequest.downloadHandler.text);
-        return response?.Data?.Select(m => m.Id).ToList() ?? new List<string>();
+        return response?.Data?.Select(m => m.Id).ToList() ?? [];
     }
 }

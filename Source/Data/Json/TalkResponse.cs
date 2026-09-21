@@ -11,6 +11,7 @@ public class TalkResponse(TalkType talkType, string name, string text) : IJsonDa
 {
     public Guid Id { get; set; } = Guid.NewGuid();
 
+    // Internal game logic only. Do NOT add [DataMember]; it leaks into LLM history JSON payloads.
     public TalkType TalkType { get; set; } = talkType;
     
     [DataMember(Name = "name")] 
@@ -44,9 +45,11 @@ public class TalkResponse(TalkType talkType, string name, string text) : IJsonDa
 
         return Enum.TryParse(InteractionRaw, true, out InteractionType result) ? result : InteractionType.None;
     }
+    public Pawn? TargetPawn { get; set; }
+
     public Pawn? GetTarget()
     {
-        return TargetName != null ? Cache.GetByName(TargetName)?.Pawn : null;
+        return TargetPawn ?? (TargetName != null ? Cache.GetByName(TargetName)?.Pawn : null);
     }
 
     public override string ToString()

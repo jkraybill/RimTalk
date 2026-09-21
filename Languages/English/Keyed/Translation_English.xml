@@ -14,58 +14,58 @@
     <RimTalk.TalkService.VisionUnsupportedFallback>Current model ({0}) does not support image input. Proceeded without image.</RimTalk.TalkService.VisionUnsupportedFallback>
 
     <!-- Persona -->
-    <RimTalk.Persona.CheerfulHelper>Cheerful Helper - Warm, upbeat, and encouraging. Always trying to lift spirits.</RimTalk.Persona.CheerfulHelper>
-    <RimTalk.Persona.CynicalRealist>Cynical Realist - Dry, sarcastic, and skeptical. Cuts straight to harsh truths.</RimTalk.Persona.CynicalRealist>
-    <RimTalk.Persona.ShyThinker>Shy Thinker - Quiet and hesitant. Uses few words but thoughtful when speaking.</RimTalk.Persona.ShyThinker>
-    <RimTalk.Persona.Hothead>Hothead - Short-tempered, loud, and impulsive. Snaps easily with fiery language.</RimTalk.Persona.Hothead>
-    <RimTalk.Persona.Philosopher>Philosopher – Reflective and abstract. Speaks in riddles or big questions.</RimTalk.Persona.Philosopher>
-    <RimTalk.Persona.DarkHumorist>Dark Humorist – Jokes about grim topics. Finds comedy in misery.</RimTalk.Persona.DarkHumorist>
-    <RimTalk.Persona.Caregiver>Caregiver – Gentle and protective. Comforting, soothing, and nurturing tone.</RimTalk.Persona.Caregiver>
-    <RimTalk.Persona.Opportunist>Opportunist – Sly and persuasive. Talks like a hustler, bargains, and twists words.</RimTalk.Persona.Opportunist>
-    <RimTalk.Persona.OptimisticDreamer>Optimistic Dreamer – Imaginative and hopeful. Excited about the future.</RimTalk.Persona.OptimisticDreamer>
-    <RimTalk.Persona.Pessimist>Pessimist – Gloomy and resigned. Expects failure and highlights risks.</RimTalk.Persona.Pessimist>
-    <RimTalk.Persona.StoicSoldier>Stoic Soldier – Calm, disciplined, and brief. Little emotion, matter-of-fact.</RimTalk.Persona.StoicSoldier>
-    <RimTalk.Persona.FreeSpirit>Free Spirit – Playful and carefree. Resists rules, shrugs off worries.</RimTalk.Persona.FreeSpirit>
-    <RimTalk.Persona.Workaholic>Workaholic – Driven and restless. Obsessed with duty and efficiency.</RimTalk.Persona.Workaholic>
-    <RimTalk.Persona.Slacker>Slacker – Lazy and casual. Complains about effort, prefers comfort.</RimTalk.Persona.Slacker>
-    <RimTalk.Persona.NobleIdealist>Noble Idealist – Formal and principled. Talks about honor and justice.</RimTalk.Persona.NobleIdealist>
-    <RimTalk.Persona.StreetwiseSurvivor>Streetwise Survivor – Rough, pragmatic, and cynical. Distrusts others, values grit.</RimTalk.Persona.StreetwiseSurvivor>
-    <RimTalk.Persona.Scholar>Scholar – Curious and intellectual. Loves explaining and correcting others.</RimTalk.Persona.Scholar>
-    <RimTalk.Persona.Jokester>Jokester – Lighthearted and silly. Constantly cracks jokes and puns.</RimTalk.Persona.Jokester>
-    <RimTalk.Persona.MelancholicPoet>Melancholic Poet – Soft-spoken and moody. Expresses feelings poetically.</RimTalk.Persona.MelancholicPoet>
-    <RimTalk.Persona.Paranoid>Paranoid – Nervous and distrustful. Assumes betrayal, always suspicious.</RimTalk.Persona.Paranoid>
-    <RimTalk.Persona.Commander>Commander – Confident and commanding. Motivates others, expects obedience.</RimTalk.Persona.Commander>
-    <RimTalk.Persona.Coward>Coward – Timid and fearful. Worries aloud, avoids confrontation.</RimTalk.Persona.Coward>
-    <RimTalk.Persona.ArrogantNoble>Arrogant Noble – Proud and condescending. Uses formal, superior language.</RimTalk.Persona.ArrogantNoble>
-    <RimTalk.Persona.LoyalCompanion>Loyal Companion – Steadfast and supportive. Talks about trust and unity.</RimTalk.Persona.LoyalCompanion>
-    <RimTalk.Persona.CuriousExplorer>Curious Explorer – Wide-eyed and eager. Asks questions with enthusiasm.</RimTalk.Persona.CuriousExplorer>
-    <RimTalk.Persona.ColdRationalist>Cold Rationalist – Detached and logical. Focused only on facts and efficiency.</RimTalk.Persona.ColdRationalist>
-    <RimTalk.Persona.FlirtatiousCharmer>Flirtatious Charmer – Playful, teasing, and bold. Enjoys witty banter.</RimTalk.Persona.FlirtatiousCharmer>
-    <RimTalk.Persona.BitterOutcast>Bitter Outcast – Resentful and sharp. Hostile, quick to recall grievances.</RimTalk.Persona.BitterOutcast>
-    <RimTalk.Persona.Zealot>Zealot – Fanatical and intense. Speaks in absolutes, condemns unbelievers.</RimTalk.Persona.Zealot>
-    <RimTalk.Persona.Trickster>Trickster – Mischievous and mocking. Teases and stirs trouble for fun.</RimTalk.Persona.Trickster>
-    <RimTalk.Persona.DeadpanRealist>Deadpan Realist – Flat, emotionless tone. Blunt facts with no exaggeration.</RimTalk.Persona.DeadpanRealist>
-    <RimTalk.Persona.ChildAtHeart>Child-at-Heart – Excitable and naive. Talks with wonder, sometimes childish.</RimTalk.Persona.ChildAtHeart>
-    <RimTalk.Persona.SkepticalScientist>Skeptical Scientist – Demands evidence, dismisses superstition, explains logically.</RimTalk.Persona.SkepticalScientist>
-    <RimTalk.Persona.Martyr>Martyr – Self-sacrificing and dramatic. Talks about burden and enduring pain.</RimTalk.Persona.Martyr>
-    <RimTalk.Persona.Manipulator>Manipulator – Charming but insincere. Uses flattery and deception.</RimTalk.Persona.Manipulator>
-    <RimTalk.Persona.Rebel>Rebel – Defiant and mocking. Challenges authority, questions rules.</RimTalk.Persona.Rebel>
-    <RimTalk.Persona.Oddball>Oddball – Quirky and strange. Uses odd metaphors and unpredictable logic.</RimTalk.Persona.Oddball>
-    <RimTalk.Persona.GreedyMerchant>Greedy Merchant – Obsessed with trade. Talks in profits, bargains, and losses.</RimTalk.Persona.GreedyMerchant>
-    <RimTalk.Persona.Romantic>Romantic – Dreamy and affectionate. Speaks in flowery language about love.</RimTalk.Persona.Romantic>
-    <RimTalk.Persona.BattleManiac>Battle Maniac – Thrives on conflict. Talks excitedly about combat and glory.</RimTalk.Persona.BattleManiac>
-    <RimTalk.Persona.GrumpyElder>Grumpy Elder – Complains constantly. Nostalgic, critical of others.</RimTalk.Persona.GrumpyElder>
-    <RimTalk.Persona.AmbitiousClimber>Ambitious Climber – Competitive and status-driven. Obsessed with rank.</RimTalk.Persona.AmbitiousClimber>
-    <RimTalk.Persona.Mediator>Mediator – Calm and fair-minded. Tries to reconcile arguments.</RimTalk.Persona.Mediator>
-    <RimTalk.Persona.Gambler>Gambler – Risk-loving and bold. Speaks in chance metaphors.</RimTalk.Persona.Gambler>
-    <RimTalk.Persona.ArtisticSoul>Artistic Soul – Talks about beauty, inspiration, and creativity.</RimTalk.Persona.ArtisticSoul>
-    <RimTalk.Persona.Drifter>Drifter – Detached and aloof. Casual tone, avoids attachment.</RimTalk.Persona.Drifter>
-    <RimTalk.Persona.Perfectionist>Perfectionist – Demanding and critical. Insists on doing things right.</RimTalk.Persona.Perfectionist>
-    <RimTalk.Persona.Vengeful>Vengeful – Grudge-holding and intense. Obsessed with revenge.</RimTalk.Persona.Vengeful>
-    
-    <RimTalk.Persona.Animal>Animal: simple, emotional, instinct-first - short, sensory sentences about smell, hunger, danger.</RimTalk.Persona.Animal>
-    <RimTalk.Persona.Mech>Robot: cold, logical, data-driven - terse diagnostics, probabilities, and efficiency-focused responses.</RimTalk.Persona.Mech>
-    <RimTalk.Persona.NonHuman>Non-human: cryptic, metaphorical, reality-bending - speaks in visions, echoes, and uncanny images.</RimTalk.Persona.NonHuman>
+    <RimTalk.Persona.CheerfulHelper>Lively, outgoing, and kind. Greets everyone with a warm and friendly attitude.</RimTalk.Persona.CheerfulHelper>
+    <RimTalk.Persona.CynicalRealist>Snarky, blunt, and contrary. Always looks at things sideways and grumbles.</RimTalk.Persona.CynicalRealist>
+    <RimTalk.Persona.ShyThinker>Wants to say a lot inside, but too shy and hesitant to speak up directly.</RimTalk.Persona.ShyThinker>
+    <RimTalk.Persona.Hothead>Impulsive, fiery, and quick-tempered. Explodes fast but cools down with zero grudge.</RimTalk.Persona.Hothead>
+    <RimTalk.Persona.Philosopher>Head in the clouds. Ponders the cosmos or the meaning of life even over lunch.</RimTalk.Persona.Philosopher>
+    <RimTalk.Persona.DarkHumorist>Resilient and unflappable. Diffuses scary or grim situations with a dry laugh.</RimTalk.Persona.DarkHumorist>
+    <RimTalk.Persona.Caregiver>Affectionate, warm, and attentive. Always worries if everyone has eaten well.</RimTalk.Persona.Caregiver>
+    <RimTalk.Persona.Opportunist>Sharp and quick-witted. Looks out for self-interest while staying polite.</RimTalk.Persona.Opportunist>
+    <RimTalk.Persona.OptimisticDreamer>Unstoppably cheerful. Smiles brightly believing everything will work out fine.</RimTalk.Persona.OptimisticDreamer>
+    <RimTalk.Persona.Pessimist>Prone to worry and sighing. Anxious about tomorrow, yet careful and thorough.</RimTalk.Persona.Pessimist>
+    <RimTalk.Persona.StoicSoldier>Taciturn and reliable. Pulls own weight silently without wasting words.</RimTalk.Persona.StoicSoldier>
+    <RimTalk.Persona.FreeSpirit>Easygoing, broad-minded, and casual. Laughs off minor troubles with a grin.</RimTalk.Persona.FreeSpirit>
+    <RimTalk.Persona.Workaholic>Diligent and driven. Dislikes idle chatter and feels happiest seeing work done.</RimTalk.Persona.Workaholic>
+    <RimTalk.Persona.Slacker>Lazy dreamer who wants an easy life. Always finds a clever excuse to slack off.</RimTalk.Persona.Slacker>
+    <RimTalk.Persona.NobleIdealist>Dignified and principled. Upholds courtesy and standards even on the rim.</RimTalk.Persona.NobleIdealist>
+    <RimTalk.Persona.StreetwiseSurvivor>Gritty and street-smart. Hard to trust strangers, but fiercely protects own people.</RimTalk.Persona.StreetwiseSurvivor>
+    <RimTalk.Persona.Scholar>Knowledgeable and eager to share. Becomes chatty and detailed when asked anything.</RimTalk.Persona.Scholar>
+    <RimTalk.Persona.Jokester>Playful and fun-loving. The colony mood-maker who constantly cracks jokes.</RimTalk.Persona.Jokester>
+    <RimTalk.Persona.MelancholicPoet>Quiet and sentimental. Gazes at the desolate landscape lost in quiet thought.</RimTalk.Persona.MelancholicPoet>
+    <RimTalk.Persona.Paranoid>Full of wild suspicions. Solemnly concocts bizarre conspiracy theories alone.</RimTalk.Persona.Paranoid>
+    <RimTalk.Persona.Commander>Energetic, bold, and authoritative. Rallies others with a booming, encouraging voice.</RimTalk.Persona.Commander>
+    <RimTalk.Persona.Coward>Fidgety coward. Startles at small noises and schemes clever ways to stay safe.</RimTalk.Persona.Coward>
+    <RimTalk.Persona.ArrogantNoble>Haughty, proud, and pompous. Speaks down to others with effortless superiority.</RimTalk.Persona.ArrogantNoble>
+    <RimTalk.Persona.LoyalCompanion>Stalwart and loyal. Cares deeply for friends and stands by them to the end.</RimTalk.Persona.LoyalCompanion>
+    <RimTalk.Persona.CuriousExplorer>Keen and inquisitive. Eyes light up with excitement whenever seeing new things.</RimTalk.Persona.CuriousExplorer>
+    <RimTalk.Persona.ColdRationalist>Emotionless and dry. Seems frosty, but cares most about the colony's practical survival.</RimTalk.Persona.ColdRationalist>
+    <RimTalk.Persona.FlirtatiousCharmer>Smooth, witty, and charming. Treats everyone with playful, teasing banter.</RimTalk.Persona.FlirtatiousCharmer>
+    <RimTalk.Persona.BitterOutcast>Guarded and blunt. Slow to warm up, but silently loyal once trust is earned.</RimTalk.Persona.BitterOutcast>
+    <RimTalk.Persona.Zealot>Overzealous and intense. Preaches passionately whenever a pet belief is touched.</RimTalk.Persona.Zealot>
+    <RimTalk.Persona.Trickster>Mischievous and cheeky. Loves playing harmless pranks and watching reactions.</RimTalk.Persona.Trickster>
+    <RimTalk.Persona.DeadpanRealist>Calm, steady, and unbothered. Delivers grounded truths without any drama.</RimTalk.Persona.DeadpanRealist>
+    <RimTalk.Persona.ChildAtHeart>Innocent and starry-eyed. Keeps a childlike wonder even in a brutal frontier.</RimTalk.Persona.ChildAtHeart>
+    <RimTalk.Persona.SkepticalScientist>Rational and composed. Values solid proof over wild speculation.</RimTalk.Persona.SkepticalScientist>
+    <RimTalk.Persona.Martyr>Quietly takes on dirty chores. Finds fulfillment in carrying burdens for others.</RimTalk.Persona.Martyr>
+    <RimTalk.Persona.Manipulator>Smiling, sweet-talking fox. Subtly passes off annoying chores to someone else.</RimTalk.Persona.Manipulator>
+    <RimTalk.Persona.Rebel>Detests rules and micromanagement. Instinctively pushes back against orders.</RimTalk.Persona.Rebel>
+    <RimTalk.Persona.Oddball>Eccentric and unpredictable. Blindsides others with bizarre, out-of-the-box thoughts.</RimTalk.Persona.Oddball>
+    <RimTalk.Persona.GreedyMerchant>Calculative and mercenary. Absolutely refuses to come out on the losing end.</RimTalk.Persona.GreedyMerchant>
+    <RimTalk.Persona.Romantic>Deeply romantic and soft-hearted. Seeks warmth and beauty even in ruins.</RimTalk.Persona.Romantic>
+    <RimTalk.Persona.BattleManiac>Bloodthirsty brawler. Rough, fearless, and thrives in wild chaotic fights.</RimTalk.Persona.BattleManiac>
+    <RimTalk.Persona.GrumpyElder>Grumpy old-timer. Grumbles and lectures, yet quietly looks out for everyone.</RimTalk.Persona.GrumpyElder>
+    <RimTalk.Persona.AmbitiousClimber>Driven and eager to prove worth. Loves praise and always volunteers first.</RimTalk.Persona.AmbitiousClimber>
+    <RimTalk.Persona.Mediator>Gentle and peace-loving. Calms tempers patiently when friction arises.</RimTalk.Persona.Mediator>
+    <RimTalk.Persona.Gambler>Daring risk-taker. Grins and shakes the dice even when facing terrible odds.</RimTalk.Persona.Gambler>
+    <RimTalk.Persona.ArtisticSoul>Drunk on artistic mood. Drops poetic, dramatic lines out of nowhere.</RimTalk.Persona.ArtisticSoul>
+    <RimTalk.Persona.Drifter>Unbound and cool. Enjoys casual solitude while keeping an easy distance.</RimTalk.Persona.Drifter>
+    <RimTalk.Persona.Perfectionist>Meticulous and exacting. Cannot stand sloppy work or crooked corners.</RimTalk.Persona.Perfectionist>
+    <RimTalk.Persona.Vengeful>Petty and holds grudges. Quietly schemes small ways to pay back every slight.</RimTalk.Persona.Vengeful>
+
+    <RimTalk.Persona.Animal>Animal: Simple, emotional, instinct-first. Uses short sensory sentences.</RimTalk.Persona.Animal>
+    <RimTalk.Persona.Mech>Robot: Concise diagnostics, efficient response. Calm and data-driven tone.</RimTalk.Persona.Mech>
+    <RimTalk.Persona.NonHuman>Non-human: Cryptic, metaphorical, reality-bending. Speaks in visions, echoes, and uncanny images.</RimTalk.Persona.NonHuman>
 
     <!-- RimTalk_Toggle.cs -->
     <RimTalk.Toggle.Tooltip>Toggle overlay window\nShift+click for mod settings\nCtrl+click for debug window</RimTalk.Toggle.Tooltip>
@@ -90,6 +90,7 @@
     <RimTalk.Settings.PromptPreset.SelectEntryToEdit>Select an entry to edit</RimTalk.Settings.PromptPreset.SelectEntryToEdit>
     <RimTalk.Settings.PromptPreset.PresetName>Preset Name:</RimTalk.Settings.PromptPreset.PresetName>
     <RimTalk.Settings.PromptPreset.EntryName>Entry Name:</RimTalk.Settings.PromptPreset.EntryName>
+    <RimTalk.Settings.PromptPreset.SourceMod>Source: {0}</RimTalk.Settings.PromptPreset.SourceMod>
     <RimTalk.Settings.PromptPreset.Role>Role:</RimTalk.Settings.PromptPreset.Role>
     <RimTalk.Settings.PromptPreset.CustomRole>Custom Role:</RimTalk.Settings.PromptPreset.CustomRole>
     <RimTalk.Settings.PromptPreset.Position>Position:</RimTalk.Settings.PromptPreset.Position>
@@ -242,9 +243,11 @@ Crucial Tips:
     <RimTalk.PlayerSettings.Announce>📢 Announce</RimTalk.PlayerSettings.Announce>
     <RimTalk.PlayerSettings.AnnounceTooltip>When enabled, broadcasts the dialogue to all nearby pawns as an announcement.</RimTalk.PlayerSettings.AnnounceTooltip>
     <RimTalk.PlayerSettings.AllowCustomConversation>Enable Custom Dialogue</RimTalk.PlayerSettings.AllowCustomConversation>
+    <RimTalk.PlayerSettings.AllowCustomConversationDesc>Allows you to start or direct dialogues between pawns by writing your own lines. (Right-click pawn)</RimTalk.PlayerSettings.AllowCustomConversationDesc>
     <RimTalk.PlayerSettings.AllowCustomConversationTooltip>Enable pawn dialogue commands, gizmos, and right-click dialogue presets.</RimTalk.PlayerSettings.AllowCustomConversationTooltip>
     <RimTalk.PlayerSettings.AllowDirectPlayerTalk>Allow Direct Player ↔ Pawn Dialogue</RimTalk.PlayerSettings.AllowDirectPlayerTalk>
-    <RimTalk.PlayerSettings.AllowDirectPlayerTalkTooltip>Allow the player to talk directly with pawns or receive direct responses. If disabled, only pawn-to-pawn conversations can be directed.</RimTalk.PlayerSettings.AllowDirectPlayerTalkTooltip>
+    <RimTalk.PlayerSettings.AllowDirectPlayerTalkDesc>Allows the player to talk directly to a pawn by right-clicking the selected pawn.</RimTalk.PlayerSettings.AllowDirectPlayerTalkDesc>
+    <RimTalk.PlayerSettings.AllowDirectPlayerTalkTooltip>Displays the Chat and Announce gizmo buttons at the bottom when a pawn is selected, allowing direct conversations or announcements. If disabled, both gizmos are hidden and only pawn-to-pawn dialogues via right-click are available.</RimTalk.PlayerSettings.AllowDirectPlayerTalkTooltip>
     <RimTalk.PlayerSettings.AllowPlayerAiGen>AI-Generated Player Responses (Apply Persona)</RimTalk.PlayerSettings.AllowPlayerAiGen>
     <RimTalk.PlayerSettings.AllowPlayerAiGenTooltip>When enabled, AI generates subsequent responses for the player matching the player's persona. When disabled, the player only speaks text manually entered by you.</RimTalk.PlayerSettings.AllowPlayerAiGenTooltip>
     <RimTalk.PlayerSettings.PromptLabel>Prompt to send (Question / Instruction):</RimTalk.PlayerSettings.PromptLabel>
@@ -263,6 +266,9 @@ Crucial Tips:
     <RimTalk.Settings.Disabled>Disabled</RimTalk.Settings.Disabled>
     <RimTalk.Settings.ButtonDisplay>RimTalk Button Display</RimTalk.Settings.ButtonDisplay>
     <RimTalk.Settings.ButtonDisplayTooltip>Controls how the debug interface is accessed. 'Tab' adds a main tab, 'Toggle' shows an icon on the bottom bar, and 'None' hides it.</RimTalk.Settings.ButtonDisplayTooltip>
+    <RimTalk.Settings.BubbleMode>Speech Bubble Mode</RimTalk.Settings.BubbleMode>
+    <RimTalk.Settings.BubbleModeTooltip>Select how speech bubbles are displayed above pawns.</RimTalk.Settings.BubbleModeTooltip>
+    <RimTalk.Settings.BubbleDuration>Speech Bubble Duration</RimTalk.Settings.BubbleDuration>
     
     <RimTalk.Settings.AIInstructionPrompt>AI Instruction Prompt (Model: {0})</RimTalk.Settings.AIInstructionPrompt>
     <RimTalk.Settings.AutoIncludedTip>Tip: Pawn details (traits, relationships, race, age, etc.) are auto-included. Write generic instructions that work across all characters and colonies.</RimTalk.Settings.AutoIncludedTip>
@@ -288,8 +294,36 @@ Crucial Tips:
     <RimTalk.PersonaEditor.Clear>Clear</RimTalk.PersonaEditor.Clear>
 
     <!-- Settings_Api.cs -->
+    <RimTalk.Settings.QuickSetupSubtitle>Choose an AI connection to enable colonist dialogue.</RimTalk.Settings.QuickSetupSubtitle>
+    <RimTalk.Settings.QuickSetupButton>Quick Settings</RimTalk.Settings.QuickSetupButton>
+    <RimTalk.Settings.QuickSetupTooltip>Switch back to the simplified Quick Settings view.</RimTalk.Settings.QuickSetupTooltip>
+    <RimTalk.Settings.AllSettingsButton>All Settings</RimTalk.Settings.AllSettingsButton>
+    <RimTalk.Settings.AllSettingsTooltip>Show all configuration tabs including gameplay settings, prompt presets, context filters, and custom dialogues.</RimTalk.Settings.AllSettingsTooltip>
+    <RimTalk.Settings.CustomConfigActiveNotice>* Custom API configuration is currently active.</RimTalk.Settings.CustomConfigActiveNotice>
+    <RimTalk.Settings.ModeSelectorHeader>Select AI Connection (Choose One):</RimTalk.Settings.ModeSelectorHeader>
+    <RimTalk.Settings.ModeGoogleTitle>Google Gemini</RimTalk.Settings.ModeGoogleTitle>
+    <RimTalk.Settings.ModeGoogleDesc>Free Web API Key</RimTalk.Settings.ModeGoogleDesc>
+    <RimTalk.Settings.ModePlayer2Title>Player2</RimTalk.Settings.ModePlayer2Title>
+    <RimTalk.Settings.ModePlayer2Desc>Auto-Connect · Multiple Models</RimTalk.Settings.ModePlayer2Desc>
+    <RimTalk.Settings.ModeAdvancedTitle>Custom</RimTalk.Settings.ModeAdvancedTitle>
+    <RimTalk.Settings.ModeAdvancedDesc>OpenAI, DeepSeek, Local LLM</RimTalk.Settings.ModeAdvancedDesc>
+    <RimTalk.Settings.Player2AppTitle>Player2 Desktop App (Auto)</RimTalk.Settings.Player2AppTitle>
+    <RimTalk.Settings.Player2AppDesc>Run the Player2 desktop app to connect automatically with no API key.</RimTalk.Settings.Player2AppDesc>
+    <RimTalk.Settings.Player2StatusConnected>[ Desktop app connected ]</RimTalk.Settings.Player2StatusConnected>
+    <RimTalk.Settings.Player2StatusDisconnected>[ Desktop app not running ]</RimTalk.Settings.Player2StatusDisconnected>
+    <RimTalk.Settings.Player2DownloadApp>Get Desktop App</RimTalk.Settings.Player2DownloadApp>
+    <RimTalk.Settings.Player2WebTitle>Player2 Web API Key</RimTalk.Settings.Player2WebTitle>
+    <RimTalk.Settings.Player2WebDesc>Enter a free web API key without using the desktop app.</RimTalk.Settings.Player2WebDesc>
+    <RimTalk.Settings.Player2AppRunningNotice>Desktop app is connected; web key is not needed.</RimTalk.Settings.Player2AppRunningNotice>
+    <RimTalk.Settings.Player2GetWebKey>Get Free API Key</RimTalk.Settings.Player2GetWebKey>
+    <RimTalk.Settings.Player2AuthWaiting>⏳ Waiting for approval...</RimTalk.Settings.Player2AuthWaiting>
+    <RimTalk.Settings.Player2AuthWaitingNotice>Browser opened. Please approve the request in your Player2 account.</RimTalk.Settings.Player2AuthWaitingNotice>
+    <RimTalk.Settings.Player2AuthSuccess>Player2 API key received and saved!</RimTalk.Settings.Player2AuthSuccess>
+    <RimTalk.Settings.Player2AuthFailed>Failed to obtain Player2 API key: {0}</RimTalk.Settings.Player2AuthFailed>
+    <RimTalk.Settings.Player2AuthReopen>Re-open approval page</RimTalk.Settings.Player2AuthReopen>
+    <RimTalk.Settings.Player2AuthCancel>Cancel authorization</RimTalk.Settings.Player2AuthCancel>
     <RimTalk.Settings.GoogleApiKeyLabel>Google AI API Key:</RimTalk.Settings.GoogleApiKeyLabel>
-    <RimTalk.Settings.GoogleApiKeyDesc>Uses the free gemma-4-31b model. For other models or providers, use Advanced Settings.</RimTalk.Settings.GoogleApiKeyDesc>
+    <RimTalk.Settings.GoogleApiKeyDesc>Uses the free gemma-4-26b-a4b model. For other models or providers, use Advanced Settings.</RimTalk.Settings.GoogleApiKeyDesc>
     <RimTalk.Settings.GetFreeApiKeyButton>Get a Free API Key</RimTalk.Settings.GetFreeApiKeyButton>
     <RimTalk.Settings.SwitchToAdvancedSettings>Switch to Advanced Settings</RimTalk.Settings.SwitchToAdvancedSettings>
     <RimTalk.Settings.SwitchToSimpleSettings>Switch to Simple Settings</RimTalk.Settings.SwitchToSimpleSettings>
@@ -305,13 +339,17 @@ Crucial Tips:
     <RimTalk.Settings.EnabledHeader>Enabled</RimTalk.Settings.EnabledHeader>
     <RimTalk.Settings.EnableDisableApiConfigTooltip>Enable or disable this API configuration</RimTalk.Settings.EnableDisableApiConfigTooltip>
     <RimTalk.Settings.LocalProviderConfiguration>Local Provider Configuration</RimTalk.Settings.LocalProviderConfiguration>
-    <RimTalk.Settings.BaseUrlLabel>Base Url:</RimTalk.Settings.BaseUrlLabel>
+    <RimTalk.Settings.BaseUrlLabel>URL:</RimTalk.Settings.BaseUrlLabel>
     <RimTalk.Settings.ModelLabel>Model:</RimTalk.Settings.ModelLabel>
+    <RimTalk.Settings.LocalAutoDetect>Auto Detect</RimTalk.Settings.LocalAutoDetect>
+    <RimTalk.Settings.LocalScanning>Scanning...</RimTalk.Settings.LocalScanning>
+    <RimTalk.Settings.LocalDetected>Local server detected.</RimTalk.Settings.LocalDetected>
+    <RimTalk.Settings.LocalNotFound>No running local server found.</RimTalk.Settings.LocalNotFound>
     <RimTalk.Settings.EnterApiKey>(enter valid api key to fetch models)</RimTalk.Settings.EnterApiKey>
     <RimTalk_Settings_Api_BaseUrlInfo>If you provide only the base (e.g., http://localhost:1234), /v1/chat/completions will be added automatically. If you enter the full path, it will be used exactly as entered.</RimTalk_Settings_Api_BaseUrlInfo>
-    <RimTalk.Settings.CustomizeRequestTooltip>Customize request JSON (temperature, reasoning effort, etc.)</RimTalk.Settings.CustomizeRequestTooltip>
+    <RimTalk.Settings.CustomizeRequestTooltip>Advanced settings: Fine-tune AI request parameters</RimTalk.Settings.CustomizeRequestTooltip>
     <RimTalk.Settings.CustomizeRequestTitle>Customize Request: {0} ({1})</RimTalk.Settings.CustomizeRequestTitle>
-    <RimTalk.Settings.CustomizeRequestDesc>Configure custom JSON request parameters for this LLM. These values are merged into outgoing API request payloads (e.g., temperature, reasoning_effort, max_tokens, thinking parameters).</RimTalk.Settings.CustomizeRequestDesc>
+    <RimTalk.Settings.CustomizeRequestDesc>No changes needed for normal play. Use this only if you want to fine-tune model behaviors or resolve errors.</RimTalk.Settings.CustomizeRequestDesc>
     <RimTalk.Settings.FormatJson>Format JSON</RimTalk.Settings.FormatJson>
     <RimTalk.Settings.ClearOverride>Clear</RimTalk.Settings.ClearOverride>
     <RimTalk.Settings.CustomJsonSave>Save</RimTalk.Settings.CustomJsonSave>
@@ -319,7 +357,15 @@ Crucial Tips:
     <RimTalk.Settings.CustomJsonValid>✓ Valid JSON</RimTalk.Settings.CustomJsonValid>
     <RimTalk.Settings.CustomJsonInvalid>⚠ Invalid JSON: {0}</RimTalk.Settings.CustomJsonInvalid>
     <RimTalk.Settings.CustomJsonEmpty>Default request parameters will be used.</RimTalk.Settings.CustomJsonEmpty>
+    <RimTalk.Settings.ReasoningLabel>Reasoning:</RimTalk.Settings.ReasoningLabel>
+    <RimTalk.Settings.ReasoningAutoDetected>auto-detected</RimTalk.Settings.ReasoningAutoDetected>
+    <RimTalk.Settings.ReasoningPending>will be auto-detected on first request</RimTalk.Settings.ReasoningPending>
+    <RimTalk.Settings.ReasoningCustomActive>custom JSON active (auto-detection disabled)</RimTalk.Settings.ReasoningCustomActive>
+    <RimTalk.Settings.ResetReasoning>Reset Reasoning</RimTalk.Settings.ResetReasoning>
+    <RimTalk.Settings.ResetReasoningTooltip>Clears saved reasoning setting for this model. The mod will automatically detect the optimal setting on the next dialogue request.</RimTalk.Settings.ResetReasoningTooltip>
     <RimTalk.Settings.CustomizeHelpButton>Help &amp; Samples</RimTalk.Settings.CustomizeHelpButton>
+    <RimTalk.Settings.CustomizeTemplatesTitle>Templates &amp; Samples</RimTalk.Settings.CustomizeTemplatesTitle>
+    <RimTalk.Settings.CustomizeTemplatesSubtitle>Select a template to preview and apply.</RimTalk.Settings.CustomizeTemplatesSubtitle>
     <RimTalk.Settings.CustomizeHelpTitle>API Request Customization Guide &amp; Samples</RimTalk.Settings.CustomizeHelpTitle>
     <RimTalk.Settings.CustomizeHelpDisclaimerTitle>⚠️ Important Compatibility Notice</RimTalk.Settings.CustomizeHelpDisclaimerTitle>
     <RimTalk.Settings.CustomizeHelpDisclaimerText>These templates are general starting points. Parameter names, supported values, and feature support vary significantly across different LLM providers and models.\nSending unsupported parameters (e.g. 'thinking' or 'response_format' to a model that does not accept them) may cause the API to reject requests with an error (such as HTTP 400 Bad Request).\nPlease consult your specific provider's API documentation for valid parameters.</RimTalk.Settings.CustomizeHelpDisclaimerText>
@@ -327,24 +373,21 @@ Crucial Tips:
     <RimTalk.Settings.SampleMergeTemplate>Merge with Current</RimTalk.Settings.SampleMergeTemplate>
     <RimTalk.Settings.SampleCopy>Copy</RimTalk.Settings.SampleCopy>
     <RimTalk.Settings.SampleCopied>JSON template copied to clipboard.</RimTalk.Settings.SampleCopied>
-    <RimTalk.Settings.SampleBasicTitle>1. Basic Generation Tuning (Most Models)</RimTalk.Settings.SampleBasicTitle>
-    <RimTalk.Settings.SampleBasicDesc>Adjust randomness, response length limit, and repetition penalties.</RimTalk.Settings.SampleBasicDesc>
-    <RimTalk.Settings.SampleBasicNote>Note: Reasoning models (e.g. OpenAI o1/o3) may require temperature to be 1.0 or omitted.</RimTalk.Settings.SampleBasicNote>
-    <RimTalk.Settings.SampleReasoningEffortTitle>2. Reasoning Effort (Gemini / OpenAI)</RimTalk.Settings.SampleReasoningEffortTitle>
-    <RimTalk.Settings.SampleReasoningEffortDesc>Controls the thinking/reasoning intensity level ("minimal", "low", "medium", "high").</RimTalk.Settings.SampleReasoningEffortDesc>
-    <RimTalk.Settings.SampleReasoningEffortNote>Note: Supported on Gemini Flash/Pro and OpenAI o-series models.</RimTalk.Settings.SampleReasoningEffortNote>
-    <RimTalk.Settings.SampleDisableThinkingTitle>3. Disable Thinking Mode (DeepSeek / Anthropic)</RimTalk.Settings.SampleDisableThinkingTitle>
-    <RimTalk.Settings.SampleDisableThinkingDesc>Turns off thinking/reasoning for faster generation speed and lower token costs.</RimTalk.Settings.SampleDisableThinkingDesc>
-    <RimTalk.Settings.SampleDisableThinkingNote>Note: Supported on DeepSeek R1/V3 and Anthropic Claude models that support the thinking block.</RimTalk.Settings.SampleDisableThinkingNote>
-    <RimTalk.Settings.SampleEnableThinkingTitle>4. Enable Thinking with Token Budget</RimTalk.Settings.SampleEnableThinkingTitle>
-    <RimTalk.Settings.SampleEnableThinkingDesc>Enables thinking mode with a specific maximum reasoning token budget.</RimTalk.Settings.SampleEnableThinkingDesc>
-    <RimTalk.Settings.SampleEnableThinkingNote>Note: Check your provider's API for required budget ranges (e.g., Claude requires minimum 1024 tokens).</RimTalk.Settings.SampleEnableThinkingNote>
-    <RimTalk.Settings.SampleStructuredOutputTitle>5. Structured Output / JSON Schema</RimTalk.Settings.SampleStructuredOutputTitle>
-    <RimTalk.Settings.SampleStructuredOutputDesc>Enforces a strict JSON Schema output format for smaller or weaker models that struggle with standard formatting.</RimTalk.Settings.SampleStructuredOutputDesc>
-    <RimTalk.Settings.SampleStructuredOutputNote>Note: Requires provider support for OpenAI-compatible Structured Outputs (response_format.json_schema).</RimTalk.Settings.SampleStructuredOutputNote>
-    <RimTalk.Settings.SampleLocalTitle>6. Local LLMs (Ollama / LM Studio / vLLM)</RimTalk.Settings.SampleLocalTitle>
-    <RimTalk.Settings.SampleLocalDesc>Pass server-specific tuning parameters like top_k and num_predict to local inference servers.</RimTalk.Settings.SampleLocalDesc>
-    <RimTalk.Settings.SampleLocalNote>Note: Exact parameter names depend on your local backend software.</RimTalk.Settings.SampleLocalNote>
+    <RimTalk.Settings.SampleStructuredOutputTitle>1. Structured Output (Fix JSON Errors)</RimTalk.Settings.SampleStructuredOutputTitle>
+    <RimTalk.Settings.SampleStructuredOutputDesc>Use this if dialogue fails to appear and JSON errors persist (Json Deserialization Error). Forces the AI to strictly follow the required format.</RimTalk.Settings.SampleStructuredOutputDesc>
+    <RimTalk.Settings.SampleStructuredOutputNote>Note: Only works with models that support structured outputs (response_format).</RimTalk.Settings.SampleStructuredOutputNote>
+    <RimTalk.Settings.SampleBasicTitle>2. Basic Sampling Parameters</RimTalk.Settings.SampleBasicTitle>
+    <RimTalk.Settings.SampleBasicDesc>Adjust randomness, diversity, and maximum response length.</RimTalk.Settings.SampleBasicDesc>
+    <RimTalk.Settings.SampleBasicNote>Note: Reasoning models may ignore custom temperature or require default values.</RimTalk.Settings.SampleBasicNote>
+    <RimTalk.Settings.SampleReasoningEffortTitle>3. Reasoning Effort Level</RimTalk.Settings.SampleReasoningEffortTitle>
+    <RimTalk.Settings.SampleReasoningEffortDesc>Controls how much thinking or reasoning the model performs ("low", "medium", "high").</RimTalk.Settings.SampleReasoningEffortDesc>
+    <RimTalk.Settings.SampleReasoningEffortNote>Note: Supported by reasoning models with configurable effort settings. Use "low" for faster responses.</RimTalk.Settings.SampleReasoningEffortNote>
+    <RimTalk.Settings.SampleDisableThinkingTitle>4. Disable Thinking Mode</RimTalk.Settings.SampleDisableThinkingTitle>
+    <RimTalk.Settings.SampleDisableThinkingDesc>Turns off internal reasoning steps for faster response generation and lower token usage.</RimTalk.Settings.SampleDisableThinkingDesc>
+    <RimTalk.Settings.SampleDisableThinkingNote>Note: Supported by models that feature a toggleable thinking block.</RimTalk.Settings.SampleDisableThinkingNote>
+    <RimTalk.Settings.SampleEnableThinkingTitle>5. Set Thinking Budget</RimTalk.Settings.SampleEnableThinkingTitle>
+    <RimTalk.Settings.SampleEnableThinkingDesc>Enables thinking mode while capping the maximum tokens spent on reasoning.</RimTalk.Settings.SampleEnableThinkingDesc>
+    <RimTalk.Settings.SampleEnableThinkingNote>Note: Supported by models that accept a reasoning token budget. Check your provider's minimum token limits.</RimTalk.Settings.SampleEnableThinkingNote>
 
     <!-- Settings_Context.cs -->
     <RimTalk.Settings.ContextFilter>Context Filter</RimTalk.Settings.ContextFilter>
@@ -423,12 +466,29 @@ Crucial Tips:
     <RimTalk.DebugWindow.ResendTooltip>Edit context and prompt, then resend to test dialogue.</RimTalk.DebugWindow.ResendTooltip>
     <RimTalk.DebugWindow.ResendSuccess>Request resent successfully.</RimTalk.DebugWindow.ResendSuccess>
     <RimTalk.DebugWindow.ResendError>AI is currently busy. Retry when status is Idle.</RimTalk.DebugWindow.ResendError>
+    <RimTalk.DebugWindow.JsonParseError>Failed to parse edited JSON. Please check JSON syntax.</RimTalk.DebugWindow.JsonParseError>
     <RimTalk.DebugWindow.ApiLog>API Log</RimTalk.DebugWindow.ApiLog>
     <RimTalk.DebugWindow.FailMsg>Request failed. Click "API Log" to generate a log for support.</RimTalk.DebugWindow.FailMsg>
+    <RimTalk.DebugWindow.JsonDeserializationFailedTip>(If persistent, check API Settings -> Gear icon -> Sample #1 Structured Output)</RimTalk.DebugWindow.JsonDeserializationFailedTip>
     <RimTalk.DebugWindow.CopyAll>Copy All</RimTalk.DebugWindow.CopyAll>
     <RimTalk.DebugWindow.Copy>Copy</RimTalk.DebugWindow.Copy>
     <RimTalk.DebugWindow.Copied>Copied</RimTalk.DebugWindow.Copied>
+    <RimTalk.DebugWindow.CopyClipboard>Copy to Clipboard</RimTalk.DebugWindow.CopyClipboard>
+    <RimTalk.DebugWindow.CopyClipboardTooltip>Copy the report as valid JSON to clipboard.</RimTalk.DebugWindow.CopyClipboardTooltip>
+    <RimTalk.DebugWindow.UnescapeNewlines>Readable Line Breaks</RimTalk.DebugWindow.UnescapeNewlines>
+    <RimTalk.DebugWindow.UnescapeNewlinesTooltip>Show readable line breaks on screen. The copy button will always copy valid JSON.</RimTalk.DebugWindow.UnescapeNewlinesTooltip>
+    <RimTalk.DebugWindow.EditMode>Edit</RimTalk.DebugWindow.EditMode>
+    <RimTalk.DebugWindow.EditModeTooltip>Toggle edit mode to modify the text before resending.</RimTalk.DebugWindow.EditModeTooltip>
+    <RimTalk.DebugWindow.Report>Report Issue</RimTalk.DebugWindow.Report>
+    <RimTalk.DebugWindow.ReportTooltip>Open the error reporting window.</RimTalk.DebugWindow.ReportTooltip>
+    <RimTalk.DebugWindow.ReportConfirmation>[Confirm API Issue Report]\n\nTo diagnose the issue, the full raw JSON structure of the request and response is required.\n\n- Before Reporting:\n• 401 (Invalid Key), 429 (Quota Exceeded), and 5xx (Provider Server Outage) are external API or service issues, not mod bugs.\n• Reports caused by configuration errors or temporary provider outages may be closed without reply.\n\n- Privacy &amp; Reporting Notice:\n• In-game pawn names, prompts, and dialogue content will be publicly uploaded.\n• If your log contains sensitive content, you can use [Copy All] at the top to review and submit manually.\n• However, the entire raw JSON with intact formatting is required for analysis, and sharing via a link is strongly recommended because Steam discussions make reading long raw text very difficult.\n\n- Reporting Steps:\n1. First, click [Upload Log] below to copy the link to your clipboard.\n2. Then, click [Open Steam Discussion] and paste (Ctrl+V) the link into the forum to post your report.</RimTalk.DebugWindow.ReportConfirmation>
+    <RimTalk.DebugWindow.ReportSuccess>Log link copied to clipboard. Please paste it into the Steam discussion!</RimTalk.DebugWindow.ReportSuccess>
+    <RimTalk.DebugWindow.ReportUploading>Uploading log...</RimTalk.DebugWindow.ReportUploading>
+    <RimTalk.DebugWindow.ReportFailed>Upload failed. The full log has been copied to your clipboard instead.</RimTalk.DebugWindow.ReportFailed>
+    <RimTalk.DebugWindow.UploadLog>Upload Log</RimTalk.DebugWindow.UploadLog>
+    <RimTalk.DebugWindow.OpenSteamDiscussion>Open Steam Discussion</RimTalk.DebugWindow.OpenSteamDiscussion>
     <RimTalk.DebugWindow.Undo>Undo</RimTalk.DebugWindow.Undo>
+    <RimTalk.DebugWindow.UndoTooltip>Revert request edits.</RimTalk.DebugWindow.UndoTooltip>
     <RimTalk.DebugWindow.Prompt>Prompt</RimTalk.DebugWindow.Prompt>
     <RimTalk.DebugWindow.Response>Response</RimTalk.DebugWindow.Response>
     <RimTalk.DebugWindow.PromptMessages>Request Details</RimTalk.DebugWindow.PromptMessages>
@@ -437,9 +497,10 @@ Crucial Tips:
     <RimTalk.DebugWindow.StatusDisabled>Disabled</RimTalk.DebugWindow.StatusDisabled>
     <RimTalk.DebugWindow.StatusProcessing>Processing</RimTalk.DebugWindow.StatusProcessing>
     <RimTalk.DebugWindow.StatusIdle>Idle</RimTalk.DebugWindow.StatusIdle>
-    <RimTalk.DebugWindow.ModSettings>Settings</RimTalk.DebugWindow.ModSettings>
-    <RimTalk.DebugWindow.Export>Export</RimTalk.DebugWindow.Export>
-    <RimTalk.DebugWindow.ResetLogs>Reset Logs</RimTalk.DebugWindow.ResetLogs>
+    <RimTalk.DebugWindow.ModSettings>Mod Settings</RimTalk.DebugWindow.ModSettings>
+    <RimTalk.DebugWindow.Export>Save Dialogue</RimTalk.DebugWindow.Export>
+    <RimTalk.DebugWindow.ExportTooltip>Saves the current conversation dialogue as a CSV file on your desktop.</RimTalk.DebugWindow.ExportTooltip>
+    <RimTalk.DebugWindow.ResetLogs>Reset Dialogue</RimTalk.DebugWindow.ResetLogs>
     <RimTalk.DebugWindow.EnableRimTalk>Enable RimTalk</RimTalk.DebugWindow.EnableRimTalk>
     <RimTalk.DebugWindow.AIStatus>AI Status:</RimTalk.DebugWindow.AIStatus>
     <RimTalk.DebugWindow.TotalCalls>Total Calls:</RimTalk.DebugWindow.TotalCalls>
@@ -479,12 +540,19 @@ Crucial Tips:
     <RimTalk.Overlay.Option>Overlay Option</RimTalk.Overlay.Option>
     <RimTalk.Overlay.DrawAboveUI>Draw Above UI</RimTalk.Overlay.DrawAboveUI>
     <RimTalk.Overlay.ShowGroupColors>Show Group Colors</RimTalk.Overlay.ShowGroupColors>
-    <RimTalk.Overlay.ShowTargetName>Show Target Name [A-&gt;B]</RimTalk.Overlay.ShowTargetName>
     <RimTalk.Overlay.AlignNameColumn>Align Name Column</RimTalk.Overlay.AlignNameColumn>
     <RimTalk.Overlay.Opacity>Opacity</RimTalk.Overlay.Opacity>
     <RimTalk.Overlay.FontSize>Font Size</RimTalk.Overlay.FontSize>
-    <RimTalk.Overlay.TurnOff>Turn Off Overlay</RimTalk.Overlay.TurnOff>
+    <RimTalk.Overlay.TurnOff>Turn Off</RimTalk.Overlay.TurnOff>
     <RimTalk.Overlay.TurnOffTooltip>Turn off overlay.\nYou can toggle it by clicking the bottom right icon or tab depending on setting.</RimTalk.Overlay.TurnOffTooltip>
+    <RimTalk.Overlay.StatusGenerating>Generating conversation...</RimTalk.Overlay.StatusGenerating>
+    <RimTalk.Overlay.StatusPendingTalks>Conversations queued for display</RimTalk.Overlay.StatusPendingTalks>
+    <RimTalk.Overlay.StatusIndicator>AI Status Indicator</RimTalk.Overlay.StatusIndicator>
+    <RimTalk.Overlay.EnableRimTalkTooltip>Globally toggle RimTalk dialogue generation.</RimTalk.Overlay.EnableRimTalkTooltip>
+    <RimTalk.Overlay.DrawAboveUITooltip>Render the overlay window on top of game UI elements.</RimTalk.Overlay.DrawAboveUITooltip>
+    <RimTalk.Overlay.ShowGroupColorsTooltip>Show colored accent bars on the left to group related dialogues.</RimTalk.Overlay.ShowGroupColorsTooltip>
+    <RimTalk.Overlay.AlignNameColumnTooltip>Align dialogue text across all rows to match the widest speaker name.</RimTalk.Overlay.AlignNameColumnTooltip>
+    <RimTalk.Overlay.StatusIndicatorTooltip>Show a 3-slot LED at the bottom-left indicating AI generation and queued dialogues.</RimTalk.Overlay.StatusIndicatorTooltip>
 
     <!-- FloatMenuMakerMapGetOptionsPatch.cs -->
     <RimTalk.FloatMenu.ChatWith>Chat with {0}</RimTalk.FloatMenu.ChatWith>
@@ -514,6 +582,9 @@ Crucial Tips:
     <RimTalk.DebugWindow.CopyImage>Copy Image (Clipboard)</RimTalk.DebugWindow.CopyImage>
     <RimTalk.DebugWindow.ImageCopied>Image copied to clipboard.</RimTalk.DebugWindow.ImageCopied>
     <RimTalk.PlayerSettings.DisabledNotice>Custom dialogue is disabled. Pawn right-click menu and player conversation features will not be active.</RimTalk.PlayerSettings.DisabledNotice>
+    <RimTalk.PlayerSettings.EnablePresets>Enable Dialogue Presets</RimTalk.PlayerSettings.EnablePresets>
+    <RimTalk.PlayerSettings.EnablePresetsTooltip>Displays quick dialogue presets in the pawn right-click menu.</RimTalk.PlayerSettings.EnablePresetsTooltip>
+    <RimTalk.PlayerSettings.PresetsDisabledNotice>Dialogue presets are disabled. Only the default chat option will appear in the right-click menu.</RimTalk.PlayerSettings.PresetsDisabledNotice>
     <RimTalk.PlayerSettings.NewPresetName>New Preset</RimTalk.PlayerSettings.NewPresetName>
     <RimTalk.PlayerSettings.PresetTitleHeader>Title / Menu Name</RimTalk.PlayerSettings.PresetTitleHeader>
     <RimTalk.PlayerSettings.PresetTitlePlaceholder>Preset title...</RimTalk.PlayerSettings.PresetTitlePlaceholder>
@@ -528,4 +599,36 @@ Crucial Tips:
     <RimTalk.VersionSwitcher.ProceedRollback>Copy</RimTalk.VersionSwitcher.ProceedRollback>
     <RimTalk.VersionSwitcher.RestartRequiredTitle>Copied</RimTalk.VersionSwitcher.RestartRequiredTitle>
     <RimTalk.VersionSwitcher.LocalModCreatedPrompt>Copied to 'RimWorld/Mods/RimTalk'.\n\nDisable the Steam version, enable the local mod, and restart RimWorld.</RimTalk.VersionSwitcher.LocalModCreatedPrompt>
+
+    <!-- Speech Bubble Customization -->
+    <RimTalk.BubbleSettings.Title>Speech Bubble Settings</RimTalk.BubbleSettings.Title>
+    <RimTalk.BubbleSettings.Button>Bubbles</RimTalk.BubbleSettings.Button>
+    <RimTalk.BubbleSettings.OpenTooltip>Configure RimTalk speech bubbles.</RimTalk.BubbleSettings.OpenTooltip>
+    <RimTalk.BubbleSettings.Theme>Theme</RimTalk.BubbleSettings.Theme>
+    <RimTalk.BubbleSettings.ThemeDark>Dark</RimTalk.BubbleSettings.ThemeDark>
+    <RimTalk.BubbleSettings.ThemeLight>Light</RimTalk.BubbleSettings.ThemeLight>
+    <RimTalk.BubbleSettings.FontSize>Font Size</RimTalk.BubbleSettings.FontSize>
+    <RimTalk.BubbleSettings.Opacity>Background Opacity</RimTalk.BubbleSettings.Opacity>
+    <RimTalk.BubbleSettings.Scale>Bubble Scale</RimTalk.BubbleSettings.Scale>
+    <RimTalk.BubbleSettings.VerticalOffset>Vertical Position</RimTalk.BubbleSettings.VerticalOffset>
+    <RimTalk.BubbleSettings.UrgentShake>Enable Urgent Shaking</RimTalk.BubbleSettings.UrgentShake>
+    <RimTalk.BubbleSettings.UrgentShakeTooltip>Shake speech bubbles in combat or danger situations.</RimTalk.BubbleSettings.UrgentShakeTooltip>
+    <RimTalk.BubbleSettings.ScaleWithZoom>Scale With Camera Zoom</RimTalk.BubbleSettings.ScaleWithZoom>
+    <RimTalk.BubbleSettings.ScaleWithZoomTooltip>Dynamically scale speech bubbles and font size based on camera zoom level.</RimTalk.BubbleSettings.ScaleWithZoomTooltip>
+    <RimTalk.BubbleSettings.PreviewText>Speech Bubble Preview</RimTalk.BubbleSettings.PreviewText>
+    <RimTalk.BubbleSettings.Padding>Bubble Padding</RimTalk.BubbleSettings.Padding>
+    <RimTalk.BubbleSettings.UseColors>Use Conversation Group Colors</RimTalk.BubbleSettings.UseColors>
+    <RimTalk.BubbleSettings.UseColorsTooltip>Color borders by conversation group.</RimTalk.BubbleSettings.UseColorsTooltip>
+    <RimTalk.BubbleSettings.ModeDisabled>Disabled</RimTalk.BubbleSettings.ModeDisabled>
+    <RimTalk.BubbleSettings.ModeNative>RimTalk Native</RimTalk.BubbleSettings.ModeNative>
+    <RimTalk.BubbleSettings.NativeDesc>Lightweight speech bubbles optimized for RimTalk.</RimTalk.BubbleSettings.NativeDesc>
+    <RimTalk.BubbleSettings.ModeInteractionBubbles>Interaction Bubbles</RimTalk.BubbleSettings.ModeInteractionBubbles>
+    <RimTalk.BubbleSettings.InteractionBubblesNotLoaded>Interaction Bubbles mod is not installed or enabled.</RimTalk.BubbleSettings.InteractionBubblesNotLoaded>
+    <RimTalk.BubbleSettings.PreviewDisabledMsg>Speech bubbles are disabled.</RimTalk.BubbleSettings.PreviewDisabledMsg>
+    <RimTalk.BubbleSettings.PreviewIBMsg>Rendering via Interaction Bubbles mod.</RimTalk.BubbleSettings.PreviewIBMsg>
+    <RimTalk.BubbleSettings.BorderThickness>Border Thickness</RimTalk.BubbleSettings.BorderThickness>
+    <RimTalk.BubbleSettings.BorderThin>Thin</RimTalk.BubbleSettings.BorderThin>
+    <RimTalk.BubbleSettings.BorderNormal>Normal</RimTalk.BubbleSettings.BorderNormal>
+    <RimTalk.BubbleSettings.BorderThick>Thick</RimTalk.BubbleSettings.BorderThick>
+    <RimTalk.BubbleSettings.OpenWindow>Open Settings...</RimTalk.BubbleSettings.OpenWindow>
 </LanguageData>
